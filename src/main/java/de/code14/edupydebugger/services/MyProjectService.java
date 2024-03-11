@@ -1,6 +1,6 @@
 package de.code14.edupydebugger.services;
 
-import com.github.juliancode14.edupydebugger.MyBundle;
+import de.code14.edupydebugger.MyBundle;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
