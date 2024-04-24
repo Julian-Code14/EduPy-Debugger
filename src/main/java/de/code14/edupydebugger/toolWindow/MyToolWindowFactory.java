@@ -8,12 +8,9 @@ import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
-import de.code14.edupydebugger.MyBundle;
 import de.code14.edupydebugger.services.MyProjectService;
 
 import javax.swing.*;
-
-import static com.sun.java.accessibility.util.AWTEventMonitor.addActionListener;
 
 /**
  * @author julian
@@ -41,11 +38,11 @@ public class MyToolWindowFactory implements ToolWindowFactory {
 
         public JBPanel getContent() {
             JBPanel panel = new JBPanel();
-            JBLabel label = new JBLabel(MyBundle.message("randomLabel", "?"));
+            JBLabel label = new JBLabel("Random Label");
 
             panel.add(label);
-            JButton shuffleButton = new JButton(MyBundle.message("shuffle"));
-            shuffleButton.addActionListener(e -> label.setText(MyBundle.message("randomLabel", service.getRandomNumber())));
+            JButton shuffleButton = new JButton("Shuffle");
+            shuffleButton.addActionListener(e -> label.setText("Random Label"));
             panel.add(shuffleButton);
             return panel;
         }
