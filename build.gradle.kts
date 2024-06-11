@@ -23,7 +23,10 @@ repositories {
 
 // Dependencies are managed with Gradle version catalog - read more: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
 dependencies {
-//    implementation(libs.annotations)
+    implementation("jakarta.websocket:jakarta.websocket-api:2.1.1")
+    implementation("org.glassfish.tyrus:tyrus-server:2.1.4")
+    implementation("org.glassfish.tyrus:tyrus-container-grizzly-server:2.1.4")
+    implementation("org.glassfish.grizzly:grizzly-http-server:2.4.4")
 }
 
 // Set the JVM language level used to build the project.

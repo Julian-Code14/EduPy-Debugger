@@ -11,6 +11,7 @@
 
     <projectListeners>
         <listener class="de.code14.edupydebugger.DebugProcessListener" topic="com.intellij.xdebugger.XDebuggerManagerListener" />
+        <listener class="de.code14.edupydebugger.EduPyProjectManagerListener" topic="com.intellij.openapi.project.ProjectManagerListener" />
     </projectListeners>
 
     <extensions defaultExtensionNs="com.intellij">
