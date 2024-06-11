@@ -1,10 +1,7 @@
 package de.code14.edupydebugger.ui;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.openapi.wm.ToolWindowAnchor;
-import com.intellij.openapi.wm.ToolWindowFactory;
-import com.intellij.openapi.wm.ToolWindowManager;
+import com.intellij.openapi.wm.*;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.jcef.JBCefBrowser;
@@ -67,11 +64,6 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
     public void openToolWindow(@NotNull Project project) {
         ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow("DebuggerToolWindow");
         if (toolWindow != null) {
-            toolWindow.show();
-        } else {
-            ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
-            toolWindow = toolWindowManager.registerToolWindow("DebuggerToolWindow", true, ToolWindowAnchor.BOTTOM);
-            this.createToolWindowContent(project, toolWindow);
             toolWindow.show();
         }
     }
