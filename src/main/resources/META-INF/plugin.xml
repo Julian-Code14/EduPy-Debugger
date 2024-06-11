@@ -9,11 +9,14 @@
 
     <!--<resource-bundle>messages.MyBundle</resource-bundle>-->
 
+    <projectListeners>
+        <listener class="de.code14.edupydebugger.DebugProcessListener" topic="com.intellij.xdebugger.XDebuggerManagerListener" />
+    </projectListeners>
+
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="de.code14.edupydebugger.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
+        <toolWindow factoryClass="de.code14.edupydebugger.ui.DebuggerToolWindowFactory" id="DebuggerToolWindow" anchor="bottom" />
     </extensions>
 
     <applicationListeners>
-        <listener class="de.code14.edupydebugger.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>
     </applicationListeners>
 </idea-plugin>
