@@ -1,6 +1,9 @@
 package de.code14.edupydebugger;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowId;
+import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebuggerManagerListener;
@@ -26,8 +29,14 @@ public class DebugProcessListener implements XDebuggerManagerListener {
     public void processStarted(@NotNull XDebugProcess debugProcess) {
         final XDebugSession debugSession = debugProcess.getSession();
 
-        // Open the Tool Window
         SwingUtilities.invokeLater(() -> {
+            // Hide the default Debug Tool Window content
+            ToolWindow defaultDebugToolWindow = ToolWindowManager.getInstance(project).getToolWindow(ToolWindowId.DEBUG);
+            if (defaultDebugToolWindow != null) {
+                defaultDebugToolWindow.setAvailable(false);
+            }
+
+            // Open the Tool Window
             DebuggerToolWindowFactory debuggerToolWindowFactory = new DebuggerToolWindowFactory();
             debuggerToolWindowFactory.openToolWindow(project);
         });
@@ -36,10 +45,6 @@ public class DebugProcessListener implements XDebuggerManagerListener {
     @Override
     public void processStopped(@NotNull XDebugProcess debugProcess) {
         // Optional: Tool-Fenster wieder schließen
-    }
-
-    private void openToolWindow(Project project) {
-
     }
 
 }
