@@ -40,6 +40,7 @@ public class DebugWebSocketServer {
         websocketServer.start();
 
         httpServer.start();
+        isRunning = true;
         System.out.println("Server started on port 8080");
     }
 
@@ -60,6 +61,8 @@ public class DebugWebSocketServer {
             httpServer.shutdownNow();
             System.out.println("HTTP Server stopped");
         }
+
+        isRunning = false;
     }
 
     public static boolean isRunning() {
