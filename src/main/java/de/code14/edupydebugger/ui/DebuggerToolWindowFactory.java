@@ -26,7 +26,7 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
 
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        JBCefBrowser jbCefBrowser = new JBCefBrowser("http://localhost:8080");
+        JBCefBrowser jbCefBrowser = new JBCefBrowser("http://localhost:8080/index.html");
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(jbCefBrowser.getComponent(), BorderLayout.CENTER);
 

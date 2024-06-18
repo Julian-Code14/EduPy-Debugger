@@ -23,10 +23,18 @@ repositories {
 
 // Dependencies are managed with Gradle version catalog - read more: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
 dependencies {
+
+    // Webserver Dependencies
     implementation("jakarta.websocket:jakarta.websocket-api:2.1.1")
     implementation("org.glassfish.tyrus:tyrus-server:2.1.4")
     implementation("org.glassfish.tyrus:tyrus-container-grizzly-server:2.1.4")
-    implementation("org.glassfish.grizzly:grizzly-http-server:2.4.4")
+
+    // Testing Setup
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
+    testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.0")
+    testImplementation("org.mockito:mockito-core:5.7.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.1")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.1")
 }
 
 // Set the JVM language level used to build the project.
@@ -119,4 +127,7 @@ tasks {
         // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
         channels = properties("pluginVersion").map { listOf(it.substringAfter('-', "").substringBefore('.').ifEmpty { "default" }) }
     }
+
+
+
 }
