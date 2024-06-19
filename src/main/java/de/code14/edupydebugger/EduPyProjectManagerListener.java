@@ -19,11 +19,11 @@ public class EduPyProjectManagerListener implements ProjectManagerListener {
 
     @Override
     public void projectClosing(@NotNull Project project) {
-        try {
+        /*try {
             DebugWebSocketServer.stopServer();
         } catch (IOException e) {
             //LOG.error("Failed to close websocket server", e);
-        }
+        }*/
     }
 
 

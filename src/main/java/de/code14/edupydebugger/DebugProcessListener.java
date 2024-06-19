@@ -10,7 +10,6 @@ import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebuggerManagerListener;
 import de.code14.edupydebugger.server.DebugWebSocketServer;
 import de.code14.edupydebugger.ui.DebuggerToolWindowFactory;
-import jakarta.websocket.DeploymentException;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -37,13 +36,13 @@ public class DebugProcessListener implements XDebuggerManagerListener {
         final XDebugSession debugSession = debugProcess.getSession();
 
         SwingUtilities.invokeLater(() -> {
-            if (!DebugWebSocketServer.isRunning()) {
-                try {
+            //if (!DebugWebSocketServer.isRunning()) {
+            //    try {
                     DebugWebSocketServer.startServer();
-                } catch (IOException | DeploymentException | URISyntaxException e) {
+            //    } catch (IOException | DeploymentException | URISyntaxException e) {
                     //LOG.error("Failed to start the server", e);
-                }
-            }
+            //    }
+            //}
 
             // Hide the default Debug Tool Window content
             ToolWindow defaultDebugToolWindow = ToolWindowManager.getInstance(project).getToolWindow(ToolWindowId.DEBUG);
