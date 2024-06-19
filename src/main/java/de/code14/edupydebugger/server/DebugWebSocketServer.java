@@ -4,16 +4,13 @@ import com.intellij.openapi.diagnostic.Logger;
 import jakarta.websocket.*;
 import jakarta.websocket.server.ServerEndpoint;
 import org.glassfish.grizzly.http.server.HttpServer;
-import org.glassfish.grizzly.http.server.StaticHttpHandler;
+import org.glassfish.grizzly.http.server.NetworkListener;
 import org.glassfish.tyrus.server.Server;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.FileSystemNotFoundException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Objects;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author julian
@@ -55,26 +52,29 @@ public class DebugWebSocketServer {
         }
 
         // Start Grizzly HTTP server on port 8080
-        httpServer = HttpServer.createSimpleServer("/", 8081);
+        httpServer = new HttpServer();
+        NetworkListener listener = new NetworkListener("EduPyDebuggerUI", "localhost", 8081);
+        httpServer.addListener(listener);
 
         // StaticHttpHandler for handling the Web Application
-        StaticHttpHandler staticHttpHandler;
+        httpServer.getServerConfiguration().addHttpHandler(new org.glassfish.grizzly.http.server.CLStaticHttpHandler(
+                DebugWebSocketServer.class.getClassLoader(), "/static/"
+        ), "/");
+
+        // Start Tyrus Websocket server on another open port under the /websockets context
+        Map<String, Object> properties = new HashMap<>();
+        websocketServer = new Server("localhost", 8082, "", properties, DebugWebSocketServer.class);
+
         try {
-            Path resourceBasePath = Paths.get(Objects.requireNonNull(DebugWebSocketServer.class.getResource("/static")).toURI());
-            staticHttpHandler = new StaticHttpHandler(resourceBasePath.toString());
-        } catch (FileSystemNotFoundException | URISyntaxException e) {
-            // Fall back to loading from the classpath if the resource is inside a JAR
-            staticHttpHandler = new StaticHttpHandler("/static/");
+            httpServer.start();
+            websocketServer.start();
+            isRunning = true;
+            LOG.info("Servers started successfully on ports 8081 (HTTP) and 8082 (WebSocket)");
+        } catch (Exception e) {
+            LOG.error("Failed to start servers", e);
+            stopServer();
         }
-        httpServer.getServerConfiguration().addHttpHandler(staticHttpHandler, "/");
 
-        // Start Tyrus Websocket server on the same port under the /websockets context
-        websocketServer = new Server("localhost", 8082, "/websockets", null, DebugWebSocketServer.class);
-        websocketServer.start();
-
-        httpServer.start();
-        isRunning = true;
-        //LOG.info("Server started on port 8080");
     }
 
     public static void stopServer() throws IOException {
