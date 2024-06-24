@@ -32,7 +32,8 @@ dependencies {
     // https://mvnrepository.com/artifact/org.glassfish.tyrus/tyrus-server
     implementation("org.glassfish.tyrus:tyrus-server:2.1.5")
     // https://mvnrepository.com/artifact/org.glassfish.tyrus/tyrus-container-grizzly-server
-    implementation("org.glassfish.tyrus:tyrus-container-grizzly-server:2.1.5")
+    //implementation("org.glassfish.tyrus:tyrus-container-grizzly-server:2.1.5")
+    implementation(files("$projectDir/libs/tyrus-container-grizzly-server-2.1.5.jar"))
 
 
     // Testing Setup
@@ -139,6 +140,9 @@ tasks {
         channels = properties("pluginVersion").map { listOf(it.substringAfter('-', "").substringBefore('.').ifEmpty { "default" }) }
     }
 
+}
 
-
+tasks.withType<Jar> {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
 }
