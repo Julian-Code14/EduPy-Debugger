@@ -15,13 +15,20 @@ public class DebugWebSocketServer {
     public static void startServer() {
         server = new Server("localhost", 8025, "/websockets", null, DebugServerEndpoint.class);
 
+        // Context ClassLoader Handling
+        Thread currentThread = Thread.currentThread();
+        ClassLoader originalClassLoader = currentThread.getContextClassLoader();
+        ClassLoader pluginClassLoader = DebugWebSocketServer.class.getClassLoader();
+
         try {
+            currentThread.setContextClassLoader(pluginClassLoader);
             server.start();
             System.out.println("Server started on port " + server.getPort());
             System.in.read();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
+            currentThread.setContextClassLoader(originalClassLoader);
             server.stop();
         }
     }

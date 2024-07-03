@@ -12,7 +12,7 @@ import jakarta.websocket.Session;
  * @since 19.06.24
  */
 @WebListener
-@ServerEndpoint(value = "debug")
+@ServerEndpoint(value = "/debug")
 public class DebugServerEndpoint {
 
     @OnMessage

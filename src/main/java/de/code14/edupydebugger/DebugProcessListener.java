@@ -13,8 +13,6 @@ import de.code14.edupydebugger.ui.DebuggerToolWindowFactory;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import java.io.IOException;
-import java.net.URISyntaxException;
 
 /**
  * @author julian
