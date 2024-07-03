@@ -1,6 +1,7 @@
 package de.code14.edupydebugger.server;
 
 
+import com.intellij.openapi.diagnostic.Logger;
 import org.glassfish.tyrus.server.Server;
 
 /**
@@ -10,9 +11,12 @@ import org.glassfish.tyrus.server.Server;
  */
 public class DebugWebSocketServer {
 
-    private static Server server;
+    private static final Logger LOGGER = Logger.getInstance(DebugWebSocketServer.class);
 
-    public static void startServer() {
+    private static Server server;
+    private static boolean running = false;
+
+    public static void startWebSocketServer() {
         server = new Server("localhost", 8025, "/websockets", null, DebugServerEndpoint.class);
 
         // Context ClassLoader Handling
@@ -23,14 +27,23 @@ public class DebugWebSocketServer {
         try {
             currentThread.setContextClassLoader(pluginClassLoader);
             server.start();
-            System.out.println("Server started on port " + server.getPort());
-            System.in.read();
+            LOGGER.info("WebSocket server started on port " + server.getPort());
+            running = true;
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error(e);
         } finally {
             currentThread.setContextClassLoader(originalClassLoader);
+        }
+    }
+
+    public static void stopWebSocketServer() {
+        if (server != null && running) {
             server.stop();
         }
+    }
+
+    public static boolean isRunning() {
+        return running;
     }
 
 }
