@@ -29,37 +29,38 @@ public class DebugProcessListener implements XDebuggerManagerListener {
     private static final Logger LOGGER = Logger.getInstance(DebugProcessListener.class);
 
     private final Project project;
+    private final DebuggerToolWindowFactory debuggerToolWindowFactory;
 
     public DebugProcessListener(Project project) {
         this.project = project;
+        this.debuggerToolWindowFactory = new DebuggerToolWindowFactory();
     }
 
     @Override
     public void processStarted(@NotNull XDebugProcess debugProcess) {
         final XDebugSession debugSession = debugProcess.getSession();
 
-        LOGGER.info("Debug session started");
+        LOGGER.info("Debug Process started");
+
+        // Start the Websocket Server
+        if (!DebugWebSocketServer.isRunning()) {
+            try {
+                DebugWebSocketServer.startWebSocketServer();
+            } catch (final Exception e) {
+                LOGGER.error("Failed to start the websocket server", e);
+            }
+        }
+
+        // Start the HTTP Webserver
+        if (!DebugWebServer.isRunning()) {
+            try {
+                DebugWebServer.startWebServer();
+            } catch (final Exception e) {
+                LOGGER.error("Failed to start the http server", e);
+            }
+        }
 
         SwingUtilities.invokeLater(() -> {
-            // Start the Websocket Server
-            if (!DebugWebSocketServer.isRunning()) {
-                try {
-                    DebugWebSocketServer.startWebSocketServer();
-                    System.out.println("WebSocket server started");
-                } catch (final Exception e) {
-                    LOGGER.error("Failed to start the websocket server", e);
-                }
-            }
-
-            // Start the HTTP Webserver
-            if (!DebugWebServer.isRunning()) {
-                try {
-                    DebugWebServer.startWebServer();
-                } catch (final Exception e) {
-                    LOGGER.error("Failed to start the http server", e);
-                }
-            }
-
             // Hide the default Debug Tool Window content
             ToolWindow defaultDebugToolWindow = ToolWindowManager.getInstance(project).getToolWindow(ToolWindowId.DEBUG);
             if (defaultDebugToolWindow != null) {
@@ -67,14 +68,15 @@ public class DebugProcessListener implements XDebuggerManagerListener {
             }
 
             // Open the Tool Window
-            DebuggerToolWindowFactory debuggerToolWindowFactory = new DebuggerToolWindowFactory();
             debuggerToolWindowFactory.openToolWindow(project);
         });
+
+        // Register DebugSessionListener
+        debugSession.addSessionListener(new DebugSessionListener(debugProcess));
     }
 
     @Override
     public void processStopped(@NotNull XDebugProcess debugProcess) {
-        // Optional: Tool-Fenster wieder schließen
         SwingUtilities.invokeLater(() -> {
             // Stop the Websocket Server
             if (DebugWebSocketServer.isRunning()) {
@@ -92,6 +94,12 @@ public class DebugProcessListener implements XDebuggerManagerListener {
                 } catch (final Exception e) {
                     LOGGER.error("Failed to start the http server", e);
                 }
+            }
+
+            // Close Debugger Tool Window
+            ToolWindow currentDebugToolWindow = ToolWindowManager.getInstance(project).getToolWindow("DebuggerToolWindow");
+            if (currentDebugToolWindow != null) {
+                currentDebugToolWindow.hide();
             }
         });
     }

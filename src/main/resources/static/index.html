@@ -1,38 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<title>Simple Web Application</title>
-		<style>
-			body {
-				font-family: Arial, sans-serif;
-				margin: 0;
-				padding: 0;
-				display: flex;
-				justify-content: center;
-				align-items: center;
-				height: 100vh;
-				background-color: #f0f0f0;
-			}
-			#content {
-				text-align: center;
-				padding: 20px;
-				background-color: #fff;
-				border-radius: 8px;
-				box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-			}
-			h1 {
-				color: #333;
-			}
-			p {
-				color: #666;
-			}
-		</style>
-	</head>
-	<body>
-		<div id="content">
-			<h1>Welcome to the Simple Web Application</h1>
-			<p>This is a basic web page served by the embedded HTTP server.</p>
-		</div>
-	</body>
+<head>
+	<meta charset="UTF-8" />
+	<title>Simple Web Application</title>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			margin: 0;
+			padding: 0;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			height: 100vh;
+			background-color: #f0f0f0;
+		}
+		#content {
+			text-align: center;
+			padding: 20px;
+			background-color: #fff;
+			border-radius: 8px;
+			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		}
+		h1 {
+			color: #333;
+		}
+		p {
+			color: #666;
+		}
+		#debug-info {
+			margin-top: 20px;
+			padding: 10px;
+			background-color: #e0e0e0;
+			border-radius: 5px;
+			font-family: monospace;
+		}
+	</style>
+</head>
+<body>
+<div id="content">
+	<h1>Welcome to the Simple Web Application</h1>
+	<p>This is a basic web page served by the embedded HTTP server.</p>
+	<div id="debug-info">Waiting for debug info...</div>
+</div>
+<script>
+	const debugInfoDiv = document.getElementById('debug-info');
+	const socket = new WebSocket('ws://localhost:8025/websockets/debug');
+
+	socket.onmessage = function(event) {
+		debugInfoDiv.textContent = event.data;
+	};
+
+	socket.onopen = function() {
+		console.log('WebSocket connection established');
+	};
+
+	socket.onclose = function() {
+		console.log('WebSocket connection closed');
+	};
+
+	socket.onerror = function(error) {
+		console.error('WebSocket error:', error);
+	};
+</script>
+</body>
 </html>

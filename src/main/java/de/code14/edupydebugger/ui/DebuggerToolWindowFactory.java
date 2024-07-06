@@ -1,15 +1,21 @@
 package de.code14.edupydebugger.ui;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.*;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
+import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.ui.jcef.JBCefBrowser;
+import com.intellij.ui.jcef.JBCefClient;
+import org.cef.browser.CefBrowser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
 /**
  * @author julian
@@ -17,6 +23,8 @@ import java.awt.*;
  * @since 11.06.24
  */
 public class DebuggerToolWindowFactory implements ToolWindowFactory {
+
+    private final static Logger LOGGER = Logger.getInstance(DebuggerToolWindowFactory.class);
 
 
     @Override
@@ -26,13 +34,18 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
 
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        JBCefBrowser jbCefBrowser = new JBCefBrowser("http://localhost:8026/index.html");
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.add(jbCefBrowser.getComponent(), BorderLayout.CENTER);
+        if (JBCefApp.isSupported()) {
+            JBCefBrowser jbCefBrowser = new JBCefBrowser("http://localhost:8026/index.html");
+            LOGGER.info("Loading JBCef browser...");
+            JPanel panel = new JPanel(new BorderLayout());
+            panel.add(jbCefBrowser.getComponent(), BorderLayout.CENTER);
 
-        ContentFactory contentFactory = ContentFactory.getInstance();
-        Content content = contentFactory.createContent(panel, "", false);
-        toolWindow.getContentManager().addContent(content);
+            ContentFactory contentFactory = ContentFactory.getInstance();
+            Content content = contentFactory.createContent(panel, "", false);
+            toolWindow.getContentManager().addContent(content);
+        } else {
+            LOGGER.error("JBCefApp is not supported");
+        }
     }
 
     @Override
