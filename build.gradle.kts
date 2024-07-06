@@ -26,25 +26,16 @@ dependencies {
 
     // Webserver Dependencies
     // https://mvnrepository.com/artifact/jakarta.websocket/jakarta.websocket-api
-    compileOnly("jakarta.websocket:jakarta.websocket-api:2.2.0-M1")
-    // https://mvnrepository.com/artifact/jakarta.xml.bind/jakarta.xml.bind-api
-    implementation("jakarta.xml.bind:jakarta.xml.bind-api:4.0.1")
-    // https://mvnrepository.com/artifact/jakarta.websocket/jakarta.websocket-client-api
-    compileOnly("jakarta.websocket:jakarta.websocket-client-api:2.2.0-M1")
-    // https://mvnrepository.com/artifact/jakarta.activation/jakarta.activation-api
-    implementation("jakarta.activation:jakarta.activation-api:2.1.2")
-    // https://mvnrepository.com/artifact/org.glassfish.tyrus/tyrus-client
-    implementation("org.glassfish.tyrus:tyrus-client:2.2.0-M1")
+    implementation("jakarta.websocket:jakarta.websocket-api:2.2.0")
+    // https://mvnrepository.com/artifact/jakarta.servlet/jakarta.servlet-api
+    implementation("jakarta.servlet:jakarta.servlet-api:6.1.0")
     // https://mvnrepository.com/artifact/org.glassfish.tyrus/tyrus-server
-    implementation("org.glassfish.tyrus:tyrus-server:2.2.0-M1")
-    // https://mvnrepository.com/artifact/org.glassfish.tyrus/tyrus-container-grizzly-client
-    implementation("org.glassfish.tyrus:tyrus-container-grizzly-client:2.2.0-M1")
-    // https://mvnrepository.com/artifact/org.glassfish.grizzly/grizzly-framework
-    implementation("org.glassfish.grizzly:grizzly-framework:4.0.2")
-    // https://mvnrepository.com/artifact/org.glassfish.grizzly/grizzly-http-server
-    implementation("org.glassfish.grizzly:grizzly-http-server:4.0.2")
+    implementation("org.glassfish.tyrus:tyrus-server:2.1.5")
     // https://mvnrepository.com/artifact/org.glassfish.tyrus/tyrus-container-grizzly-server
-    implementation("org.glassfish.tyrus:tyrus-container-grizzly-server:2.2.0-M1")
+    implementation("org.glassfish.tyrus:tyrus-container-grizzly-server:2.1.5")
+    ///implementation(files("$projectDir/libs/tyrus-container-grizzly-server-2.1.5.jar"))
+    //implementation((fileTree("libs")))
+
 
 
     // Testing Setup
@@ -77,12 +68,8 @@ changelog {
 }
 
 // Configure Gradle Kover Plugin - read more: https://github.com/Kotlin/kotlinx-kover#configuration
-koverReport {
-    defaults {
-        xml {
-            onCheck = true
-        }
-    }
+kover {
+
 }
 
 tasks {
@@ -151,6 +138,10 @@ tasks {
         channels = properties("pluginVersion").map { listOf(it.substringAfter('-', "").substringBefore('.').ifEmpty { "default" }) }
     }
 
-
+    runIde {
+        jvmArgs("--add-exports", "java.base/jdk.internal.vm=ALL-UNNAMED")
+    }
 
 }
+
+
