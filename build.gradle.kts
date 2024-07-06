@@ -33,9 +33,10 @@ dependencies {
     implementation("org.glassfish.tyrus:tyrus-server:2.1.5")
     // https://mvnrepository.com/artifact/org.glassfish.tyrus/tyrus-container-grizzly-server
     implementation("org.glassfish.tyrus:tyrus-container-grizzly-server:2.1.5")
-    ///implementation(files("$projectDir/libs/tyrus-container-grizzly-server-2.1.5.jar"))
-    //implementation((fileTree("libs")))
 
+    // Plant UML
+    // https://mvnrepository.com/artifact/net.sourceforge.plantuml/plantuml
+    implementation("net.sourceforge.plantuml:plantuml:1.2024.5")
 
 
     // Testing Setup

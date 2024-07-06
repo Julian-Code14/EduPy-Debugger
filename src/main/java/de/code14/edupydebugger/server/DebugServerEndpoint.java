@@ -61,6 +61,14 @@ public class DebugServerEndpoint {
     @OnMessage
     public String onMessage(String message, Session session) {
         LOGGER.info("Received websocket message " + message);
+        try {
+            //PlantUMLDiagramGenerator.generateDiagram(message, "diagram.png");
+            String output = PlantUMLDiagramGenerator.generateDiagramAsBase64(message);
+            System.out.println(output);
+            sendDebugInfo(output);
+        } catch (IOException e) {
+            LOGGER.error("Could not generate diagram", e);
+        }
         return message;
     }
 
