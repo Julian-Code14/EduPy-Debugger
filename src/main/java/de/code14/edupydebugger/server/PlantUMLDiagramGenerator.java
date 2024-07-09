@@ -41,11 +41,22 @@ public class PlantUMLDiagramGenerator {
     }
 
     public static String generateDiagramAsBase64(String plantUmlSource) throws IOException {
+        String base64EncodedImage;
         SourceStringReader reader = new SourceStringReader(plantUmlSource);
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             reader.outputImage(baos);
             byte[] imageBytes = baos.toByteArray();
-            return Base64.getEncoder().encodeToString(imageBytes);
+            base64EncodedImage = Base64.getEncoder().encodeToString(imageBytes);
+            System.out.println("Encoding: " + base64EncodedImage);
+        }
+        // Validate Base64-String
+        try {
+            byte[] decodedBytes = Base64.getDecoder().decode(base64EncodedImage);
+            System.out.println("Base64 decoded successfully.");
+            return base64EncodedImage;
+        } catch (IllegalArgumentException e) {
+            System.err.println("Invalid Base64 encoding: " + e.getMessage());
+            throw new IOException("Invalid Base64 encoding", e);
         }
     }
 

@@ -27,7 +27,6 @@ public class DebugSessionListener implements XDebugSessionListener {
     @Override
     public void stackFrameChanged() {
         LOGGER.info("stackFrameChanged");
-        DebugServerEndpoint.sendDebugInfo("Test");
     }
 
 }

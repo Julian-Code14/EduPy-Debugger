@@ -5,11 +5,32 @@ const socket = new WebSocket('ws://localhost:8025/websockets/debug');
 socket.onmessage = function(event) {
     //debugInfoDiv.textContent = event.data;
 
-    const base64Image = event.data;
+    // Receive and proceed with the Base64 Image
+    const base64Image = 'data:image/png;base64,' + event.data;
     console.log(base64Image);
-    const imageUrl = `data:image/png;base64,${base64Image}`;
-    console.log(imageUrl);
-    document.getElementById('uml-output').innerHTML = `<img src="${imageUrl}" alt="PlantUML Diagram">`;
+
+    // Check if it is a correct encoded Base64 Image
+    if (base64Image.startsWith('data:image/png;base64,')) {
+        const base64String = base64Image.split(',')[1];
+        console.log('Received Base64 string:', base64String);
+
+        // Versuchen, das Bild anzuzeigen
+        const img = new Image();
+        img.src = base64Image;
+        img.onload = function() {
+            console.log('Image loaded successfully.');
+        };
+        img.onerror = function(error) {
+            console.error('Failed to load image:', error);
+        };
+
+        // Add the image to DOM to show it
+        const umlOutputDiv = document.getElementById('uml-output');
+        umlOutputDiv.innerHTML = ''; // Empty div
+        umlOutputDiv.appendChild(img);
+    } else {
+        console.log('Received non-image data:', base64Image);
+    }
 };
 
 socket.onopen = function() {
