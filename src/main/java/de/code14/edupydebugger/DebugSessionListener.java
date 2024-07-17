@@ -4,9 +4,16 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebugSessionListener;
-import com.intellij.xdebugger.frame.XStackFrame;
+import com.intellij.xdebugger.frame.*;
+import com.jetbrains.python.debugger.PyDebugProcess;
+import com.jetbrains.python.psi.types.TypeEvalContext;
+import de.code14.edupydebugger.debugger.PythonAnalyzer;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
+import de.code14.edupydebugger.server.PlantUMLDiagramGenerator;
+import de.code14.edupydebugger.ui.ClassDiagramParser;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
 
 /**
  * @author julian
@@ -17,9 +24,12 @@ public class DebugSessionListener implements XDebugSessionListener {
 
     private final static Logger LOGGER = Logger.getInstance(DebugSessionListener.class);
 
+    private final XDebugProcess debugProcess;
     private final XDebugSession session;
 
+
     public DebugSessionListener(@NotNull XDebugProcess debugProcess) {
+        this.debugProcess = debugProcess;
         this.session = debugProcess.getSession();
     }
 
@@ -27,6 +37,18 @@ public class DebugSessionListener implements XDebugSessionListener {
     @Override
     public void stackFrameChanged() {
         LOGGER.info("stackFrameChanged");
+        XStackFrame stackFrame = session.getCurrentStackFrame();
+
+        if (debugProcess instanceof PyDebugProcess pyDebugProcess) {
+            String plantUml = ClassDiagramParser.generateClassDiagram(pyDebugProcess.getProject());
+            try {
+                DebugServerEndpoint.sendDebugInfo(PlantUMLDiagramGenerator.generateDiagramAsBase64(plantUml));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
+
+
 
 }
