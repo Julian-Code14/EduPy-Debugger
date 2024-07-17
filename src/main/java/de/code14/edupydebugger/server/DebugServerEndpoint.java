@@ -10,6 +10,8 @@ import jakarta.websocket.server.ServerEndpoint;
 import jakarta.websocket.Session;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -59,9 +61,18 @@ public class DebugServerEndpoint {
     }
 
     @OnMessage
-    public String onMessage(String message, Session session) {
+    public void onMessage(String message, Session session) {
         LOGGER.info("Received websocket message " + message);
-        return message;
+        try {
+            if (message.startsWith("@startuml")) {
+                String output = PlantUMLDiagramGenerator.generateDiagramAsBase64(message);
+                sendDebugInfo(output);
+            } else {
+                System.out.println("Folgendes: " + message);
+            }
+        } catch (IOException e) {
+            LOGGER.error("Could not generate diagram", e);
+        }
     }
 
     public static void sendDebugInfo(String message) {
@@ -73,6 +84,7 @@ public class DebugServerEndpoint {
         synchronized (sessions) {
             for (Session session : sessions) {
                 try {
+                    System.out.println("Message sent: " + message);
                     session.getBasicRemote().sendText(message);
                     LOGGER.info("Debug info sent to " + session.getId());
                 } catch (IOException e) {
@@ -85,4 +97,5 @@ public class DebugServerEndpoint {
     public static synchronized boolean isConnected() {
         return isConnected;
     }
+
 }
