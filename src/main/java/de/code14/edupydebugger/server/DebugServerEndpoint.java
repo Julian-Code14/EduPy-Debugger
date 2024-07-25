@@ -68,7 +68,7 @@ public class DebugServerEndpoint {
                 String output = PlantUMLDiagramGenerator.generateDiagramAsBase64(message);
                 sendDebugInfo(output);
             } else {
-                System.out.println("Folgendes: " + message);
+                LOGGER.warn("Unknown message received: " + message);
             }
         } catch (IOException e) {
             LOGGER.error("Could not generate diagram", e);
@@ -84,9 +84,9 @@ public class DebugServerEndpoint {
         synchronized (sessions) {
             for (Session session : sessions) {
                 try {
-                    System.out.println("Message sent: " + message);
                     session.getBasicRemote().sendText(message);
                     LOGGER.info("Debug info sent to " + session.getId());
+                    LOGGER.debug("Sent debug info: " + message);
                 } catch (IOException e) {
                     LOGGER.error("Error while sending debug info to " + session.getId(), e);
                 }

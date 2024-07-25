@@ -1,5 +1,6 @@
 package de.code14.edupydebugger.ui;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.jetbrains.python.psi.PyClass;
 import com.jetbrains.python.psi.PyFunction;
@@ -18,6 +19,9 @@ import java.util.Map;
  * @since 16.07.24
  */
 public class ClassDiagramParser {
+
+    private static final Logger LOGGER = Logger.getInstance(ClassDiagramParser.class);
+
 
     public static String generateClassDiagram(Project project) {
         PythonAnalyzer.analyzePythonFile(project);
@@ -51,7 +55,7 @@ public class ClassDiagramParser {
 
         plantUML.append("@enduml");
 
-        System.out.println(plantUML);
+        LOGGER.debug(plantUML.toString());
 
         return plantUML.toString();
     }

@@ -33,7 +33,7 @@ public class PythonAnalyzer {
         String projectBasePath = project.getBasePath();
 
         if (projectBasePath == null) {
-            System.out.println("Das Projekt-BasePath ist nicht verfügbar.");
+            LOGGER.warn("The project has no base path.");
             return;
         }
 
@@ -42,6 +42,7 @@ public class PythonAnalyzer {
 
         if (projectDir == null) {
             System.out.println("Das Projektverzeichnis wurde nicht gefunden.");
+            LOGGER.warn("The project dir could not be found.");
             return;
         }
 
@@ -85,7 +86,7 @@ public class PythonAnalyzer {
         PsiFile psiFile = PsiManager.getInstance(project).findFile(virtualFile);
 
         if (psiFile == null || psiFile.getFileType() != PythonFileType.INSTANCE) {
-            System.out.println("Die Datei ist keine gültige Python-Datei: " + virtualFile.getPath());
+            LOGGER.warn("The psi file could not be found: " + virtualFile.getPath());
             return;
         }
 
@@ -114,7 +115,7 @@ public class PythonAnalyzer {
                 classDetails.put(className, new Object[]{attributesList, methodsList});
             }
         } else {
-            System.out.println("Die Datei ist kein gültiges PyFile: " + virtualFile.getPath());
+            LOGGER.warn("The psi file could not be found: " + virtualFile.getPath());
         }
     }
 

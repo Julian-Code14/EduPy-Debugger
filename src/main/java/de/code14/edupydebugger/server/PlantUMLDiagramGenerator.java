@@ -47,15 +47,15 @@ public class PlantUMLDiagramGenerator {
             reader.outputImage(baos);
             byte[] imageBytes = baos.toByteArray();
             base64EncodedImage = Base64.getEncoder().encodeToString(imageBytes);
-            System.out.println("Encoding: " + base64EncodedImage);
+            LOGGER.debug("Encoded diagram image (base64): " + base64EncodedImage);
         }
         // Validate Base64-String
         try {
             byte[] decodedBytes = Base64.getDecoder().decode(base64EncodedImage);
-            System.out.println("Base64 decoded successfully.");
+            LOGGER.debug("Base64 decoded successfully. Base64 string validated.");
             return base64EncodedImage;
         } catch (IllegalArgumentException e) {
-            System.err.println("Invalid Base64 encoding: " + e.getMessage());
+            LOGGER.warn("Invalid Base64 encoding: " + e.getMessage());
             throw new IOException("Invalid Base64 encoding", e);
         }
     }
