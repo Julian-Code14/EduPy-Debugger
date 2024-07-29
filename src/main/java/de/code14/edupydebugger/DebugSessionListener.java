@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.*;
 
 /**
  * @author julian
@@ -48,10 +49,22 @@ public class DebugSessionListener implements XDebugSessionListener {
             // Dynamische Analyse
             List<PyStackFrame> pyStackFrames = DebuggerUtils.getAllStackFrames(this.session);
             StackFrameAnalyzer stackFrameAnalyzer = new StackFrameAnalyzer(pyStackFrames);
+            /*ExecutorService executorService = Executors.newSingleThreadExecutor();
+            Callable<Void> task = () -> {
+                stackFrameAnalyzer.analyzeFrames();
+                return null;
+            };
+            Future<Void> future = executorService.submit(task);
+            try {
+                future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+            executorService.shutdown();*/
+
             stackFrameAnalyzer.analyzeFrames();
             // Zugriff auf die gesammelten Daten
             Map<String, List<String>> variables = stackFrameAnalyzer.getVariables();
-            System.out.println("Jetzt gehts los:");
             for (Map.Entry<String, List<String>> entry : variables.entrySet()) {
                 System.out.println(entry.getKey() + ": " + entry.getValue());
             }
