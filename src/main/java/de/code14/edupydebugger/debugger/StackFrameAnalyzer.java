@@ -24,7 +24,7 @@ public class StackFrameAnalyzer {
     private static final Logger LOGGER = Logger.getInstance(StackFrameAnalyzer.class);
 
 
-    // Muster: Key: ID, Values -> [Name, Typ, aktueller Wert] ggf. zu erweitern um global/statisch/etc.
+    // Muster: Key: ID, Values -> [Name, Typ, aktueller Wert, Scope] ggf. zu erweitern um global/statisch/etc.
     private Map<String, List<String>> variables = new HashMap<>();
 
     private List<PyStackFrame> pyStackFrames = new ArrayList<>();
@@ -64,8 +64,8 @@ public class StackFrameAnalyzer {
                     } catch (PyDebuggerException e) {
                         throw new RuntimeException(e);
                     }
-                    LOGGER.debug("collectAttributes: " + id + " -> " + value.getName() + ": " + value.getValue() + " (" + value.getType() + ")");
-                    variables.put(id, new ArrayList<>(Arrays.asList(value.getName(), value.getType(), value.getValue())));
+                    System.out.println("collectAttributes: " + id + " -> " + value.getName() + ": " + value.getValue() + " (" + value.getType() + ") [" + determineScope(value) + "]");
+                    variables.put(id, new ArrayList<>(Arrays.asList(value.getName(), value.getType(), value.getValue(), determineScope(value))));
                 }
                 if (last) {
                     latch.countDown();
@@ -100,6 +100,29 @@ public class StackFrameAnalyzer {
 
         });
     }
+
+    private String determineScope(PyDebugValue value) {
+        try {
+            // Check if the variable exists in the local scope
+            String isLocal = value.getFrameAccessor().evaluate("locals().get('" + value.getName() + "', None) is not None", false, true).getValue();
+            if (Boolean.parseBoolean(isLocal)) {
+                return "local";
+            }
+
+            // Check if the variable exists in the global scope
+            String isGlobal = value.getFrameAccessor().evaluate("globals().get('" + value.getName() + "', None) is not None", false, true).getValue();
+            if (Boolean.parseBoolean(isGlobal)) {
+                return "global";
+            }
+
+            // If it's neither local nor global, it might be unknown or a different scope
+            return "unknown";
+        } catch (PyDebuggerException e) {
+            LOGGER.error("Error determining scope for variable: " + value.getName(), e);
+            return "unknown";
+        }
+    }
+
 
     public Map<String, List<String>> getVariables() {
         return variables;
