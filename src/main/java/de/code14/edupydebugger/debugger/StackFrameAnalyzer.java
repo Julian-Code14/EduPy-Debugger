@@ -155,60 +155,7 @@ public class StackFrameAnalyzer {
 
                     // Check if this is a user-defined object instance
                     if (isUserDefinedInstance(value)) {
-                        try {
-                            // Evaluate dir() to get all attributes of the object
-                            String attributesListStr = value.getFrameAccessor().evaluate("dir(" + value.getName() + ")", false, true).getValue();
-                            attributesListStr = attributesListStr.substring(1, attributesListStr.length() - 1); // Remove brackets
-                            String[] attributeNames = attributesListStr.split(", ");
-
-                            List<List<String>> attributeList = new ArrayList<>();
-
-                            for (String attrName : attributeNames) {
-                                attrName = attrName.trim().replace("'", ""); // Clean attribute name
-                                if (attrName.endsWith("__")) {
-                                    continue; // Skip attributes and methods ending with double underscore
-                                }
-
-                                PyDebugValue attrValue = (PyDebugValue) value.getFrameAccessor().evaluate(value.getName() + "." + attrName, false, true);
-                                String attrType = attrValue.getType();
-
-                                // Exclude methods and only include attributes
-                                if (attrType.equals("method") || attrType.equals("builtin_function_or_method") || attrType.startsWith("<bound method")) {
-                                    continue;
-                                }
-
-                                // Determine if the attribute is a class variable (static) or an instance variable
-                                boolean isStatic = false;
-                                try {
-                                    String isClassVar = value.getFrameAccessor().evaluate(value.getName() + ".__class__.__dict__.get('" + attrName + "', None) is not None", false, true).getValue();
-                                    isStatic = Boolean.parseBoolean(isClassVar);
-                                } catch (PyDebuggerException e) {
-                                    LOGGER.error("Error determining if attribute is static: " + attrName, e);
-                                }
-
-                                // Determine the value or the ID of the referenced object
-                                String attrValueStr;
-                                if (Objects.requireNonNull(attrValue.getValue()).contains("object")) {
-                                    // Get the ID of the referenced object
-                                    try {
-                                        attrValueStr = "refid:" + value.getFrameAccessor().evaluate("__builtins__.id(" + value.getName() + "." + attrName + ")", false, true).getValue();
-                                    } catch (PyDebuggerException e) {
-                                        LOGGER.error("Error getting ID for referenced object: " + attrName, e);
-                                        attrValueStr = "unknown";
-                                    }
-                                } else {
-                                    attrValueStr = attrValue.getValue();
-                                }
-
-                                String originalName = getOriginalAttributeName(value, attrName);
-                                String visibility = isStatic ? "static" : determineVisibility(originalName);
-                                attributeList.add(new ArrayList<>(Arrays.asList(originalName, attrType, attrValueStr, visibility)));
-                            }
-
-                            attributes.put(id, attributeList);
-                        } catch (PyDebuggerException e) {
-                            LOGGER.error("Error collecting attributes for object: " + value.getName(), e);
-                        }
+                        gatherAttributeInformation(value, id);
                     }
                 }
                 if (last) {
@@ -243,6 +190,65 @@ public class StackFrameAnalyzer {
             }
 
         });
+    }
+
+    private void gatherAttributeInformation(PyDebugValue value, String pyObjId) {
+        try {
+            // Evaluate dir() to get all attributes of the object
+            String attributesListStr = value.getFrameAccessor().evaluate("dir(" + value.getName() + ")", false, true).getValue();
+            attributesListStr = attributesListStr.substring(1, attributesListStr.length() - 1); // Remove brackets
+            String[] attributeNames = attributesListStr.split(", ");
+
+            List<List<String>> attributeList = new ArrayList<>();
+
+            for (String attrName : attributeNames) {
+                attrName = attrName.trim().replace("'", ""); // Clean attribute name
+                if (attrName.endsWith("__")) {
+                    continue; // Skip attributes and methods ending with double underscore
+                }
+
+                PyDebugValue attrValue = (PyDebugValue) value.getFrameAccessor().evaluate(value.getName() + "." + attrName, false, true);
+                String attrType = attrValue.getType();
+
+                // Exclude methods and only include attributes
+                if (attrType.equals("method") || attrType.equals("builtin_function_or_method") || attrType.startsWith("<bound method")) {
+                    continue;
+                }
+
+                // Determine if the attribute is a class variable (static) or an instance variable
+                boolean isStatic = false;
+                try {
+                    String isClassVar = value.getFrameAccessor().evaluate(value.getName() + ".__class__.__dict__.get('" + attrName + "', None) is not None", false, true).getValue();
+                    isStatic = Boolean.parseBoolean(isClassVar);
+                } catch (PyDebuggerException e) {
+                    LOGGER.error("Error determining if attribute is static: " + attrName, e);
+                }
+
+                // Determine the value or the ID of the referenced object
+                String attrValueStr;
+                if (Objects.requireNonNull(attrValue.getValue()).contains("object")) {
+                    // Get the ID of the referenced object
+                    try {
+                        String id = value.getFrameAccessor().evaluate("__builtins__.id(" + value.getName() + "." + attrName + ")", false, true).getValue();
+                        attrValueStr = "refid:" + id;
+                        gatherAttributeInformation(attrValue, id);
+                    } catch (PyDebuggerException e) {
+                        LOGGER.error("Error getting ID for referenced object: " + attrName, e);
+                        attrValueStr = "unknown";
+                    }
+                } else {
+                    attrValueStr = attrValue.getValue();
+                }
+
+                String originalName = getOriginalAttributeName(value, attrName);
+                String visibility = isStatic ? "static" : determineVisibility(originalName);
+                attributeList.add(new ArrayList<>(Arrays.asList(originalName, attrType, attrValueStr, visibility)));
+            }
+
+            attributes.put(pyObjId, attributeList);
+        } catch (PyDebuggerException e) {
+            LOGGER.error("Error collecting attributes for object: " + value.getName(), e);
+        }
     }
 
     private String getOriginalAttributeName(PyDebugValue value, String attributeName) {
