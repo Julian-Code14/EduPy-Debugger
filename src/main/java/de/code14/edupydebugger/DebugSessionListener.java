@@ -69,6 +69,12 @@ public class DebugSessionListener implements XDebugSessionListener {
                 System.out.println(entry.getKey() + ": " + entry.getValue());
             }
 
+            Map<String, List<List<String>>> attributes = stackFrameAnalyzer.getAttributes();
+            for (Map.Entry<String, List<List<String>>> entry : attributes.entrySet()) {
+                System.out.println(entry.getKey() + ": " + entry.getValue());
+            }
+
+
             // Statische Code-Analyse
             String plantUml = ClassDiagramParser.generateClassDiagram(pyDebugProcess.getProject());
             try {
