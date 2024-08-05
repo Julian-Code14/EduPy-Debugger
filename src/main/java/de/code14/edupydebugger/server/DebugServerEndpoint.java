@@ -2,6 +2,7 @@ package de.code14.edupydebugger.server;
 
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.xdebugger.XDebugProcess;
 import jakarta.servlet.annotation.WebListener;
 import jakarta.websocket.OnClose;
 import jakarta.websocket.OnMessage;
@@ -32,6 +33,7 @@ public class DebugServerEndpoint {
     private static final Set<Session> sessions = Collections.synchronizedSet(new HashSet<>());
     private static final BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>();
     private static volatile boolean isConnected = false;
+    private static final DebugProcessController debugProcessController = new DebugProcessController();
 
     @OnOpen
     public void onOpen(Session session) {
@@ -67,6 +69,27 @@ public class DebugServerEndpoint {
             if (message.startsWith("@startuml")) {
                 String output = PlantUMLDiagramGenerator.generateDiagramAsBase64(message);
                 sendDebugInfo(output);
+            } else if (message.startsWith("action:")) {
+                switch (message.substring("action:".length())) {
+                    case "resume":
+                        debugProcessController.resume();
+                        break;
+                    case "pause":
+                        debugProcessController.pause();
+                        break;
+                    case "step-over":
+                        debugProcessController.stepOver();
+                        break;
+                    case "step-into":
+                        debugProcessController.stepInto();
+                        break;
+                    case "step-out":
+                        debugProcessController.stepOut();
+                        break;
+                    default:
+                        LOGGER.warn("Unknown action received: " + message);
+                        break;
+                }
             } else {
                 LOGGER.warn("Unknown message received: " + message);
             }
@@ -96,6 +119,10 @@ public class DebugServerEndpoint {
 
     public static synchronized boolean isConnected() {
         return isConnected;
+    }
+
+    public static void setDebugProcess(XDebugProcess debugProcess) {
+        debugProcessController.setDebugProcess(debugProcess);
     }
 
 }

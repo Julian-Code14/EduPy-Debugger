@@ -8,6 +8,7 @@ import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebuggerManagerListener;
+import de.code14.edupydebugger.server.DebugServerEndpoint;
 import de.code14.edupydebugger.server.DebugWebServer;
 import de.code14.edupydebugger.server.DebugWebSocketServer;
 import de.code14.edupydebugger.ui.DebuggerToolWindowFactory;
@@ -59,6 +60,8 @@ public class DebugProcessListener implements XDebuggerManagerListener {
                 LOGGER.error("Failed to start the http server", e);
             }
         }
+
+        DebugServerEndpoint.setDebugProcess(debugProcess);
 
         SwingUtilities.invokeLater(() -> {
             // Hide the default Debug Tool Window content
