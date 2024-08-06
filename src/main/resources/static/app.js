@@ -12,14 +12,79 @@ function goToClassDiagram() {
     }
 }
 
+function splitStringAtFirstColon(input) {
+    // Finden des Index des ersten Doppelpunkts
+    const index = input.indexOf(':');
+
+    // Wenn kein Doppelpunkt gefunden wird, kann der String nicht geteilt werden
+    if (index === -1) {
+        return [input, ''];
+    }
+
+    // Der Doppelpunkt gehört zur ersten Hälfte
+    const firstPart = input.slice(0, index + 1); // inkl. Doppelpunkt
+    const secondPart = input.slice(index + 1);   // nach dem Doppelpunkt
+
+    return [firstPart, secondPart];
+}
+
+function updateVariablesTable(dataString) {
+    // Get the table body element
+    const tableBody = document.querySelector('.variables-container tbody');
+
+    // Clear the existing rows
+    tableBody.innerHTML = '';
+
+    /*const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.textContent = "Hallo";
+    tr.appendChild(td);
+    tableBody.appendChild(tr);*/
+
+    // Split the data string by ';' to get each row
+    const rows = dataString.split(';');
+
+    // Iterate over each row and create table rows
+    rows.forEach(row => {
+        if (row.trim() === '') return; // Skip empty rows
+
+        // Split the row into columns by '=' and ','
+        const [id, rest] = row.split('=');
+        const [name, type, currentValue, scope] = rest.split(',');
+
+        // Create a new row element
+        const tr = document.createElement('tr');
+
+        // Create and append cell elements for each value
+        [id, name, type, currentValue, scope].forEach(value => {
+            const td = document.createElement('td');
+            td.textContent = value;
+            tr.appendChild(td);
+        });
+
+        // Append the row to the table body
+        tableBody.appendChild(tr);
+    });
+}
+
+
 function connectWebSocket() {
     socket = new WebSocket(websocketUrl);
 
     socket.onmessage = function(event) {
-        //debugInfoDiv.textContent = event.data;
+        const eventData = splitStringAtFirstColon(event.data);
+
+        switch (eventData.at(0)) {
+            case "variables:":
+                updateVariablesTable(eventData.at(1));
+                break;
+            default:
+                console.error(eventData);
+        }
+
 
         // Receive and proceed with the Base64 Image
-        const base64Image = 'data:image/png;base64,' + event.data;
+        /*const base64Image = 'data:image/png;base64,' + event.data;
         console.log(base64Image);
 
         // Check if it is a correct encoded Base64 Image
@@ -43,7 +108,7 @@ function connectWebSocket() {
             umlOutputDiv.appendChild(img);
         } else {
             console.log('Received non-image data:', base64Image);
-        }
+        }*/
     };
 
     socket.onopen = function() {

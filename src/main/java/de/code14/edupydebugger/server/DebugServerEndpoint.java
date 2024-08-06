@@ -121,7 +121,6 @@ public class DebugServerEndpoint {
                 try {
                     session.getBasicRemote().sendText(message);
                     LOGGER.info("Debug info sent to " + session.getId());
-                    LOGGER.debug("Sent debug info: " + message);
                 } catch (IOException e) {
                     LOGGER.error("Error while sending debug info to " + session.getId(), e);
                 }

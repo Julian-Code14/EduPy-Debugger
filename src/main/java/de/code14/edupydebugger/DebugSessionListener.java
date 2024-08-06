@@ -49,18 +49,6 @@ public class DebugSessionListener implements XDebugSessionListener {
             // Dynamische Analyse
             List<PyStackFrame> pyStackFrames = DebuggerUtils.getAllStackFrames(this.session);
             StackFrameAnalyzer stackFrameAnalyzer = new StackFrameAnalyzer(pyStackFrames);
-            /*ExecutorService executorService = Executors.newSingleThreadExecutor();
-            Callable<Void> task = () -> {
-                stackFrameAnalyzer.analyzeFrames();
-                return null;
-            };
-            Future<Void> future = executorService.submit(task);
-            try {
-                future.get();
-            } catch (InterruptedException | ExecutionException e) {
-                throw new RuntimeException(e);
-            }
-            executorService.shutdown();*/
 
             stackFrameAnalyzer.analyzeFrames();
             // Zugriff auf die gesammelten Daten
@@ -68,6 +56,13 @@ public class DebugSessionListener implements XDebugSessionListener {
             for (Map.Entry<String, List<String>> entry : variables.entrySet()) {
                 System.out.println(entry.getKey() + ": " + entry.getValue());
             }
+            StringBuilder variablesString = new StringBuilder("variables:");
+            for (Map.Entry<String, List<String>> entry : variables.entrySet()) {
+                String values = String.join(",", entry.getValue());
+                variablesString.append(entry.getKey()).append("=").append(values).append(";");
+            }
+            DebugServerEndpoint.sendDebugInfo(variablesString.toString());
+            System.out.println(variablesString);
 
             Map<String, List<List<String>>> attributes = stackFrameAnalyzer.getAttributes();
             for (Map.Entry<String, List<List<String>>> entry : attributes.entrySet()) {
