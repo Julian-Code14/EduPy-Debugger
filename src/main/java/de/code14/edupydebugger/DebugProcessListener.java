@@ -8,6 +8,7 @@ import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebuggerManagerListener;
+import com.jetbrains.python.debugger.PyDebugProcess;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
 import de.code14.edupydebugger.server.DebugWebServer;
 import de.code14.edupydebugger.server.DebugWebSocketServer;
@@ -61,7 +62,7 @@ public class DebugProcessListener implements XDebuggerManagerListener {
             }
         }
 
-        DebugServerEndpoint.setDebugProcess(debugProcess);
+        DebugServerEndpoint.setDebugProcess((PyDebugProcess) debugProcess);
 
         SwingUtilities.invokeLater(() -> {
             // Hide the default Debug Tool Window content
@@ -80,31 +81,7 @@ public class DebugProcessListener implements XDebuggerManagerListener {
 
     @Override
     public void processStopped(@NotNull XDebugProcess debugProcess) {
-        SwingUtilities.invokeLater(() -> {
-            // Stop the Websocket Server
-            if (DebugWebSocketServer.isRunning()) {
-                try {
-                    DebugWebSocketServer.stopWebSocketServer();
-                } catch (final Exception e) {
-                    LOGGER.error("Failed to stop the websocket server", e);
-                }
-            }
 
-            // Stop the HTTP Webserver
-            if (DebugWebServer.isRunning()) {
-                try {
-                    DebugWebServer.stopWebServer();
-                } catch (final Exception e) {
-                    LOGGER.error("Failed to start the http server", e);
-                }
-            }
-
-            // Close Debugger Tool Window
-            ToolWindow currentDebugToolWindow = ToolWindowManager.getInstance(project).getToolWindow("DebuggerToolWindow");
-            if (currentDebugToolWindow != null) {
-                currentDebugToolWindow.hide();
-            }
-        });
     }
 
 }

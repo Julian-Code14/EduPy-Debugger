@@ -3,6 +3,8 @@ package de.code14.edupydebugger.server;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.xdebugger.XDebugProcess;
+import com.jetbrains.python.debugger.PyDebugProcess;
+import de.code14.edupydebugger.ui.ClassDiagramParser;
 import jakarta.servlet.annotation.WebListener;
 import jakarta.websocket.OnClose;
 import jakarta.websocket.OnMessage;
@@ -34,6 +36,7 @@ public class DebugServerEndpoint {
     private static final BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>();
     private static volatile boolean isConnected = false;
     private static final DebugProcessController debugProcessController = new DebugProcessController();
+    private static String classDiagramPlantUml;
 
     @OnOpen
     public void onOpen(Session session) {
@@ -90,6 +93,15 @@ public class DebugServerEndpoint {
                         LOGGER.warn("Unknown action received: " + message);
                         break;
                 }
+            } else if (message.startsWith("get:")) {
+                switch (message.substring("get:".length())) {
+                    case "cd":
+                        sendDebugInfo(classDiagramPlantUml);
+                        break;
+                    default:
+                        LOGGER.warn("Unknown get request received: " + message);
+                        break;
+                }
             } else {
                 LOGGER.warn("Unknown message received: " + message);
             }
@@ -121,8 +133,12 @@ public class DebugServerEndpoint {
         return isConnected;
     }
 
-    public static void setDebugProcess(XDebugProcess debugProcess) {
+    public static void setDebugProcess(PyDebugProcess debugProcess) {
         debugProcessController.setDebugProcess(debugProcess);
+    }
+
+    public static void setClassDiagramPlantUml(String plantUml) {
+        classDiagramPlantUml = plantUml;
     }
 
 }

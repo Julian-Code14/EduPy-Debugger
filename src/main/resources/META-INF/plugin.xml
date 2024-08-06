@@ -15,7 +15,7 @@
     </projectListeners>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="de.code14.edupydebugger.ui.DebuggerToolWindowFactory" id="DebuggerToolWindow" anchor="left" />
+        <toolWindow factoryClass="de.code14.edupydebugger.ui.DebuggerToolWindowFactory" id="DebuggerToolWindow" anchor="left" doNotActivateOnStart="true" />
     </extensions>
 
     <applicationListeners>

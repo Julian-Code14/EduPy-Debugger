@@ -72,9 +72,9 @@ th, td {
     align-items: center;
 }
 
-.object-inspector-container {
+#object-inspector-container {
     margin-top: 10px;
-    height: 200px; /* Beispielhöhe */
+    height: 200px;
     background-color: #fff;
     border: 1px solid #ddd;
     display: flex;
@@ -173,3 +173,47 @@ input:checked + .slider:before {
         max-width: 200px;
     }
 }
+
+
+/* Class Diagram */
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #f44336;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    padding: 5px 10px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.close-btn:hover {
+    background-color: #d32f2f;
+}
+
+.diagram-section {
+    width: 100%;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.image-container {
+    width: 100%;
+    max-width: 800px;
+    height: auto;
+    overflow: hidden;
+    border: 1px solid #ddd;
+    background-color: white;
+}
+
+.diagram-image {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+

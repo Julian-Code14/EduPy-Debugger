@@ -3,8 +3,8 @@ const websocketUrl = 'ws://localhost:8025/websockets/debug'
 let socket;
 const reconnectInterval = 5000;
 
-function goToClassDiagram() {
-    window.location.href = 'pages/class-diagram.html';
+function goToIndex() {
+    window.location.href = '../index.html';
     try {
         socket.close();
     } catch (e) {
@@ -16,8 +16,6 @@ function connectWebSocket() {
     socket = new WebSocket(websocketUrl);
 
     socket.onmessage = function(event) {
-        //debugInfoDiv.textContent = event.data;
-
         // Receive and proceed with the Base64 Image
         const base64Image = 'data:image/png;base64,' + event.data;
         console.log(base64Image);
@@ -38,7 +36,7 @@ function connectWebSocket() {
             };
 
             // Add the image to DOM to show it
-            const umlOutputDiv = document.getElementById('object-inspector-container');
+            const umlOutputDiv = document.getElementById('class-diagram-container');
             umlOutputDiv.innerHTML = ''; // Empty div
             umlOutputDiv.appendChild(img);
         } else {
@@ -48,6 +46,9 @@ function connectWebSocket() {
 
     socket.onopen = function() {
         console.log('WebSocket connection established');
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.send("get:cd");
+        }
     };
 
     socket.onclose = function() {

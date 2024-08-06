@@ -78,7 +78,7 @@ public class DebugSessionListener implements XDebugSessionListener {
             // Statische Code-Analyse
             String plantUml = ClassDiagramParser.generateClassDiagram(pyDebugProcess.getProject());
             try {
-                DebugServerEndpoint.sendDebugInfo(PlantUMLDiagramGenerator.generateDiagramAsBase64(plantUml));
+                DebugServerEndpoint.setClassDiagramPlantUml(PlantUMLDiagramGenerator.generateDiagramAsBase64(plantUml));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

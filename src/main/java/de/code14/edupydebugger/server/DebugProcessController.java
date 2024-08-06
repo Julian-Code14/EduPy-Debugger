@@ -2,6 +2,7 @@ package de.code14.edupydebugger.server;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.xdebugger.XDebugProcess;
+import com.jetbrains.python.debugger.PyDebugProcess;
 
 /**
  * @author julian
@@ -11,9 +12,9 @@ import com.intellij.xdebugger.XDebugProcess;
 public class DebugProcessController {
 
     private static final Logger LOGGER = Logger.getInstance(DebugProcessController.class);
-    private XDebugProcess debugProcess;
+    private PyDebugProcess debugProcess;
 
-    public void setDebugProcess(XDebugProcess debugProcess) {
+    public void setDebugProcess(PyDebugProcess debugProcess) {
         this.debugProcess = debugProcess;
     }
 
@@ -50,6 +51,10 @@ public class DebugProcessController {
             debugProcess.getSession().stepOut();
             LOGGER.info("Stepped out in debug process");
         }
+    }
+
+    public PyDebugProcess getDebugProcess() {
+        return debugProcess;
     }
 
 }
