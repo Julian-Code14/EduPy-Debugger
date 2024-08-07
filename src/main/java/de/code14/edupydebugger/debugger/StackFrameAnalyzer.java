@@ -27,7 +27,7 @@ public class StackFrameAnalyzer {
     private Map<String, List<String>> variables = new HashMap<>();
 
     // Muster: Key: ID, Values -> [Name, Typ, aktueller Wert, Sichtbarkeit] ggf. zu erweitern
-    private Map<String, List<List<String>>> attributes = new HashMap<>();
+    private Map<String, List<Object>[]> objects = new HashMap<>();
 
     private List<PyStackFrame> pyStackFrames = new ArrayList<>();
 
@@ -51,15 +51,15 @@ public class StackFrameAnalyzer {
             Thread.currentThread().interrupt();
         }
 
-        attributes.clear();
-        CountDownLatch attributeLatch = new CountDownLatch(this.pyStackFrames.size());
+        objects.clear();
+        CountDownLatch objectsLatch = new CountDownLatch(this.pyStackFrames.size());
 
         for (PyStackFrame frame : this.pyStackFrames) {
-            collectAttributes(frame, attributeLatch);
+            collectObjects(frame, objectsLatch);
         }
 
         try {
-            attributeLatch.await();
+            objectsLatch.await();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -79,7 +79,7 @@ public class StackFrameAnalyzer {
                     } catch (PyDebuggerException e) {
                         throw new RuntimeException(e);
                     }
-                    LOGGER.debug("collectAttributes: " + id + " -> " + value.getName() + ": " + value.getValue() + " (" + value.getType() + ") [" + determineScope(value) + "]");
+                    LOGGER.debug("collectVariables: " + id + " -> " + value.getName() + ": " + value.getValue() + " (" + value.getType() + ") [" + determineScope(value) + "]");
                     variables.put(id, new ArrayList<>(Arrays.asList(value.getName(), value.getType(), value.getValue(), determineScope(value))));
                 }
                 if (last) {
@@ -138,11 +138,11 @@ public class StackFrameAnalyzer {
         }
     }
 
-    private void collectAttributes(PyStackFrame pyStackFrame, CountDownLatch latch) {
+    private void collectObjects(PyStackFrame pyStackFrame, CountDownLatch latch) {
         pyStackFrame.computeChildren(new XCompositeNode() {
             @Override
             public void addChildren(@NotNull XValueChildrenList children, boolean last) {
-                LOGGER.debug("Collecting attributes for PyStackFrame: " + pyStackFrame.getFrameId());
+                LOGGER.debug("Collecting objects for PyStackFrame: " + pyStackFrame.getFrameId());
                 for (int i = 0; i < children.size(); i++) {
                     PyDebugValue value = (PyDebugValue) children.getValue(i);
                     String id = "";
@@ -199,7 +199,13 @@ public class StackFrameAnalyzer {
             attributesListStr = attributesListStr.substring(1, attributesListStr.length() - 1); // Remove brackets
             String[] attributeNames = attributesListStr.split(", ");
 
-            List<List<String>> attributeList = new ArrayList<>();
+            List<String> references = new ArrayList<>();
+            List<List<String>> attributes = new ArrayList<>();
+            List[] objectInfoList = new List[2];
+            objectInfoList[0] = references;
+            objectInfoList[1] = attributes;
+
+            references.add(value.getName() + ":" + value.getType());
 
             for (String attrName : attributeNames) {
                 attrName = attrName.trim().replace("'", ""); // Clean attribute name
@@ -242,10 +248,14 @@ public class StackFrameAnalyzer {
 
                 String originalName = getOriginalAttributeName(value, attrName);
                 String visibility = isStatic ? "static" : determineVisibility(originalName);
-                attributeList.add(new ArrayList<>(Arrays.asList(originalName, attrType, attrValueStr, visibility)));
+                attributes.add(new ArrayList<>(Arrays.asList(originalName, attrType, attrValueStr, visibility)));
             }
 
-            attributes.put(pyObjId, attributeList);
+            if (objects.containsKey(pyObjId)) {
+                objects.get(pyObjId)[0].add(value.getName() + ":" + value.getType());
+            } else {
+                objects.put(pyObjId, objectInfoList);
+            }
         } catch (PyDebuggerException e) {
             LOGGER.error("Error collecting attributes for object: " + value.getName(), e);
         }
@@ -290,8 +300,8 @@ public class StackFrameAnalyzer {
         return variables;
     }
 
-    public Map<String, List<List<String>>> getAttributes() {
-        return attributes;
+    public Map<String, List<Object>[]> getObjects() {
+        return objects;
     }
 
 }

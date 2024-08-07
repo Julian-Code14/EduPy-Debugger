@@ -67,6 +67,38 @@ function updateVariablesTable(dataString) {
     });
 }
 
+function updateObjectCardsImage(dataString) {
+    // Receive and proceed with the Base64 Image
+    const base64Image = 'data:image/png;base64,' + dataString;
+    console.log(base64Image);
+
+    // Check if it is a correct encoded Base64 Image
+    if (base64Image.startsWith('data:image/png;base64,')) {
+        const base64String = base64Image.split(',')[1];
+        console.log('Received Base64 string:', base64String);
+
+        // Versuchen, das Bild anzuzeigen
+        const img = new Image();
+        img.src = base64Image;
+        img.onload = function() {
+            socket.send("Client: Image loaded successfully.");
+            console.log('Image loaded successfully.');
+        };
+        img.onerror = function(error) {
+            socket.send("Client: Failed to load image: " + error);
+            console.error('Failed to load image:', error);
+        };
+
+        // Add the image to DOM to show it
+        const umlOutputDiv = document.getElementById('object-inspector-container');
+        umlOutputDiv.innerHTML = ''; // Empty div
+        umlOutputDiv.appendChild(img);
+    } else {
+        socket.send("Client: Received non-image data");
+        console.log('Received non-image data:', base64Image);
+    }
+}
+
 
 function connectWebSocket() {
     socket = new WebSocket(websocketUrl);
@@ -78,37 +110,14 @@ function connectWebSocket() {
             case "variables:":
                 updateVariablesTable(eventData.at(1));
                 break;
+            case "oc:":
+                socket.send(JSON.stringify(eventData));
+                updateObjectCardsImage(eventData.at(1));
+                break;
             default:
                 console.error(eventData);
         }
 
-
-        // Receive and proceed with the Base64 Image
-        /*const base64Image = 'data:image/png;base64,' + event.data;
-        console.log(base64Image);
-
-        // Check if it is a correct encoded Base64 Image
-        if (base64Image.startsWith('data:image/png;base64,')) {
-            const base64String = base64Image.split(',')[1];
-            console.log('Received Base64 string:', base64String);
-
-            // Versuchen, das Bild anzuzeigen
-            const img = new Image();
-            img.src = base64Image;
-            img.onload = function() {
-                console.log('Image loaded successfully.');
-            };
-            img.onerror = function(error) {
-                console.error('Failed to load image:', error);
-            };
-
-            // Add the image to DOM to show it
-            const umlOutputDiv = document.getElementById('object-inspector-container');
-            umlOutputDiv.innerHTML = ''; // Empty div
-            umlOutputDiv.appendChild(img);
-        } else {
-            console.log('Received non-image data:', base64Image);
-        }*/
     };
 
     socket.onopen = function() {

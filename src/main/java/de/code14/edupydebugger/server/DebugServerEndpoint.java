@@ -68,45 +68,38 @@ public class DebugServerEndpoint {
     @OnMessage
     public void onMessage(String message, Session session) {
         LOGGER.info("Received websocket message " + message);
-        try {
-            if (message.startsWith("@startuml")) {
-                String output = PlantUMLDiagramGenerator.generateDiagramAsBase64(message);
-                sendDebugInfo(output);
-            } else if (message.startsWith("action:")) {
-                switch (message.substring("action:".length())) {
-                    case "resume":
-                        debugProcessController.resume();
-                        break;
-                    case "pause":
-                        debugProcessController.pause();
-                        break;
-                    case "step-over":
-                        debugProcessController.stepOver();
-                        break;
-                    case "step-into":
-                        debugProcessController.stepInto();
-                        break;
-                    case "step-out":
-                        debugProcessController.stepOut();
-                        break;
-                    default:
-                        LOGGER.warn("Unknown action received: " + message);
-                        break;
-                }
-            } else if (message.startsWith("get:")) {
-                switch (message.substring("get:".length())) {
-                    case "cd":
-                        sendDebugInfo(classDiagramPlantUml);
-                        break;
-                    default:
-                        LOGGER.warn("Unknown get request received: " + message);
-                        break;
-                }
-            } else {
-                LOGGER.warn("Unknown message received: " + message);
+        if (message.startsWith("action:")) {
+            switch (message.substring("action:".length())) {
+                case "resume":
+                    debugProcessController.resume();
+                    break;
+                case "pause":
+                    debugProcessController.pause();
+                    break;
+                case "step-over":
+                    debugProcessController.stepOver();
+                    break;
+                case "step-into":
+                    debugProcessController.stepInto();
+                    break;
+                case "step-out":
+                    debugProcessController.stepOut();
+                    break;
+                default:
+                    LOGGER.warn("Unknown action received: " + message);
+                    break;
             }
-        } catch (IOException e) {
-            LOGGER.error("Could not generate diagram", e);
+        } else if (message.startsWith("get:")) {
+            switch (message.substring("get:".length())) {
+                case "cd":
+                    sendDebugInfo(classDiagramPlantUml);
+                    break;
+                default:
+                    LOGGER.warn("Unknown get request received: " + message);
+                    break;
+            }
+        } else {
+            LOGGER.warn("Unknown message received: " + message);
         }
     }
 
@@ -120,7 +113,7 @@ public class DebugServerEndpoint {
             for (Session session : sessions) {
                 try {
                     session.getBasicRemote().sendText(message);
-                    LOGGER.info("Debug info sent to " + session.getId());
+                    LOGGER.info("Debug info sent to " + session.getId() + ": " + message);
                 } catch (IOException e) {
                     LOGGER.error("Error while sending debug info to " + session.getId(), e);
                 }

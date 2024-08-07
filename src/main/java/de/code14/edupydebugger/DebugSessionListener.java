@@ -13,11 +13,13 @@ import de.code14.edupydebugger.debugger.StackFrameAnalyzer;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
 import de.code14.edupydebugger.server.PlantUMLDiagramGenerator;
 import de.code14.edupydebugger.ui.ClassDiagramParser;
+import de.code14.edupydebugger.ui.ObjectDiagramParser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -53,21 +55,24 @@ public class DebugSessionListener implements XDebugSessionListener {
             stackFrameAnalyzer.analyzeFrames();
             // Zugriff auf die gesammelten Daten
             Map<String, List<String>> variables = stackFrameAnalyzer.getVariables();
-            for (Map.Entry<String, List<String>> entry : variables.entrySet()) {
-                System.out.println(entry.getKey() + ": " + entry.getValue());
-            }
             StringBuilder variablesString = new StringBuilder("variables:");
             for (Map.Entry<String, List<String>> entry : variables.entrySet()) {
                 String values = String.join(",", entry.getValue());
                 variablesString.append(entry.getKey()).append("=").append(values).append(";");
             }
+            LOGGER.debug(variablesString.toString());
             DebugServerEndpoint.sendDebugInfo(variablesString.toString());
-            System.out.println(variablesString);
 
-            Map<String, List<List<String>>> attributes = stackFrameAnalyzer.getAttributes();
-            for (Map.Entry<String, List<List<String>>> entry : attributes.entrySet()) {
-                System.out.println(entry.getKey() + ": " + entry.getValue());
+            Map<String, List<Object>[]> objects = stackFrameAnalyzer.getObjects();
+            String plantUmlString = ObjectDiagramParser.generateObjectCards(objects);
+            try {
+                DebugServerEndpoint.sendDebugInfo("oc:" + PlantUMLDiagramGenerator.generateDiagramAsBase64(plantUmlString));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
+            /*for (Map.Entry<String, List<String>[]> entry : objects.entrySet()) {
+                System.out.println(entry.getKey() + ": " + Arrays.toString(entry.getValue()));
+            }*/
 
 
             // Statische Code-Analyse
