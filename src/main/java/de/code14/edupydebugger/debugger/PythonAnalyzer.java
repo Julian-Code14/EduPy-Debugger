@@ -101,6 +101,7 @@ public class PythonAnalyzer {
                 List<String> attributesList = new ArrayList<>();
                 List<String> methodsList = new ArrayList<>();
                 List<String> referencesList = new ArrayList<>();
+                List<String> superClassesList = new ArrayList<>();
 
                 // Finde alle Attribute der Klasse
                 List<PyTargetExpression> attributes = pyClass.getInstanceAttributes();
@@ -121,7 +122,13 @@ public class PythonAnalyzer {
                     methodsList.add(methodSignature);
                 }
 
-                classDetails.put(className, new Object[]{attributesList, methodsList, referencesList});
+                // Finde alle Superklassen der Klasse
+                List<PyExpression> superClasses = List.of(pyClass.getSuperClassExpressions());
+                for (PyExpression superClass : superClasses) {
+                    superClassesList.add(superClass.getText());
+                }
+
+                classDetails.put(className, new Object[]{attributesList, methodsList, referencesList, superClassesList});
             }
         } else {
             LOGGER.warn("The psi file could not be found: " + virtualFile.getPath());

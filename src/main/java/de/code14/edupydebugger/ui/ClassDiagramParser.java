@@ -38,7 +38,11 @@ public class ClassDiagramParser {
             List<String> attributes = (List<String>) details[0];
             List<String> methods = (List<String>) details[1];
             List<String> references = (List<String>) details[2];
+            List<String> superClasses = (List<String>) details[3];
 
+            if (superClasses.contains("ABC")) {
+                plantUML.append("abstract ");
+            }
             plantUML.append("class ").append(className).append(" {\n");
 
             // Attribute der Klasse hinzufügen
@@ -56,6 +60,13 @@ public class ClassDiagramParser {
             // Referenzen der Klasse hinzufügen
             for (String reference : references) {
                 plantUML.append(className).append(" ..> ").append(reference).append("\n");
+            }
+
+            // Vererbung
+            for (String superClass : superClasses) {
+                if (!superClasses.contains("ABC")) {
+                    plantUML.append(className).append(" --|> ").append(superClass).append("\n");
+                }
             }
         }
 

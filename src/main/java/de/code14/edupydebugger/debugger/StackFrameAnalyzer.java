@@ -155,6 +155,7 @@ public class StackFrameAnalyzer {
 
                     // Check if this is a user-defined object instance
                     if (isUserDefinedInstance(value)) {
+                        System.out.println(value);
                         gatherAttributeInformation(value, id);
                     }
                 }
@@ -209,8 +210,8 @@ public class StackFrameAnalyzer {
 
             for (String attrName : attributeNames) {
                 attrName = attrName.trim().replace("'", ""); // Clean attribute name
-                if (attrName.endsWith("__")) {
-                    continue; // Skip attributes and methods ending with double underscore
+                if (attrName.endsWith("__") || attrName.equals("_abc_impl")) {
+                    continue; // Skip attributes and methods ending with double underscore or that are from ABC module
                 }
 
                 PyDebugValue attrValue = (PyDebugValue) value.getFrameAccessor().evaluate(value.getName() + "." + attrName, false, true);
@@ -237,7 +238,9 @@ public class StackFrameAnalyzer {
                     try {
                         String id = value.getFrameAccessor().evaluate("__builtins__.id(" + value.getName() + "." + attrName + ")", false, true).getValue();
                         attrValueStr = "refid:" + id;
-                        gatherAttributeInformation(attrValue, id);
+                        if (!attrValue.getType().contains("_abc_data")) {
+                            gatherAttributeInformation(attrValue, id);
+                        }
                     } catch (PyDebuggerException e) {
                         LOGGER.error("Error getting ID for referenced object: " + attrName, e);
                         attrValueStr = "unknown";
