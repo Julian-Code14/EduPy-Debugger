@@ -7,10 +7,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.jetbrains.python.PythonFileType;
-import com.jetbrains.python.psi.PyClass;
-import com.jetbrains.python.psi.PyFile;
-import com.jetbrains.python.psi.PyFunction;
-import com.jetbrains.python.psi.PyTargetExpression;
+import com.jetbrains.python.psi.*;
 import com.jetbrains.python.psi.types.PyType;
 import com.jetbrains.python.psi.types.TypeEvalContext;
 import org.jetbrains.annotations.NotNull;
@@ -103,13 +100,14 @@ public class PythonAnalyzer {
                 List<PyTargetExpression> attributes = pyClass.getInstanceAttributes();
                 for (PyTargetExpression attribute : attributes) {
                     String type = getTypeString(attribute, context);
-                    attributesList.add(attribute.getName() + " : " + type);
+                    attributesList.add(determineVisibility(Objects.requireNonNull(attribute.getName())) + attribute.getName() + " : " + type);
                 }
 
                 // Finde alle Methoden der Klasse
                 List<PyFunction> methods = Arrays.asList(pyClass.getMethods());
                 for (PyFunction method : methods) {
-                    methodsList.add(method.getName() + "()");
+                    String methodSignature = getMethodSignature(method, context);
+                    methodsList.add(methodSignature);
                 }
 
                 classDetails.put(className, new Object[]{attributesList, methodsList});
@@ -119,9 +117,59 @@ public class PythonAnalyzer {
         }
     }
 
-    private static String getTypeString(PyTargetExpression target, TypeEvalContext context) {
-        PyType type = context.getType(target);
-        return type != null ? type.getName() : "unbekannt";
+    private static String getMethodSignature(PyFunction method, TypeEvalContext context) {
+        StringBuilder signature = new StringBuilder(determineVisibility(Objects.requireNonNull(method.getName())) + method.getName() + "(");
+        PyParameterList parameterList = method.getParameterList();
+        PyParameter[] parameters = parameterList.getParameters();
+
+        for (int i = 0; i < parameters.length; i++) {
+            PyParameter parameter = parameters[i];
+            String paramName = parameter.getName();
+            String paramType = getTypeString(parameter, context);
+            if (paramType.equals("?")) {
+                signature.append(paramName);
+            } else {
+                signature.append(paramName).append(" : ").append(paramType);
+            }
+            if (i < parameters.length - 1) {
+                signature.append(", ");
+            }
+        }
+
+        signature.append(")");
+
+        // Return types
+        String returnType = getTypeString(method, context);
+        if (!returnType.equals("?")) {
+            signature.append(" : ").append(returnType);
+        }
+        return signature.toString();
+    }
+
+
+    private static String getTypeString(PyElement element, TypeEvalContext context) {
+        if (element instanceof PyTargetExpression) {
+            PyType type = context.getType((PyTargetExpression) element);
+            return type != null ? type.getName() : "?";
+        } else if (element instanceof PyNamedParameter) {
+            PyType type = context.getType((PyNamedParameter) element);
+            return type != null ? type.getName() : "?";
+        } else if (element instanceof PyFunction) {
+            PyType type = context.getReturnType((PyFunction) element);
+            return type != null ? type.getName() : "?";
+        } else {
+            return "?";
+        }
+    }
+
+    private static String determineVisibility(String attributeName) {
+        if (attributeName.startsWith("__") && !attributeName.endsWith("__")) {
+            return "-";
+        } else if (attributeName.startsWith("_")) {
+            return "#";
+        } else {
+            return "+";
+        }
     }
 
     public static Map<String, Object[]> getClassDetails() {
