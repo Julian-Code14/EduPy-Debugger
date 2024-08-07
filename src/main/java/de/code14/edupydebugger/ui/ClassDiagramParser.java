@@ -37,6 +37,7 @@ public class ClassDiagramParser {
             Object[] details = entry.getValue();
             List<String> attributes = (List<String>) details[0];
             List<String> methods = (List<String>) details[1];
+            List<String> references = (List<String>) details[2];
 
             plantUML.append("class ").append(className).append(" {\n");
 
@@ -51,6 +52,11 @@ public class ClassDiagramParser {
             }
 
             plantUML.append("}\n");
+
+            // Referenzen der Klasse hinzufügen
+            for (String reference : references) {
+                plantUML.append(className).append(" ..> ").append(reference).append("\n");
+            }
         }
 
         plantUML.append("@enduml");

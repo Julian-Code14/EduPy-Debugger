@@ -24,6 +24,9 @@ public class PythonAnalyzer {
     private final static Logger LOGGER = Logger.getInstance(PythonAnalyzer.class);
 
     private static Map<String, Object[]> classDetails = new HashMap<>();
+    private static final Set<String> defaultTypes = new HashSet<String>() {
+        {add("int");add("float");add("str");add("bool");add("list");add("dict");add("tuple");add("set");}
+    };
 
     public static void analyzePythonFile(Project project) {
         // Erhalte den BasePath des Projekts
@@ -62,6 +65,8 @@ public class PythonAnalyzer {
                 }
             }
         }
+
+        //
     }
 
     private static boolean isUserFile(VirtualFile file, String projectBasePath) {
@@ -95,12 +100,18 @@ public class PythonAnalyzer {
                 String className = pyClass.getName();
                 List<String> attributesList = new ArrayList<>();
                 List<String> methodsList = new ArrayList<>();
+                List<String> referencesList = new ArrayList<>();
 
                 // Finde alle Attribute der Klasse
                 List<PyTargetExpression> attributes = pyClass.getInstanceAttributes();
                 for (PyTargetExpression attribute : attributes) {
                     String type = getTypeString(attribute, context);
                     attributesList.add(determineVisibility(Objects.requireNonNull(attribute.getName())) + attribute.getName() + " : " + type);
+
+                    // Is it a reference?
+                    if (!defaultTypes.contains(type)) {
+                        referencesList.add(type);
+                    }
                 }
 
                 // Finde alle Methoden der Klasse
@@ -110,7 +121,7 @@ public class PythonAnalyzer {
                     methodsList.add(methodSignature);
                 }
 
-                classDetails.put(className, new Object[]{attributesList, methodsList});
+                classDetails.put(className, new Object[]{attributesList, methodsList, referencesList});
             }
         } else {
             LOGGER.warn("The psi file could not be found: " + virtualFile.getPath());
