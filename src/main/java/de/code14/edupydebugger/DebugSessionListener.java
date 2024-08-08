@@ -65,9 +65,13 @@ public class DebugSessionListener implements XDebugSessionListener {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            /*for (Map.Entry<String, List<String>[]> entry : objects.entrySet()) {
-                System.out.println(entry.getKey() + ": " + Arrays.toString(entry.getValue()));
-            }*/
+            String objectDiagramPlantUmlString = ObjectDiagramParser.generateObjectDiagram(objects);
+            try {
+                DebugServerEndpoint.setObjectDiagramPlantUmlImage(PlantUMLDiagramGenerator.generateDiagramAsBase64(objectDiagramPlantUmlString));
+                DebugServerEndpoint.sendDebugInfo("od:" + PlantUMLDiagramGenerator.generateDiagramAsBase64(objectCardsPlantUmlString));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
 
 
             // Statische Code-Analyse

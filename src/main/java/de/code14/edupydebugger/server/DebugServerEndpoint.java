@@ -37,6 +37,7 @@ public class DebugServerEndpoint {
     private static String classDiagramPlantUmlImage;
     private static String variablesString;
     private static String objectCardsPlantUmlImage;
+    private static String objectDiagramPlantUmlImage;
 
     @OnOpen
     public void onOpen(Session session) {
@@ -97,6 +98,9 @@ public class DebugServerEndpoint {
                 case "oc":
                     sendDebugInfo("oc:" + objectCardsPlantUmlImage);
                     break;
+                case "od":
+                    sendDebugInfo("od:" + objectDiagramPlantUmlImage);
+                    break;
                 case "variables":
                     sendDebugInfo("variables:" + variablesString);
                     break;
@@ -145,6 +149,10 @@ public class DebugServerEndpoint {
 
     public static void setObjectCardsPlantUmlImage(String base64PlantUml) {
         objectCardsPlantUmlImage = base64PlantUml;
+    }
+
+    public static void setObjectDiagramPlantUmlImage(String base64PlantUml) {
+        objectDiagramPlantUmlImage = base64PlantUml;
     }
 
 }
