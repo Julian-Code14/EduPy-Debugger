@@ -44,6 +44,9 @@ public class ObjectDiagramParser {
 
             plantUML.append("object \"").append(references.get(0)).append("\" as o").append(key).append(" {\n");
             for (List<String> attribute : attributes) {
+                if (attribute.get(3).equals("static")) {
+                    plantUML.append("{static} ");
+                }
                 plantUML.append(attribute.get(0)).append(" = ").append(attribute.get(2)).append("\n");
             }
             plantUML.append("}\n");

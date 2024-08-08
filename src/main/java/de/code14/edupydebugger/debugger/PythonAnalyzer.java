@@ -65,8 +65,6 @@ public class PythonAnalyzer {
                 }
             }
         }
-
-        //
     }
 
     private static boolean isUserFile(VirtualFile file, String projectBasePath) {
@@ -105,9 +103,12 @@ public class PythonAnalyzer {
 
                 // Finde alle Attribute der Klasse
                 List<PyTargetExpression> attributes = pyClass.getInstanceAttributes();
+                attributes.addAll(pyClass.getClassAttributes());
                 for (PyTargetExpression attribute : attributes) {
+                    String staticModifier = pyClass.findClassAttribute(Objects.requireNonNull(attribute.getName()), false, null) != null ? "{static} " : "";
+                    String visibility = determineVisibility(Objects.requireNonNull(attribute.getName()));
                     String type = getTypeString(attribute, context);
-                    attributesList.add(determineVisibility(Objects.requireNonNull(attribute.getName())) + attribute.getName() + " : " + type);
+                    attributesList.add(staticModifier + visibility + attribute.getName() + " : " + type);
 
                     // Is it a reference?
                     if (!defaultTypes.contains(type)) {
@@ -136,7 +137,17 @@ public class PythonAnalyzer {
     }
 
     private static String getMethodSignature(PyFunction method, TypeEvalContext context) {
-        StringBuilder signature = new StringBuilder(determineVisibility(Objects.requireNonNull(method.getName())) + method.getName() + "(");
+        StringBuilder signature = new StringBuilder();
+        // Check if the method is static
+        if (method.getDecoratorList() != null && method.getDecoratorList().findDecorator("staticmethod") != null) {
+            signature.append("{static} ");
+        }
+        // Check if the method is abstract
+        if (method.getDecoratorList() != null && method.getDecoratorList().findDecorator("abstractmethod") != null) {
+            signature.append("{abstract} ");
+        }
+
+        signature.append(determineVisibility(Objects.requireNonNull(method.getName()))).append(method.getName()).append("(");
         PyParameterList parameterList = method.getParameterList();
         PyParameter[] parameters = parameterList.getParameters();
 

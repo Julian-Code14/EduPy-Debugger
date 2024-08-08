@@ -218,7 +218,7 @@ public class StackFrameAnalyzer {
                 String attrType = attrValue.getType();
 
                 // Exclude methods and only include attributes
-                if (attrType.equals("method") || attrType.equals("builtin_function_or_method") || attrType.startsWith("<bound method")) {
+                if (attrType.equals("method") || attrType.equals("function") || attrType.equals("builtin_function_or_method") || attrType.startsWith("<bound method")) {
                     continue;
                 }
 
