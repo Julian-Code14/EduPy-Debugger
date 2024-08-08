@@ -155,7 +155,6 @@ public class StackFrameAnalyzer {
 
                     // Check if this is a user-defined object instance
                     if (isUserDefinedInstance(value)) {
-                        System.out.println(value);
                         gatherAttributeInformation(value, id);
                     }
                 }

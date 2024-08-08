@@ -41,7 +41,6 @@ public class PythonAnalyzer {
         VirtualFile projectDir = LocalFileSystem.getInstance().findFileByPath(projectBasePath);
 
         if (projectDir == null) {
-            System.out.println("Das Projektverzeichnis wurde nicht gefunden.");
             LOGGER.warn("The project dir could not be found.");
             return;
         }
