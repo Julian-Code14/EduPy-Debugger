@@ -12,6 +12,15 @@ function goToClassDiagram() {
     }
 }
 
+function goToPythonTutor() {
+    socket.send("navigate:")
+    try {
+        socket.close();
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 function splitStringAtFirstColon(input) {
     // Finden des Index des ersten Doppelpunkts
     const index = input.indexOf(':');

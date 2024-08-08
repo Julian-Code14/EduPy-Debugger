@@ -3,6 +3,7 @@ package de.code14.edupydebugger.server;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.jetbrains.python.debugger.PyDebugProcess;
+import de.code14.edupydebugger.ui.DebuggerToolWindowFactory;
 import jakarta.servlet.annotation.WebListener;
 import jakarta.websocket.OnClose;
 import jakarta.websocket.OnMessage;
@@ -108,6 +109,8 @@ public class DebugServerEndpoint {
                     LOGGER.warn("Unknown get request received: " + message);
                     break;
             }
+        } else if (message.startsWith("navigate:")) {
+            DebuggerToolWindowFactory.openPythonTutor();
         } else {
             LOGGER.warn("Unknown message received: " + message);
         }

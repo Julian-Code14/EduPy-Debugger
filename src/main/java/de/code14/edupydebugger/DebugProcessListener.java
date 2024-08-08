@@ -81,7 +81,7 @@ public class DebugProcessListener implements XDebuggerManagerListener {
 
     @Override
     public void processStopped(@NotNull XDebugProcess debugProcess) {
-
+        DebuggerToolWindowFactory.reloadEduPyDebugger();
     }
 
 }

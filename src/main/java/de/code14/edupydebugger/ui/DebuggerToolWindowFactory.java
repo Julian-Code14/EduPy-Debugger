@@ -105,4 +105,12 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
             jbCefBrowser = null;
         }
     }
+
+    public static void openPythonTutor() {
+        jbCefBrowser.loadURL("https://pythontutor.com/python-compiler.html#mode=edit");
+    }
+
+    public static void reloadEduPyDebugger() {
+        jbCefBrowser.loadURL("http://localhost:8026/index.html");
+    }
 }
