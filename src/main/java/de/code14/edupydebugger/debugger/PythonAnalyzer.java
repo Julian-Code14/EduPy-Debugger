@@ -101,8 +101,12 @@ public class PythonAnalyzer {
                 List<String> superClassesList = new ArrayList<>();
 
                 // Finde alle Attribute der Klasse
-                List<PyTargetExpression> attributes = pyClass.getInstanceAttributes();
-                attributes.addAll(pyClass.getClassAttributes());
+                List<PyTargetExpression> instanceAttributes = pyClass.getInstanceAttributes();
+                List<PyTargetExpression> classAttributes = pyClass.getClassAttributes();
+                Set<PyTargetExpression> attributes = new HashSet<>();
+                attributes.addAll(instanceAttributes);
+                attributes.addAll(classAttributes);
+
                 for (PyTargetExpression attribute : attributes) {
                     String staticModifier = pyClass.findClassAttribute(Objects.requireNonNull(attribute.getName()), false, null) != null ? "{static} " : "";
                     String visibility = determineVisibility(Objects.requireNonNull(attribute.getName()));

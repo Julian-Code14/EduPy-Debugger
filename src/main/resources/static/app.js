@@ -111,7 +111,7 @@ function connectWebSocket() {
                 updateVariablesTable(eventData.at(1));
                 break;
             case "oc:":
-                socket.send(JSON.stringify(eventData));
+                //socket.send(JSON.stringify(eventData));
                 updateObjectCardsImage(eventData.at(1));
                 break;
             default:
@@ -122,6 +122,10 @@ function connectWebSocket() {
 
     socket.onopen = function() {
         console.log('WebSocket connection established');
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.send("get:variables")
+            socket.send("get:oc");
+        }
     };
 
     socket.onclose = function() {

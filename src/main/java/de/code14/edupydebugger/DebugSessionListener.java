@@ -4,25 +4,18 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebugSessionListener;
-import com.intellij.xdebugger.frame.*;
 import com.jetbrains.python.debugger.*;
-import com.jetbrains.python.psi.types.TypeEvalContext;
 import de.code14.edupydebugger.debugger.DebuggerUtils;
-import de.code14.edupydebugger.debugger.PythonAnalyzer;
 import de.code14.edupydebugger.debugger.StackFrameAnalyzer;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
 import de.code14.edupydebugger.server.PlantUMLDiagramGenerator;
 import de.code14.edupydebugger.ui.ClassDiagramParser;
 import de.code14.edupydebugger.ui.ObjectDiagramParser;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
 
 /**
  * @author julian
@@ -55,18 +48,20 @@ public class DebugSessionListener implements XDebugSessionListener {
             stackFrameAnalyzer.analyzeFrames();
             // Zugriff auf die gesammelten Daten
             Map<String, List<String>> variables = stackFrameAnalyzer.getVariables();
-            StringBuilder variablesString = new StringBuilder("variables:");
+            StringBuilder variablesString = new StringBuilder();
             for (Map.Entry<String, List<String>> entry : variables.entrySet()) {
                 String values = String.join(",", entry.getValue());
                 variablesString.append(entry.getKey()).append("=").append(values).append(";");
             }
-            LOGGER.debug(variablesString.toString());
-            DebugServerEndpoint.sendDebugInfo(variablesString.toString());
+            LOGGER.info(variablesString.toString());
+            DebugServerEndpoint.setVariablesString(variablesString.toString());
+            DebugServerEndpoint.sendDebugInfo("variables:" + variablesString.toString());
 
             Map<String, List<Object>[]> objects = stackFrameAnalyzer.getObjects();
-            String plantUmlString = ObjectDiagramParser.generateObjectCards(objects);
+            String objectCardsPlantUmlString = ObjectDiagramParser.generateObjectCards(objects);
             try {
-                DebugServerEndpoint.sendDebugInfo("oc:" + PlantUMLDiagramGenerator.generateDiagramAsBase64(plantUmlString));
+                DebugServerEndpoint.setObjectCardsPlantUmlImage(PlantUMLDiagramGenerator.generateDiagramAsBase64(objectCardsPlantUmlString));
+                DebugServerEndpoint.sendDebugInfo("oc:" + PlantUMLDiagramGenerator.generateDiagramAsBase64(objectCardsPlantUmlString));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -76,9 +71,9 @@ public class DebugSessionListener implements XDebugSessionListener {
 
 
             // Statische Code-Analyse
-            String plantUml = ClassDiagramParser.generateClassDiagram(pyDebugProcess.getProject());
+            String classDiagramPlantUmlString = ClassDiagramParser.generateClassDiagram(pyDebugProcess.getProject());
             try {
-                DebugServerEndpoint.setClassDiagramPlantUml(PlantUMLDiagramGenerator.generateDiagramAsBase64(plantUml));
+                DebugServerEndpoint.setClassDiagramPlantUmlImage(PlantUMLDiagramGenerator.generateDiagramAsBase64(classDiagramPlantUmlString));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

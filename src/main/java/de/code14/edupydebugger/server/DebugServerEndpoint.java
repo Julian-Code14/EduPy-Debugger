@@ -2,9 +2,7 @@ package de.code14.edupydebugger.server;
 
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.xdebugger.XDebugProcess;
 import com.jetbrains.python.debugger.PyDebugProcess;
-import de.code14.edupydebugger.ui.ClassDiagramParser;
 import jakarta.servlet.annotation.WebListener;
 import jakarta.websocket.OnClose;
 import jakarta.websocket.OnMessage;
@@ -13,8 +11,6 @@ import jakarta.websocket.server.ServerEndpoint;
 import jakarta.websocket.Session;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -36,7 +32,11 @@ public class DebugServerEndpoint {
     private static final BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>();
     private static volatile boolean isConnected = false;
     private static final DebugProcessController debugProcessController = new DebugProcessController();
-    private static String classDiagramPlantUml;
+
+    // Contents
+    private static String classDiagramPlantUmlImage;
+    private static String variablesString;
+    private static String objectCardsPlantUmlImage;
 
     @OnOpen
     public void onOpen(Session session) {
@@ -92,7 +92,13 @@ public class DebugServerEndpoint {
         } else if (message.startsWith("get:")) {
             switch (message.substring("get:".length())) {
                 case "cd":
-                    sendDebugInfo(classDiagramPlantUml);
+                    sendDebugInfo(classDiagramPlantUmlImage);
+                    break;
+                case "oc":
+                    sendDebugInfo("oc:" + objectCardsPlantUmlImage);
+                    break;
+                case "variables":
+                    sendDebugInfo("variables:" + variablesString);
                     break;
                 default:
                     LOGGER.warn("Unknown get request received: " + message);
@@ -129,8 +135,16 @@ public class DebugServerEndpoint {
         debugProcessController.setDebugProcess(debugProcess);
     }
 
-    public static void setClassDiagramPlantUml(String plantUml) {
-        classDiagramPlantUml = plantUml;
+    public static void setClassDiagramPlantUmlImage(String base64PlantUml) {
+        classDiagramPlantUmlImage = base64PlantUml;
+    }
+
+    public static void setVariablesString(String variablesString) {
+        DebugServerEndpoint.variablesString = variablesString;
+    }
+
+    public static void setObjectCardsPlantUmlImage(String base64PlantUml) {
+        objectCardsPlantUmlImage = base64PlantUml;
     }
 
 }
