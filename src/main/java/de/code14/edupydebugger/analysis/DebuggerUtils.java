@@ -1,5 +1,6 @@
 package de.code14.edupydebugger.analysis;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.frame.XExecutionStack;
 import com.intellij.xdebugger.frame.XStackFrame;
@@ -9,9 +10,9 @@ import com.jetbrains.python.debugger.PyStackFrame;
 import com.jetbrains.python.debugger.PyThreadInfo;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Utility class for working with the debugger and extracting stack frames.
@@ -22,6 +23,11 @@ import java.util.List;
  * @since 17.07.24
  */
 public class DebuggerUtils {
+
+    private static final Logger LOGGER = Logger.getInstance(DebuggerUtils.class);
+
+
+    private static final int INITIAL_FRAME_INDEX = 1;
 
     /**
      * Retrieves all stack frames from the current debugging session.
@@ -39,7 +45,7 @@ public class DebuggerUtils {
         Collection<PyThreadInfo> threadInfos = debugProcess.getThreads();
 
         // List to store all stack frames
-        List<PyStackFrame> allStackFrames = new ArrayList<>();
+        List<PyStackFrame> allStackFrames = new CopyOnWriteArrayList<>();
 
         // Iterate through each thread to extract stack frames
         for (PyThreadInfo threadInfo : threadInfos) {
@@ -59,31 +65,34 @@ public class DebuggerUtils {
      * @return a list of {@link PyStackFrame} objects representing the stack frames in the execution stack
      */
     private static @NotNull List<PyStackFrame> extractStackFrames(PyExecutionStack executionStack) {
-        // List to store the extracted stack frames
-        List<PyStackFrame> stackFrames = new ArrayList<>();
+        List<PyStackFrame> stackFrames = new CopyOnWriteArrayList<>();
 
-        // Add the top stack frame (most recent frame)
-        stackFrames.add(executionStack.getTopFrame());
+        // Add the top stack frame (most recent frame), ensuring it's not null
+        PyStackFrame topFrame = executionStack.getTopFrame();
+        if (topFrame != null) {
+            stackFrames.add(topFrame);
+        }
 
         // Asynchronously retrieve the remaining stack frames
-        executionStack.computeStackFrames(1, new XExecutionStack.XStackFrameContainer() {
+        executionStack.computeStackFrames(INITIAL_FRAME_INDEX, new XExecutionStack.XStackFrameContainer() {
             @Override
             public void addStackFrames(@NotNull List<? extends XStackFrame> xFrames, boolean last) {
-                // Add each stack frame to the list
                 for (XStackFrame frame : xFrames) {
-                    stackFrames.add((PyStackFrame) frame);
+                    if (frame instanceof PyStackFrame) {
+                        stackFrames.add((PyStackFrame) frame);
+                    }
                 }
             }
 
             @Override
             public void errorOccurred(@NotNull String errorMessage) {
-                // Handle any errors that occur during frame retrieval
-                // Error handling can be implemented here if needed
+                // Log the error or handle it appropriately
+                LOGGER.error("Error occurred while fetching stack frames: " + errorMessage);
             }
 
             @Override
             public boolean isObsolete() {
-                // Implement logic to determine if the container is obsolete, if needed
+                // Implement logic to determine if the container is obsolete, if necessary
                 return false;
             }
         });
