@@ -2,6 +2,8 @@ package de.code14.edupydebugger.server;
 
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.jetbrains.python.debugger.PyDebugProcess;
+import de.code14.edupydebugger.ui.DebuggerToolWindowFactory;
 import jakarta.servlet.annotation.WebListener;
 import jakarta.websocket.OnClose;
 import jakarta.websocket.OnMessage;
@@ -10,8 +12,6 @@ import jakarta.websocket.server.ServerEndpoint;
 import jakarta.websocket.Session;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -32,6 +32,13 @@ public class DebugServerEndpoint {
     private static final Set<Session> sessions = Collections.synchronizedSet(new HashSet<>());
     private static final BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>();
     private static volatile boolean isConnected = false;
+    private static final DebugProcessController debugProcessController = new DebugProcessController();
+
+    // Contents
+    private static String classDiagramPlantUmlImage;
+    private static String variablesString;
+    private static String objectCardsPlantUmlImage;
+    private static String objectDiagramPlantUmlImage;
 
     @OnOpen
     public void onOpen(Session session) {
@@ -63,15 +70,49 @@ public class DebugServerEndpoint {
     @OnMessage
     public void onMessage(String message, Session session) {
         LOGGER.info("Received websocket message " + message);
-        try {
-            if (message.startsWith("@startuml")) {
-                String output = PlantUMLDiagramGenerator.generateDiagramAsBase64(message);
-                sendDebugInfo(output);
-            } else {
-                System.out.println("Folgendes: " + message);
+        if (message.startsWith("action:")) {
+            switch (message.substring("action:".length())) {
+                case "resume":
+                    debugProcessController.resume();
+                    break;
+                case "pause":
+                    debugProcessController.pause();
+                    break;
+                case "step-over":
+                    debugProcessController.stepOver();
+                    break;
+                case "step-into":
+                    debugProcessController.stepInto();
+                    break;
+                case "step-out":
+                    debugProcessController.stepOut();
+                    break;
+                default:
+                    LOGGER.warn("Unknown action received: " + message);
+                    break;
             }
-        } catch (IOException e) {
-            LOGGER.error("Could not generate diagram", e);
+        } else if (message.startsWith("get:")) {
+            switch (message.substring("get:".length())) {
+                case "cd":
+                    sendDebugInfo(classDiagramPlantUmlImage);
+                    break;
+                case "oc":
+                    sendDebugInfo("oc:" + objectCardsPlantUmlImage);
+                    break;
+                case "od":
+                    sendDebugInfo("od:" + objectDiagramPlantUmlImage);
+                    break;
+                case "variables":
+                    sendDebugInfo("variables:" + variablesString);
+                    break;
+                default:
+                    LOGGER.warn("Unknown get request received: " + message);
+                    break;
+            }
+        } else if (message.startsWith("navigate:")) {
+            DebuggerToolWindowFactory.openPythonTutor();
+        } else {
+            LOGGER.warn("Unknown message received: " + message);
         }
     }
 
@@ -84,9 +125,8 @@ public class DebugServerEndpoint {
         synchronized (sessions) {
             for (Session session : sessions) {
                 try {
-                    System.out.println("Message sent: " + message);
                     session.getBasicRemote().sendText(message);
-                    LOGGER.info("Debug info sent to " + session.getId());
+                    LOGGER.info("Debug info sent to " + session.getId() + ": " + message);
                 } catch (IOException e) {
                     LOGGER.error("Error while sending debug info to " + session.getId(), e);
                 }
@@ -96,6 +136,26 @@ public class DebugServerEndpoint {
 
     public static synchronized boolean isConnected() {
         return isConnected;
+    }
+
+    public static void setDebugProcess(PyDebugProcess debugProcess) {
+        debugProcessController.setDebugProcess(debugProcess);
+    }
+
+    public static void setClassDiagramPlantUmlImage(String base64PlantUml) {
+        classDiagramPlantUmlImage = base64PlantUml;
+    }
+
+    public static void setVariablesString(String variablesString) {
+        DebugServerEndpoint.variablesString = variablesString;
+    }
+
+    public static void setObjectCardsPlantUmlImage(String base64PlantUml) {
+        objectCardsPlantUmlImage = base64PlantUml;
+    }
+
+    public static void setObjectDiagramPlantUmlImage(String base64PlantUml) {
+        objectDiagramPlantUmlImage = base64PlantUml;
     }
 
 }

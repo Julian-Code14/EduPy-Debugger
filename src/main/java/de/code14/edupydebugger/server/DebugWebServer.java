@@ -38,6 +38,7 @@ public class DebugWebServer {
     public static void stopWebServer() {
         if (httpServer != null && httpServer.isStarted()) {
             httpServer.shutdownNow();
+            running = false;
         }
     }
 

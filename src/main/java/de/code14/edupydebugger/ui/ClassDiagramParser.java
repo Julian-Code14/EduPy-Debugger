@@ -1,5 +1,6 @@
 package de.code14.edupydebugger.ui;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.jetbrains.python.psi.PyClass;
 import com.jetbrains.python.psi.PyFunction;
@@ -19,6 +20,9 @@ import java.util.Map;
  */
 public class ClassDiagramParser {
 
+    private static final Logger LOGGER = Logger.getInstance(ClassDiagramParser.class);
+
+
     public static String generateClassDiagram(Project project) {
         PythonAnalyzer.analyzePythonFile(project);
         Map<String, Object[]> classDetails = PythonAnalyzer.getClassDetails();
@@ -33,7 +37,12 @@ public class ClassDiagramParser {
             Object[] details = entry.getValue();
             List<String> attributes = (List<String>) details[0];
             List<String> methods = (List<String>) details[1];
+            List<String> references = (List<String>) details[2];
+            List<String> superClasses = (List<String>) details[3];
 
+            if (superClasses.contains("ABC")) {
+                plantUML.append("abstract ");
+            }
             plantUML.append("class ").append(className).append(" {\n");
 
             // Attribute der Klasse hinzufügen
@@ -47,11 +56,23 @@ public class ClassDiagramParser {
             }
 
             plantUML.append("}\n");
+
+            // Referenzen der Klasse hinzufügen
+            for (String reference : references) {
+                plantUML.append(className).append(" ..> ").append(reference).append("\n");
+            }
+
+            // Vererbung
+            for (String superClass : superClasses) {
+                if (!superClasses.contains("ABC")) {
+                    plantUML.append(className).append(" --|> ").append(superClass).append("\n");
+                }
+            }
         }
 
         plantUML.append("@enduml");
 
-        System.out.println(plantUML);
+        LOGGER.debug(plantUML.toString());
 
         return plantUML.toString();
     }

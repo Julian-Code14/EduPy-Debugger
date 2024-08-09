@@ -39,6 +39,7 @@ public class DebugWebSocketServer {
     public static void stopWebSocketServer() {
         if (server != null && running) {
             server.stop();
+            running = false;
         }
     }
 

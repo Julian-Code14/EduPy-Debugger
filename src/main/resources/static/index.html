@@ -2,20 +2,57 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8" />
-	<title>Simple Web Application</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>EduPy-Debugger by Code14</title>
 	<link rel="stylesheet" href="styles.css">
 	<script src="app.js" defer></script>
 </head>
 <body>
-<div id="content">
-	<h1>Welcome to the Simple Web Application</h1>
-	<p>This is a basic web page served by the embedded HTTP server.</p>
-	<div id="debug-info">Waiting for debug info...</div>
-
-	<h2>PlantUML Renderer</h2>
-	<textarea id="uml-input" rows="10" cols="50" placeholder="Geben Sie hier Ihren PlantUML-Code ein..."></textarea>
-	<button id="render-button">Render UML</button>
-	<div id="uml-output"></div>
+<header>
+	<h1>EduPy-Debugger by Code14</h1>
+</header>
+<div class="controls">
+	<button class="control-btn" id="resume-btn"><img src="icons/resume.svg" alt="Resume"></button>
+	<button class="control-btn" id="pause-btn"><img src="icons/pause.svg" alt="Pause"></button>
+	<button class="control-btn" id="step-over-btn"><img src="icons/stepOver.svg" alt="Step Over"></button>
+	<button class="control-btn" id="step-into-btn"><img src="icons/stepInto.svg" alt="Step Into"></button>
+	<button class="control-btn" id="step-out-btn"><img src="icons/stepOut.svg" alt="Step Out"></button>
+</div>
+<section>
+	<h2>Variablen</h2>
+	<div class="variables-container">
+		<table>
+			<thead>
+			<tr>
+				<th>ID</th>
+				<th>Name</th>
+				<th>Typ</th>
+				<th>Aktueller Wert</th>
+				<th>Scope</th>
+			</tr>
+			</thead>
+			<tbody>
+			<!-- Dynamische Inhalte hier einfügen -->
+			</tbody>
+		</table>
+	</div>
+</section>
+<section>
+	<div class="object-inspector-header">
+		<h2>Objektinspektor</h2>
+		<div class="switch-container">
+			<label class="switch">
+				<input type="checkbox" id="object-inspector-switch">
+				<span class="slider"></span>
+			</label>
+			<span class="switch-label">OD</span>
+		</div>
+	</div>
+	<div id="object-inspector-container"></div>
+</section>
+<div class="bottom-buttons">
+	<button id="to-class-diagram-btn" class="large-btn" onclick="goToClassDiagram()">Klassendiagramm</button>
+	<button id="to-python-tutor-btn" class="large-btn" onclick="goToPythonTutor()">Speicher</button>
 </div>
 </body>
 </html>
