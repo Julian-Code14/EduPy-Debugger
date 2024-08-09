@@ -1,4 +1,4 @@
-package de.code14.edupydebugger.debugger;
+package de.code14.edupydebugger.analysis;
 
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.frame.XExecutionStack;

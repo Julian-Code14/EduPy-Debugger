@@ -1,4 +1,4 @@
-package de.code14.edupydebugger.ui;
+package de.code14.edupydebugger.diagram;
 
 import com.intellij.openapi.diagnostic.Logger;
 

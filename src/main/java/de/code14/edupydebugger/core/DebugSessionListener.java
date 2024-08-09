@@ -1,16 +1,16 @@
-package de.code14.edupydebugger;
+package de.code14.edupydebugger.core;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebugSessionListener;
 import com.jetbrains.python.debugger.*;
-import de.code14.edupydebugger.debugger.DebuggerUtils;
-import de.code14.edupydebugger.debugger.StackFrameAnalyzer;
+import de.code14.edupydebugger.analysis.DebuggerUtils;
+import de.code14.edupydebugger.analysis.StackFrameAnalyzer;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
-import de.code14.edupydebugger.server.PlantUMLDiagramGenerator;
-import de.code14.edupydebugger.ui.ClassDiagramParser;
-import de.code14.edupydebugger.ui.ObjectDiagramParser;
+import de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator;
+import de.code14.edupydebugger.diagram.ClassDiagramParser;
+import de.code14.edupydebugger.diagram.ObjectDiagramParser;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;

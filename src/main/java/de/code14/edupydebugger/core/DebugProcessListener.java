@@ -1,4 +1,4 @@
-package de.code14.edupydebugger;
+package de.code14.edupydebugger.core;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
@@ -13,13 +13,9 @@ import de.code14.edupydebugger.server.DebugServerEndpoint;
 import de.code14.edupydebugger.server.DebugWebServer;
 import de.code14.edupydebugger.server.DebugWebSocketServer;
 import de.code14.edupydebugger.ui.DebuggerToolWindowFactory;
-import jakarta.websocket.DeploymentException;
-import org.apache.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import java.io.IOException;
-import java.net.URISyntaxException;
 
 /**
  * @author julian

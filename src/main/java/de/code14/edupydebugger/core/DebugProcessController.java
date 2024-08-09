@@ -1,7 +1,6 @@
-package de.code14.edupydebugger.server;
+package de.code14.edupydebugger.core;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.xdebugger.XDebugProcess;
 import com.jetbrains.python.debugger.PyDebugProcess;
 
 /**

@@ -1,4 +1,4 @@
-package de.code14.edupydebugger.debugger;
+package de.code14.edupydebugger.analysis;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
@@ -10,7 +10,6 @@ import com.jetbrains.python.PythonFileType;
 import com.jetbrains.python.psi.*;
 import com.jetbrains.python.psi.types.PyType;
 import com.jetbrains.python.psi.types.TypeEvalContext;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 

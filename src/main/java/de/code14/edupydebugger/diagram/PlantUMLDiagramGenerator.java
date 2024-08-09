@@ -1,4 +1,4 @@
-package de.code14.edupydebugger.server;
+package de.code14.edupydebugger.diagram;
 
 import com.intellij.openapi.diagnostic.Logger;
 import net.sourceforge.plantuml.SourceStringReader;

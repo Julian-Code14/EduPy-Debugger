@@ -1,21 +1,16 @@
-package de.code14.edupydebugger;
+package de.code14.edupydebugger.core;
 
 //import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManagerListener;
 import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.openapi.wm.ToolWindowManager;
 import de.code14.edupydebugger.server.DebugWebServer;
 import de.code14.edupydebugger.server.DebugWebSocketServer;
 import de.code14.edupydebugger.ui.DebuggerToolWindowFactory;
-import org.glassfish.tyrus.container.grizzly.server.GrizzlyServerContainer;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
 
 /**
  * @author julian

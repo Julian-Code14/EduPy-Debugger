@@ -3,6 +3,7 @@ package de.code14.edupydebugger.server;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.jetbrains.python.debugger.PyDebugProcess;
+import de.code14.edupydebugger.core.DebugProcessController;
 import de.code14.edupydebugger.ui.DebuggerToolWindowFactory;
 import jakarta.servlet.annotation.WebListener;
 import jakarta.websocket.OnClose;

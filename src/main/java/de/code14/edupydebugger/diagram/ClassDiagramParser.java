@@ -1,15 +1,9 @@
-package de.code14.edupydebugger.ui;
+package de.code14.edupydebugger.diagram;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.jetbrains.python.psi.PyClass;
-import com.jetbrains.python.psi.PyFunction;
-import com.jetbrains.python.psi.PyTargetExpression;
-import com.jetbrains.python.psi.types.TypeEvalContext;
-import de.code14.edupydebugger.debugger.PythonAnalyzer;
+import de.code14.edupydebugger.analysis.PythonAnalyzer;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
