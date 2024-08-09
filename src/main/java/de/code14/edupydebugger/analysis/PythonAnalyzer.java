@@ -71,25 +71,31 @@ public class PythonAnalyzer {
     }
 
     /**
-     * Recursively analyzes directories and their contained files.
+     * Iteratively analyzes directories and their contained files.
      * Excludes library directories and only analyzes user-defined Python files.
      *
      * @param project the project context
-     * @param directory the directory to analyze
+     * @param rootDir the root directory to start analyzing
      * @param projectBasePath the base path of the project
      */
-    private static void analyzeDirectory(Project project, VirtualFile directory, String projectBasePath) {
-        for (VirtualFile file : directory.getChildren()) {
-            if (file.isDirectory()) {
-                // Exclude library directories
-                if (!isLibraryDirectory(file)) {
-                    // Recursively analyze subdirectories
-                    analyzeDirectory(project, file, projectBasePath);
-                }
-            } else {
-                // Analyze only Python files that are within the project directory
-                if (file.getFileType() == PythonFileType.INSTANCE && isUserFile(file, projectBasePath)) {
-                    analyzePythonFile(project, file);
+    private static void analyzeDirectory(Project project, VirtualFile rootDir, String projectBasePath) {
+        Stack<VirtualFile> dirsToAnalyze = new Stack<>();
+        dirsToAnalyze.push(rootDir);
+
+        while (!dirsToAnalyze.isEmpty()) {
+            VirtualFile directory = dirsToAnalyze.pop();
+
+            for (VirtualFile file : directory.getChildren()) {
+                if (file.isDirectory()) {
+                    // Exclude library directories
+                    if (!isLibraryDirectory(file)) {
+                        dirsToAnalyze.push(file);
+                    }
+                } else {
+                    // Analyze only Python files that are within the project directory
+                    if (file.getFileType() == PythonFileType.INSTANCE && isUserFile(file, projectBasePath)) {
+                        analyzePythonFile(project, file);
+                    }
                 }
             }
         }
