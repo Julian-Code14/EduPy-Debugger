@@ -14,6 +14,12 @@ import com.jetbrains.python.psi.types.TypeEvalContext;
 import java.util.*;
 
 /**
+ * A utility class for analyzing Python files within a project.
+ * The class extracts class details such as attributes, methods, references, and superclasses
+ * from Python files and stores them for further processing.
+ * <p>
+ * The analysis includes both static code analysis and gathering type information using the PyCharm API.
+ *
  * @author julian
  * @version 1.0
  * @since 16.07.24
@@ -22,13 +28,29 @@ public class PythonAnalyzer {
 
     private final static Logger LOGGER = Logger.getInstance(PythonAnalyzer.class);
 
-    private static Map<String, Object[]> classDetails = new HashMap<>();
-    private static final Set<String> defaultTypes = new HashSet<String>() {
-        {add("int");add("float");add("str");add("bool");add("list");add("dict");add("tuple");add("set");}
-    };
+    // Holds details about classes, with the class name as the key and an array of class information as the value.
+    private static final Map<String, Object[]> classDetails = new HashMap<>();
 
+    // Set of default Python types that are not considered as references
+    private static final Set<String> defaultTypes = new HashSet<>() {{
+        add("int");
+        add("float");
+        add("str");
+        add("bool");
+        add("list");
+        add("dict");
+        add("tuple");
+        add("set");
+    }};
+
+    /**
+     * Analyzes all Python files in the given project by traversing the project directory recursively.
+     * Extracts information about Python classes found within the files.
+     *
+     * @param project the project to be analyzed
+     */
     public static void analyzePythonFile(Project project) {
-        // Erhalte den BasePath des Projekts
+        // Get the base path of the project
         String projectBasePath = project.getBasePath();
 
         if (projectBasePath == null) {
@@ -36,28 +58,36 @@ public class PythonAnalyzer {
             return;
         }
 
-        // Lade das Projektverzeichnis
+        // Load the project directory
         VirtualFile projectDir = LocalFileSystem.getInstance().findFileByPath(projectBasePath);
 
         if (projectDir == null) {
-            LOGGER.warn("The project dir could not be found.");
+            LOGGER.warn("The project directory could not be found.");
             return;
         }
 
-        // Rekursiv durch alle Dateien im Projektverzeichnis iterieren und analysieren
+        // Recursively iterate through all files in the project directory and analyze them
         analyzeDirectory(project, projectDir, projectBasePath);
     }
 
+    /**
+     * Recursively analyzes directories and their contained files.
+     * Excludes library directories and only analyzes user-defined Python files.
+     *
+     * @param project the project context
+     * @param directory the directory to analyze
+     * @param projectBasePath the base path of the project
+     */
     private static void analyzeDirectory(Project project, VirtualFile directory, String projectBasePath) {
         for (VirtualFile file : directory.getChildren()) {
             if (file.isDirectory()) {
-                // Bibliotheksverzeichnisse ausschließen
+                // Exclude library directories
                 if (!isLibraryDirectory(file)) {
-                    // Rekursiv die Unterverzeichnisse analysieren
+                    // Recursively analyze subdirectories
                     analyzeDirectory(project, file, projectBasePath);
                 }
             } else {
-                // Nur Python-Dateien analysieren, die innerhalb des Projektverzeichnisses liegen
+                // Analyze only Python files that are within the project directory
                 if (file.getFileType() == PythonFileType.INSTANCE && isUserFile(file, projectBasePath)) {
                     analyzePythonFile(project, file);
                 }
@@ -65,11 +95,24 @@ public class PythonAnalyzer {
         }
     }
 
+    /**
+     * Determines whether the given file is a user-defined file based on its path.
+     *
+     * @param file the file to check
+     * @param projectBasePath the base path of the project
+     * @return true if the file is a user-defined file, false otherwise
+     */
     private static boolean isUserFile(VirtualFile file, String projectBasePath) {
-        // Überprüfen, ob der Dateipfad mit dem Projekt-BasePath beginnt
         return file.getPath().startsWith(projectBasePath);
     }
 
+    /**
+     * Determines whether the given directory is a library directory.
+     * Library directories are excluded from the analysis.
+     *
+     * @param directory the directory to check
+     * @return true if the directory is a library directory, false otherwise
+     */
     private static boolean isLibraryDirectory(VirtualFile directory) {
         String[] libraryDirs = {"site-packages", "dist-packages", "lib", "libs", "Library", "Frameworks"};
         for (String libraryDir : libraryDirs) {
@@ -80,6 +123,13 @@ public class PythonAnalyzer {
         return false;
     }
 
+
+    /**
+     * Analyzes a specific Python file, extracting class information such as attributes, methods, references, and superclasses.
+     *
+     * @param project the project context
+     * @param virtualFile the Python file to analyze
+     */
     private static void analyzePythonFile(Project project, VirtualFile virtualFile) {
         PsiFile psiFile = PsiManager.getInstance(project).findFile(virtualFile);
 
@@ -99,7 +149,7 @@ public class PythonAnalyzer {
                 List<String> referencesList = new ArrayList<>();
                 List<String> superClassesList = new ArrayList<>();
 
-                // Finde alle Attribute der Klasse
+                // Collect all attributes of the class
                 List<PyTargetExpression> instanceAttributes = pyClass.getInstanceAttributes();
                 List<PyTargetExpression> classAttributes = pyClass.getClassAttributes();
                 Set<PyTargetExpression> attributes = new HashSet<>();
@@ -112,20 +162,20 @@ public class PythonAnalyzer {
                     String type = getTypeString(attribute, context);
                     attributesList.add(staticModifier + visibility + attribute.getName() + " : " + type);
 
-                    // Is it a reference?
+                    // Check if the attribute type is a reference to another class
                     if (!defaultTypes.contains(type)) {
                         referencesList.add(type);
                     }
                 }
 
-                // Finde alle Methoden der Klasse
-                List<PyFunction> methods = Arrays.asList(pyClass.getMethods());
+                // Collect all methods of the class
+                PyFunction[] methods = pyClass.getMethods();
                 for (PyFunction method : methods) {
                     String methodSignature = getMethodSignature(method, context);
                     methodsList.add(methodSignature);
                 }
 
-                // Finde alle Superklassen der Klasse
+                // Collect all superclasses of the class
                 List<PyExpression> superClasses = List.of(pyClass.getSuperClassExpressions());
                 for (PyExpression superClass : superClasses) {
                     superClassesList.add(superClass.getText());
@@ -138,6 +188,13 @@ public class PythonAnalyzer {
         }
     }
 
+    /**
+     * Constructs the method signature for a given Python method, including its parameters and return type.
+     *
+     * @param method the Python method to analyze
+     * @param context the type evaluation context
+     * @return a string representing the method signature
+     */
     private static String getMethodSignature(PyFunction method, TypeEvalContext context) {
         StringBuilder signature = new StringBuilder();
         // Check if the method is static
@@ -153,6 +210,7 @@ public class PythonAnalyzer {
         PyParameterList parameterList = method.getParameterList();
         PyParameter[] parameters = parameterList.getParameters();
 
+        // Append method parameters to the signature
         for (int i = 0; i < parameters.length; i++) {
             PyParameter parameter = parameters[i];
             String paramName = parameter.getName();
@@ -169,7 +227,7 @@ public class PythonAnalyzer {
 
         signature.append(")");
 
-        // Return types
+        // Add return type to the method signature
         String returnType = getTypeString(method, context);
         if (!returnType.equals("?")) {
             signature.append(" : ").append(returnType);
@@ -178,6 +236,14 @@ public class PythonAnalyzer {
     }
 
 
+    /**
+     * Retrieves the type of a given Python element as a string.
+     * This method is used for attributes, parameters, and functions.
+     *
+     * @param element the Python element to analyze
+     * @param context the type evaluation context
+     * @return the type of the element as a string, or "?" if the type could not be determined
+     */
     private static String getTypeString(PyElement element, TypeEvalContext context) {
         if (element instanceof PyTargetExpression) {
             PyType type = context.getType((PyTargetExpression) element);
@@ -193,6 +259,12 @@ public class PythonAnalyzer {
         }
     }
 
+    /**
+     * Determines the visibility of a Python class attribute or method based on its name.
+     *
+     * @param attributeName the name of the attribute or method
+     * @return "+" for public, "#" for protected, "-" for private
+     */
     private static String determineVisibility(String attributeName) {
         if (attributeName.startsWith("__") && !attributeName.endsWith("__")) {
             return "-";
@@ -203,6 +275,11 @@ public class PythonAnalyzer {
         }
     }
 
+    /**
+     * Returns the collected details about the analyzed classes.
+     *
+     * @return a map where the key is the class name and the value is an array of details (attributes, methods, references, superclasses)
+     */
     public static Map<String, Object[]> getClassDetails() {
         return classDetails;
     }
