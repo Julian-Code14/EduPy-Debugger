@@ -28,19 +28,7 @@ public class PythonAnalyzer {
     private static final Logger LOGGER = Logger.getInstance(PythonAnalyzer.class);
 
     // Holds details about classes, with the class name as the key and an array of class information as the value.
-    private final Map<String, Object[]> classDetails = new HashMap<>();
-
-    // Set of default Python types that are not considered as references
-    private static final Set<String> defaultTypes = new HashSet<>() {{
-        add("int");
-        add("float");
-        add("str");
-        add("bool");
-        add("list");
-        add("dict");
-        add("tuple");
-        add("set");
-    }};
+    private final Map<String, ClassInfo> classDetails = new HashMap<>();
 
     /**
      * Analyzes all Python files in the given project by traversing the project directory recursively.
@@ -160,12 +148,13 @@ public class PythonAnalyzer {
     private void processPyFile(PyFile pyFile, TypeEvalContext context) {
         for (PyClass pyClass : pyFile.getTopLevelClasses()) {
             String className = pyClass.getName();
-            classDetails.put(className, new Object[]{
+            ClassInfo classInfo = new ClassInfo(
                     collectAttributes(pyClass, context),
                     collectMethods(pyClass, context),
                     collectReferences(pyClass, context),
                     collectSuperClasses(pyClass)
-            });
+            );
+            classDetails.put(className, classInfo);
         }
     }
 
@@ -246,7 +235,7 @@ public class PythonAnalyzer {
      *
      * @return a map where the key is the class name and the value is an array of details (attributes, methods, references, superclasses)
      */
-    public Map<String, Object[]> getClassDetails() {
+    public Map<String, ClassInfo> getClassDetails() {
         return classDetails;
     }
 
