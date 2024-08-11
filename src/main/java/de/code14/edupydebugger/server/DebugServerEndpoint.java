@@ -13,13 +13,19 @@ import jakarta.websocket.server.ServerEndpoint;
 import jakarta.websocket.Session;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
+ * WebSocket server endpoint for handling debugger-related communications.
+ * This class manages WebSocket connections, processes incoming messages, and sends debug information
+ * such as diagrams and variable states to connected clients.
+ * <p>
+ * The server also queues messages if no client is currently connected, ensuring that messages are not lost.
+ * It also provides control over the debugging process through the WebSocket interface.
+ * </p>
+ *
  * @author julian
  * @version 1.0
  * @since 19.06.24
@@ -32,15 +38,30 @@ public class DebugServerEndpoint {
 
     private static final Set<Session> sessions = Collections.synchronizedSet(new HashSet<>());
     private static final BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>();
-    private static volatile boolean isConnected = false;
     private static final DebugProcessController debugProcessController = new DebugProcessController();
 
-    // Contents
+    private static volatile boolean isConnected = false;
+
+    // Debug content to be shared with clients
     private static String classDiagramPlantUmlImage;
     private static String variablesString;
     private static String objectCardsPlantUmlImage;
     private static String objectDiagramPlantUmlImage;
 
+    private static final Map<String, Runnable> actionMap = new HashMap<>();
+    static {
+        actionMap.put("resume", debugProcessController::resume);
+        actionMap.put("pause", debugProcessController::pause);
+        actionMap.put("step-over", debugProcessController::stepOver);
+        actionMap.put("step-into", debugProcessController::stepInto);
+        actionMap.put("step-out", debugProcessController::stepOut);
+    }
+
+    /**
+     * Called when a new WebSocket connection is opened.
+     *
+     * @param session the WebSocket session that was opened
+     */
     @OnOpen
     public void onOpen(Session session) {
         sessions.add(session);
@@ -59,6 +80,11 @@ public class DebugServerEndpoint {
         }
     }
 
+    /**
+     * Called when a WebSocket connection is closed.
+     *
+     * @param session the WebSocket session that was closed
+     */
     @OnClose
     public void onClose(Session session) {
         sessions.remove(session);
@@ -68,48 +94,19 @@ public class DebugServerEndpoint {
         }
     }
 
+    /**
+     * Called when a message is received from a client.
+     *
+     * @param message the message received
+     * @param session the WebSocket session that sent the message
+     */
     @OnMessage
     public void onMessage(String message, Session session) {
-        LOGGER.info("Received websocket message " + message);
+        LOGGER.info("Received WebSocket message " + message);
         if (message.startsWith("action:")) {
-            switch (message.substring("action:".length())) {
-                case "resume":
-                    debugProcessController.resume();
-                    break;
-                case "pause":
-                    debugProcessController.pause();
-                    break;
-                case "step-over":
-                    debugProcessController.stepOver();
-                    break;
-                case "step-into":
-                    debugProcessController.stepInto();
-                    break;
-                case "step-out":
-                    debugProcessController.stepOut();
-                    break;
-                default:
-                    LOGGER.warn("Unknown action received: " + message);
-                    break;
-            }
+            handleActionMessage(message.substring("action:".length()));
         } else if (message.startsWith("get:")) {
-            switch (message.substring("get:".length())) {
-                case "cd":
-                    sendDebugInfo(classDiagramPlantUmlImage);
-                    break;
-                case "oc":
-                    sendDebugInfo("oc:" + objectCardsPlantUmlImage);
-                    break;
-                case "od":
-                    sendDebugInfo("od:" + objectDiagramPlantUmlImage);
-                    break;
-                case "variables":
-                    sendDebugInfo("variables:" + variablesString);
-                    break;
-                default:
-                    LOGGER.warn("Unknown get request received: " + message);
-                    break;
-            }
+            handleGetMessage(message.substring("get:".length()));
         } else if (message.startsWith("navigate:")) {
             DebuggerToolWindowFactory.openPythonTutor();
         } else {
@@ -117,10 +114,15 @@ public class DebugServerEndpoint {
         }
     }
 
+    /**
+     * Sends debug information to all connected WebSocket clients.
+     *
+     * @param message the debug information to send
+     */
     public static void sendDebugInfo(String message) {
         if (!isConnected) {
             LOGGER.warn("Websocket is not connected. Queueing message " + message);
-            messageQueue.offer(message);
+            boolean offer = messageQueue.offer(message);
             return;
         }
         synchronized (sessions) {
@@ -135,26 +137,97 @@ public class DebugServerEndpoint {
         }
     }
 
+    /**
+     * Handles action messages received from the client.
+     * The actions include controlling the debugger (resume, pause, step-over, step-into, step-out).
+     *
+     * @param action the action command received
+     */
+    private void handleActionMessage(String action) {
+        Runnable command = actionMap.get(action);
+        if (command != null) {
+            command.run();
+        } else {
+            LOGGER.warn("Unknown action received: " + action);
+        }
+    }
+
+    /**
+     * Handles get requests received from the client.
+     * The get requests include fetching the class diagram, object cards diagram, object diagram, and variables.
+     *
+     * @param request the get request received
+     */
+    private void handleGetMessage(String request) {
+        switch (request) {
+            case "cd":
+                sendDebugInfo(classDiagramPlantUmlImage);
+                break;
+            case "oc":
+                sendDebugInfo("oc:" + objectCardsPlantUmlImage);
+                break;
+            case "od":
+                sendDebugInfo("od:" + objectDiagramPlantUmlImage);
+                break;
+            case "variables":
+                sendDebugInfo("variables:" + variablesString);
+                break;
+            default:
+                LOGGER.warn("Unknown get request received: " + request);
+                break;
+        }
+    }
+
+    /**
+     * Checks whether there is an active WebSocket connection.
+     *
+     * @return true if connected, false otherwise
+     */
     public static synchronized boolean isConnected() {
         return isConnected;
     }
 
+    /**
+     * Sets the current debug process for controlling the debugger.
+     *
+     * @param debugProcess the PyDebugProcess to control
+     */
     public static void setDebugProcess(PyDebugProcess debugProcess) {
         debugProcessController.setDebugProcess(debugProcess);
     }
 
+    /**
+     * Sets the PlantUML image for the class diagram.
+     *
+     * @param base64PlantUml the Base64 encoded PlantUML image
+     */
     public static void setClassDiagramPlantUmlImage(String base64PlantUml) {
         classDiagramPlantUmlImage = base64PlantUml;
     }
 
+    /**
+     * Sets the string representation of variables.
+     *
+     * @param variablesString the string representing the variables
+     */
     public static void setVariablesString(String variablesString) {
         DebugServerEndpoint.variablesString = variablesString;
     }
 
+    /**
+     * Sets the PlantUML image for the object cards diagram.
+     *
+     * @param base64PlantUml the Base64 encoded PlantUML image
+     */
     public static void setObjectCardsPlantUmlImage(String base64PlantUml) {
         objectCardsPlantUmlImage = base64PlantUml;
     }
 
+    /**
+     * Sets the PlantUML image for the object diagram.
+     *
+     * @param base64PlantUml the Base64 encoded PlantUML image
+     */
     public static void setObjectDiagramPlantUmlImage(String base64PlantUml) {
         objectDiagramPlantUmlImage = base64PlantUml;
     }
