@@ -29,18 +29,30 @@ public class DebugProcessListener implements XDebuggerManagerListener {
     private final Project project;
     private final DebuggerToolWindowFactory debuggerToolWindowFactory;
 
+    /**
+     * Constructs a DebugProcessListener for the specified project.
+     *
+     * @param project the IntelliJ IDEA project associated with this listener
+     */
     public DebugProcessListener(Project project) {
         this.project = project;
         this.debuggerToolWindowFactory = new DebuggerToolWindowFactory();
     }
 
+    /**
+     * This method is called when the debugging process starts.
+     * It initializes the WebSocket and HTTP servers, sets up the debug process endpoint,
+     * and opens the custom debugger tool window while hiding the default one.
+     *
+     * @param debugProcess the XDebugProcess representing the debugging process
+     */
     @Override
     public void processStarted(@NotNull XDebugProcess debugProcess) {
         final XDebugSession debugSession = debugProcess.getSession();
 
         LOGGER.info("Debug Process started");
 
-        // Start the Websocket Server
+        // Start the WebSocket server if it's not already running
         if (!DebugWebSocketServer.isRunning()) {
             try {
                 DebugWebSocketServer.startWebSocketServer();
@@ -49,7 +61,7 @@ public class DebugProcessListener implements XDebuggerManagerListener {
             }
         }
 
-        // Start the HTTP Webserver
+        // Start the HTTP server if it's not already running
         if (!DebugWebServer.isRunning()) {
             try {
                 DebugWebServer.startWebServer();
@@ -58,8 +70,10 @@ public class DebugProcessListener implements XDebuggerManagerListener {
             }
         }
 
+        // Set the debug process in the WebSocket endpoint
         DebugServerEndpoint.setDebugProcess((PyDebugProcess) debugProcess);
 
+        // Update UI components in the Swing event dispatch thread
         SwingUtilities.invokeLater(() -> {
             // Hide the default Debug Tool Window content
             ToolWindow defaultDebugToolWindow = ToolWindowManager.getInstance(project).getToolWindow(ToolWindowId.DEBUG);
@@ -67,14 +81,20 @@ public class DebugProcessListener implements XDebuggerManagerListener {
                 defaultDebugToolWindow.setAvailable(false);
             }
 
-            // Open the Tool Window
+            // Open the custom Debugger Tool Window
             debuggerToolWindowFactory.openToolWindow(project);
         });
 
-        // Register DebugSessionListener
+        // Register DebugSessionListener to monitor stack frame changes during the debugging session
         debugSession.addSessionListener(new DebugSessionListener(debugProcess));
     }
 
+    /**
+     * This method is called when the debugging process stops.
+     * It reloads the custom debugger UI to ensure that any remaining UI elements are reset.
+     *
+     * @param debugProcess the XDebugProcess representing the debugging process
+     */
     @Override
     public void processStopped(@NotNull XDebugProcess debugProcess) {
         DebuggerToolWindowFactory.reloadEduPyDebugger();
