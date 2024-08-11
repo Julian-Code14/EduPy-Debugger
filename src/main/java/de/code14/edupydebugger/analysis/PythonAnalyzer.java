@@ -8,7 +8,6 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.jetbrains.python.PythonFileType;
 import com.jetbrains.python.psi.*;
-import com.jetbrains.python.psi.types.PyType;
 import com.jetbrains.python.psi.types.TypeEvalContext;
 
 import java.util.*;
@@ -26,10 +25,10 @@ import java.util.*;
  */
 public class PythonAnalyzer {
 
-    private final static Logger LOGGER = Logger.getInstance(PythonAnalyzer.class);
+    private static final Logger LOGGER = Logger.getInstance(PythonAnalyzer.class);
 
     // Holds details about classes, with the class name as the key and an array of class information as the value.
-    private static final Map<String, Object[]> classDetails = new HashMap<>();
+    private final Map<String, Object[]> classDetails = new HashMap<>();
 
     // Set of default Python types that are not considered as references
     private static final Set<String> defaultTypes = new HashSet<>() {{
@@ -49,7 +48,7 @@ public class PythonAnalyzer {
      *
      * @param project the project to be analyzed
      */
-    public static void analyzePythonFile(Project project) {
+    public void analyzePythonFiles(Project project) {
         // Get the base path of the project
         String projectBasePath = project.getBasePath();
 
@@ -66,7 +65,7 @@ public class PythonAnalyzer {
             return;
         }
 
-        // Recursively iterate through all files in the project directory and analyze them
+        // Iteratively traverse the project directory and analyze files
         analyzeDirectory(project, projectDir, projectBasePath);
     }
 
@@ -78,7 +77,7 @@ public class PythonAnalyzer {
      * @param rootDir the root directory to start analyzing
      * @param projectBasePath the base path of the project
      */
-    private static void analyzeDirectory(Project project, VirtualFile rootDir, String projectBasePath) {
+    private void analyzeDirectory(Project project, VirtualFile rootDir, String projectBasePath) {
         Stack<VirtualFile> dirsToAnalyze = new Stack<>();
         dirsToAnalyze.push(rootDir);
 
@@ -93,8 +92,8 @@ public class PythonAnalyzer {
                     }
                 } else {
                     // Analyze only Python files that are within the project directory
-                    if (file.getFileType() == PythonFileType.INSTANCE && isUserFile(file, projectBasePath)) {
-                        analyzePythonFile(project, file);
+                    if (file.getFileType() == PythonFileType.INSTANCE && isPythonFileInProject(file, projectBasePath)) {
+                        analyzePythonClassFile(project, file);
                     }
                 }
             }
@@ -102,14 +101,14 @@ public class PythonAnalyzer {
     }
 
     /**
-     * Determines whether the given file is a user-defined file based on its path.
+     * Determines whether the given file is a user-defined Python file based on its path.
      *
      * @param file the file to check
      * @param projectBasePath the base path of the project
-     * @return true if the file is a user-defined file, false otherwise
+     * @return true if the file is a user-defined Python file, false otherwise
      */
-    private static boolean isUserFile(VirtualFile file, String projectBasePath) {
-        return file.getPath().startsWith(projectBasePath);
+    private static boolean isPythonFileInProject(VirtualFile file, String projectBasePath) {
+        return file.getFileType() == PythonFileType.INSTANCE && file.getPath().startsWith(projectBasePath);
     }
 
     /**
@@ -136,7 +135,7 @@ public class PythonAnalyzer {
      * @param project the project context
      * @param virtualFile the Python file to analyze
      */
-    private static void analyzePythonFile(Project project, VirtualFile virtualFile) {
+    private void analyzePythonClassFile(Project project, VirtualFile virtualFile) {
         PsiFile psiFile = PsiManager.getInstance(project).findFile(virtualFile);
 
         if (psiFile == null || psiFile.getFileType() != PythonFileType.INSTANCE) {
@@ -146,147 +145,108 @@ public class PythonAnalyzer {
 
         if (psiFile instanceof PyFile pyFile) {
             TypeEvalContext context = TypeEvalContext.codeAnalysis(project, psiFile);
-            List<PyClass> pyClasses = pyFile.getTopLevelClasses();
-
-            for (PyClass pyClass : pyClasses) {
-                String className = pyClass.getName();
-                List<String> attributesList = new ArrayList<>();
-                List<String> methodsList = new ArrayList<>();
-                List<String> referencesList = new ArrayList<>();
-                List<String> superClassesList = new ArrayList<>();
-
-                // Collect all attributes of the class
-                List<PyTargetExpression> instanceAttributes = pyClass.getInstanceAttributes();
-                List<PyTargetExpression> classAttributes = pyClass.getClassAttributes();
-                Set<PyTargetExpression> attributes = new HashSet<>();
-                attributes.addAll(instanceAttributes);
-                attributes.addAll(classAttributes);
-
-                for (PyTargetExpression attribute : attributes) {
-                    String staticModifier = pyClass.findClassAttribute(Objects.requireNonNull(attribute.getName()), false, null) != null ? "{static} " : "";
-                    String visibility = determineVisibility(Objects.requireNonNull(attribute.getName()));
-                    String type = getTypeString(attribute, context);
-                    attributesList.add(staticModifier + visibility + attribute.getName() + " : " + type);
-
-                    // Check if the attribute type is a reference to another class
-                    if (!defaultTypes.contains(type)) {
-                        referencesList.add(type);
-                    }
-                }
-
-                // Collect all methods of the class
-                PyFunction[] methods = pyClass.getMethods();
-                for (PyFunction method : methods) {
-                    String methodSignature = getMethodSignature(method, context);
-                    methodsList.add(methodSignature);
-                }
-
-                // Collect all superclasses of the class
-                List<PyExpression> superClasses = List.of(pyClass.getSuperClassExpressions());
-                for (PyExpression superClass : superClasses) {
-                    superClassesList.add(superClass.getText());
-                }
-
-                classDetails.put(className, new Object[]{attributesList, methodsList, referencesList, superClassesList});
-            }
+            processPyFile(pyFile, context);
         } else {
             LOGGER.warn("The psi file could not be found: " + virtualFile.getPath());
         }
     }
 
     /**
-     * Constructs the method signature for a given Python method, including its parameters and return type.
+     * Processes a PyFile and collects class details such as attributes, methods, references, and superclasses.
      *
-     * @param method the Python method to analyze
+     * @param pyFile the Python file to process
      * @param context the type evaluation context
-     * @return a string representing the method signature
      */
-    private static String getMethodSignature(PyFunction method, TypeEvalContext context) {
-        StringBuilder signature = new StringBuilder();
-        // Check if the method is static
-        if (method.getDecoratorList() != null && method.getDecoratorList().findDecorator("staticmethod") != null) {
-            signature.append("{static} ");
-        }
-        // Check if the method is abstract
-        if (method.getDecoratorList() != null && method.getDecoratorList().findDecorator("abstractmethod") != null) {
-            signature.append("{abstract} ");
-        }
-
-        signature.append(determineVisibility(Objects.requireNonNull(method.getName()))).append(method.getName()).append("(");
-        PyParameterList parameterList = method.getParameterList();
-        PyParameter[] parameters = parameterList.getParameters();
-
-        // Append method parameters to the signature
-        for (int i = 0; i < parameters.length; i++) {
-            PyParameter parameter = parameters[i];
-            String paramName = parameter.getName();
-            String paramType = getTypeString(parameter, context);
-            if (paramType.equals("?")) {
-                signature.append(paramName);
-            } else {
-                signature.append(paramName).append(" : ").append(paramType);
-            }
-            if (i < parameters.length - 1) {
-                signature.append(", ");
-            }
-        }
-
-        signature.append(")");
-
-        // Add return type to the method signature
-        String returnType = getTypeString(method, context);
-        if (!returnType.equals("?")) {
-            signature.append(" : ").append(returnType);
-        }
-        return signature.toString();
-    }
-
-
-    /**
-     * Retrieves the type of a given Python element as a string.
-     * This method is used for attributes, parameters, and functions.
-     *
-     * @param element the Python element to analyze
-     * @param context the type evaluation context
-     * @return the type of the element as a string, or "?" if the type could not be determined
-     */
-    private static String getTypeString(PyElement element, TypeEvalContext context) {
-        if (element instanceof PyTargetExpression) {
-            PyType type = context.getType((PyTargetExpression) element);
-            return type != null ? type.getName() : "?";
-        } else if (element instanceof PyNamedParameter) {
-            PyType type = context.getType((PyNamedParameter) element);
-            return type != null ? type.getName() : "?";
-        } else if (element instanceof PyFunction) {
-            PyType type = context.getReturnType((PyFunction) element);
-            return type != null ? type.getName() : "?";
-        } else {
-            return "?";
+    private void processPyFile(PyFile pyFile, TypeEvalContext context) {
+        for (PyClass pyClass : pyFile.getTopLevelClasses()) {
+            String className = pyClass.getName();
+            classDetails.put(className, new Object[]{
+                    collectAttributes(pyClass, context),
+                    collectMethods(pyClass, context),
+                    collectReferences(pyClass, context),
+                    collectSuperClasses(pyClass)
+            });
         }
     }
 
     /**
-     * Determines the visibility of a Python class attribute or method based on its name.
+     * Collects all attributes of a Python class.
      *
-     * @param attributeName the name of the attribute or method
-     * @return "+" for public, "#" for protected, "-" for private
+     * @param pyClass the Python class to analyze
+     * @param context the type evaluation context
+     * @return a list of attribute descriptions
      */
-    private static String determineVisibility(String attributeName) {
-        if (attributeName.startsWith("__") && !attributeName.endsWith("__")) {
-            return "-";
-        } else if (attributeName.startsWith("_")) {
-            return "#";
-        } else {
-            return "+";
+    private List<String> collectAttributes(PyClass pyClass, TypeEvalContext context) {
+        List<String> attributesList = new ArrayList<>();
+        List<PyTargetExpression> instanceAttributes = pyClass.getInstanceAttributes();
+        List<PyTargetExpression> classAttributes = pyClass.getClassAttributes();
+        List<PyTargetExpression> attributes = new ArrayList<>(instanceAttributes);
+        attributes.addAll(classAttributes);
+
+        for (PyTargetExpression attribute : attributes) {
+            String staticModifier = pyClass.findClassAttribute(Objects.requireNonNull(attribute.getName()), false, null) != null ? "{static} " : "";
+            String visibility = PythonAnalysisHelper.determineVisibility(attribute.getName());
+            String type = PythonAnalysisHelper.getTypeString(attribute, context);
+            attributesList.add(staticModifier + visibility + attribute.getName() + " : " + type);
         }
+
+        return attributesList;
     }
+
+    /**
+     * Collects all methods of a Python class.
+     *
+     * @param pyClass the Python class to analyze
+     * @param context the type evaluation context
+     * @return a list of method signatures
+     */
+    private List<String> collectMethods(PyClass pyClass, TypeEvalContext context) {
+        List<String> methodsList = new ArrayList<>();
+        for (PyFunction method : pyClass.getMethods()) {
+            methodsList.add(PythonAnalysisHelper.getMethodSignature(method, context));
+        }
+        return methodsList;
+    }
+
+    /**
+     * Collects all references (types that are not primitive types) of a Python class.
+     *
+     * @param pyClass the Python class to analyze
+     * @param context the type evaluation context
+     * @return a list of reference types
+     */
+    private List<String> collectReferences(PyClass pyClass, TypeEvalContext context) {
+        Set<String> referencesSet = new HashSet<>();
+        for (String attribute : collectAttributes(pyClass, context)) {
+            String type = attribute.split(" : ")[1];
+            if (!PythonAnalysisHelper.defaultTypes.contains(type)) {
+                referencesSet.add(type);
+            }
+        }
+        return new ArrayList<>(referencesSet);
+    }
+
+    /**
+     * Collects all superclasses of a Python class.
+     *
+     * @param pyClass the Python class to analyze
+     * @return a list of superclasses
+     */
+    private List<String> collectSuperClasses(PyClass pyClass) {
+        List<String> superClassesList = new ArrayList<>();
+        for (PyExpression superClass : pyClass.getSuperClassExpressions()) {
+            superClassesList.add(superClass.getText());
+        }
+        return superClassesList;
+    }
+
 
     /**
      * Returns the collected details about the analyzed classes.
      *
      * @return a map where the key is the class name and the value is an array of details (attributes, methods, references, superclasses)
      */
-    public static Map<String, Object[]> getClassDetails() {
+    public Map<String, Object[]> getClassDetails() {
         return classDetails;
     }
 

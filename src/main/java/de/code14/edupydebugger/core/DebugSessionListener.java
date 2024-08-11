@@ -6,6 +6,7 @@ import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebugSessionListener;
 import com.jetbrains.python.debugger.*;
 import de.code14.edupydebugger.analysis.DebuggerUtils;
+import de.code14.edupydebugger.analysis.PythonAnalyzer;
 import de.code14.edupydebugger.analysis.StackFrameAnalyzer;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
 import de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator;
@@ -28,11 +29,14 @@ public class DebugSessionListener implements XDebugSessionListener {
 
     private final XDebugProcess debugProcess;
     private final XDebugSession session;
+    private final ClassDiagramParser classDiagramParser;
 
 
     public DebugSessionListener(@NotNull XDebugProcess debugProcess) {
         this.debugProcess = debugProcess;
         this.session = debugProcess.getSession();
+
+        this.classDiagramParser = new ClassDiagramParser(new PythonAnalyzer());
     }
 
 
@@ -75,7 +79,7 @@ public class DebugSessionListener implements XDebugSessionListener {
 
 
             // Statische Code-Analyse
-            String classDiagramPlantUmlString = ClassDiagramParser.generateClassDiagram(pyDebugProcess.getProject());
+            String classDiagramPlantUmlString = classDiagramParser.generateClassDiagram(pyDebugProcess.getProject());
             try {
                 DebugServerEndpoint.setClassDiagramPlantUmlImage(PlantUMLDiagramGenerator.generateDiagramAsBase64(classDiagramPlantUmlString));
             } catch (IOException e) {

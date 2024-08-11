@@ -16,10 +16,16 @@ public class ClassDiagramParser {
 
     private static final Logger LOGGER = Logger.getInstance(ClassDiagramParser.class);
 
+    private final PythonAnalyzer pythonAnalyzer;
 
-    public static String generateClassDiagram(Project project) {
-        PythonAnalyzer.analyzePythonFile(project);
-        Map<String, Object[]> classDetails = PythonAnalyzer.getClassDetails();
+    public ClassDiagramParser(PythonAnalyzer pythonAnalyzer) {
+        this.pythonAnalyzer = pythonAnalyzer;
+    }
+
+
+    public String generateClassDiagram(Project project) {
+        pythonAnalyzer.analyzePythonFiles(project);
+        Map<String, Object[]> classDetails = pythonAnalyzer.getClassDetails();
 
         StringBuilder plantUML = new StringBuilder();
         plantUML.append("@startuml\n");
