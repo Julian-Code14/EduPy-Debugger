@@ -1,12 +1,16 @@
 package de.code14.edupydebugger.diagram;
 
 import com.intellij.openapi.diagnostic.Logger;
+import de.code14.edupydebugger.analysis.AttributeInfo;
+import de.code14.edupydebugger.analysis.ObjectInfo;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /**
+ * The ObjectDiagramParser class is responsible for generating PlantUML diagrams representing objects and their associations.
+ *
  * @author julian
  * @version 1.0
  * @since 06.08.24
@@ -15,68 +19,35 @@ public class ObjectDiagramParser {
 
     private static final Logger LOGGER = Logger.getInstance(ObjectDiagramParser.class);
 
-
-    public static String generateObjectCards(Map<String, List<Object>[]> objects) {
+    /**
+     * Generates a PlantUML diagram representing object cards with attributes.
+     *
+     * @param objects the map of object IDs to lists of ObjectInfo, representing object details
+     * @return a string containing the PlantUML syntax for the object cards diagram
+     */
+    public static String generateObjectCards(Map<String, ObjectInfo> objects) {
         StringBuilder plantUML = new StringBuilder();
         plantUML.append("@startuml\n");
         plantUML.append("!pragma layout smetana\n");
 
-        objects.forEach((key, value) -> {
-            List<String> references = new ArrayList<>();
-            for (Object object : value[0]) {
-                if (object instanceof String) {
-                    references.add((String) object);
-                }
-            }
-            List<List<String>> attributes = new ArrayList<>();
-            for (Object object : value[1]) {
-                if (object instanceof List<?>) {
-                    List<?> tempList = (List<?>) object;
-                    List<String> attributeList = new ArrayList<>();
-                    for (Object attribute : tempList) {
-                        if (attribute instanceof String) {
-                            attributeList.add((String) attribute);
-                        }
-                    }
-                    attributes.add(attributeList);
-                }
+        objects.forEach((key, objectInfo) -> {
+            if (objectInfo == null) {
+                return;
             }
 
-            plantUML.append("object \"").append(references.get(0)).append("\" as o").append(key).append(" {\n");
-            for (List<String> attribute : attributes) {
-                if (attribute.get(3).equals("static")) {
+            // Assume the first reference in the list represents the object
+            String reference = objectInfo.references().get(0);
+            plantUML.append("object \"").append(reference).append("\" as o").append(key).append(" {\n");
+
+            for (AttributeInfo attribute : objectInfo.attributes()) {
+                if ("static".equals(attribute.visibility())) {
                     plantUML.append("{static} ");
                 }
-                plantUML.append(attribute.get(0)).append(" = ").append(attribute.get(2)).append("\n");
+                plantUML.append(attribute.name()).append(" = ").append(attribute.value()).append("\n");
             }
+
             plantUML.append("}\n");
-
-            // Erste Liste (Array[0]) in ein Komma-getrenntes String-Format konvertieren
-            /*String firstListString = String.join(",", references);
-
-            // Zweite Liste (Array[1]) in das gewünschte Format konvertieren
-            StringBuilder secondListString = new StringBuilder();
-            for (List<String> list : attributes) {
-                secondListString.append(String.join(",", list)).append(";");
-            }
-            // Entferne das letzte Semikolon
-            if (secondListString.length() > 0) {
-                secondListString.setLength(secondListString.length() - 1);
-            }
-
-            // Füge den formatierten String für diesen Eintrag hinzu
-            plantUML.append(key)
-                    .append("=")
-                    .append(firstListString)
-                    .append("$")
-                    .append(secondListString)
-                    .append("§");*/
         });
-
-        // Entferne das letzte §-Zeichen, falls vorhanden
-        /*if (plantUML.length() > 0 && plantUML.charAt(plantUML.length() - 1) == '§') {
-            plantUML.setLength(plantUML.length() - 1);
-        }*/
 
         plantUML.append("@enduml");
 
@@ -85,50 +56,41 @@ public class ObjectDiagramParser {
         return plantUML.toString();
     }
 
-    public static String generateObjectDiagram(Map<String, List<Object>[]> objects) {
+    /**
+     * Generates a PlantUML diagram representing objects and their associations.
+     *
+     * @param objects the map of object IDs to lists of ObjectInfo, representing object details
+     * @return a string containing the PlantUML syntax for the object diagram
+     */
+    public static String generateObjectDiagram(Map<String, ObjectInfo> objects) {
         StringBuilder plantUML = new StringBuilder();
         plantUML.append("@startuml\n");
         plantUML.append("!pragma layout smetana\n");
 
-        objects.forEach((key, value) -> {
-            List<String> references = new ArrayList<>();
-            for (Object object : value[0]) {
-                if (object instanceof String) {
-                    references.add((String) object);
-                }
+        objects.forEach((key, objectInfo) -> {
+            if (objectInfo == null) {
+                return;
             }
-            List<List<String>> attributes = new ArrayList<>();
-            for (Object object : value[1]) {
-                if (object instanceof List<?>) {
-                    List<?> tempList = (List<?>) object;
-                    List<String> attributeList = new ArrayList<>();
-                    for (Object attribute : tempList) {
-                        if (attribute instanceof String) {
-                            attributeList.add((String) attribute);
-                        }
-                    }
-                    attributes.add(attributeList);
-                }
-            }
+
+            // Assume the first reference in the list represents the object
+            String reference = objectInfo.references().get(0);
+            plantUML.append("object \"").append(reference).append("\" as o").append(key).append(" {\n");
 
             List<String> associations = new ArrayList<>();
-
-            plantUML.append("object \"").append(references.get(0)).append("\" as o").append(key).append(" {\n");
-            for (List<String> attribute : attributes) {
-                if (attribute.get(3).equals("static")) {
+            for (AttributeInfo attribute : objectInfo.attributes()) {
+                if ("static".equals(attribute.visibility())) {
                     plantUML.append("{static} ");
                 }
-                if (attribute.get(2).startsWith("refid:")) {
-                    associations.add(attribute.get(2).replace("refid:", ""));
+                if (attribute.value().startsWith("refid:")) {
+                    associations.add(attribute.value().replace("refid:", ""));
                 }
-                plantUML.append(attribute.get(0)).append(" = ").append(attribute.get(2)).append("\n");
+                plantUML.append(attribute.name()).append(" = ").append(attribute.value()).append("\n");
             }
             plantUML.append("}\n");
 
             for (String association : associations) {
                 plantUML.append("o").append(key).append(" --> o").append(association).append("\n");
             }
-
         });
 
         plantUML.append("@enduml");

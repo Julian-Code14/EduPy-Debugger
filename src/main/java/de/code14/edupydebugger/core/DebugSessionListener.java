@@ -5,9 +5,7 @@ import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebugSessionListener;
 import com.jetbrains.python.debugger.*;
-import de.code14.edupydebugger.analysis.DebuggerUtils;
-import de.code14.edupydebugger.analysis.PythonAnalyzer;
-import de.code14.edupydebugger.analysis.StackFrameAnalyzer;
+import de.code14.edupydebugger.analysis.*;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
 import de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator;
 import de.code14.edupydebugger.diagram.ClassDiagramParser;
@@ -19,6 +17,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Listener class that responds to changes in the debug session's stack frame.
+ * This class triggers both static and dynamic code analysis when the stack frame changes.
+ *
  * @author julian
  * @version 1.0
  * @since 05.07.24
@@ -42,49 +43,92 @@ public class DebugSessionListener implements XDebugSessionListener {
 
     @Override
     public void stackFrameChanged() {
-        LOGGER.info("stackFrameChanged");
+        LOGGER.info("Stack frame changed, initiating analysis.");
 
         if (debugProcess instanceof PyDebugProcess pyDebugProcess) {
-            // Dynamische Analyse
-            List<PyStackFrame> pyStackFrames = DebuggerUtils.getAllStackFrames(this.session);
-            StackFrameAnalyzer stackFrameAnalyzer = new StackFrameAnalyzer(pyStackFrames);
+            // Perform dynamic analysis
+            performDynamicAnalysis();
 
-            stackFrameAnalyzer.analyzeFrames();
-            // Zugriff auf die gesammelten Daten
-            Map<String, List<String>> variables = stackFrameAnalyzer.getVariables();
-            StringBuilder variablesString = new StringBuilder();
-            for (Map.Entry<String, List<String>> entry : variables.entrySet()) {
-                String values = String.join(",", entry.getValue());
-                variablesString.append(entry.getKey()).append("=").append(values).append(";");
-            }
-            LOGGER.info(variablesString.toString());
-            DebugServerEndpoint.setVariablesString(variablesString.toString());
-            DebugServerEndpoint.sendDebugInfo("variables:" + variablesString.toString());
+            // Perform static code analysis
+            performStaticAnalysis(pyDebugProcess);
+        }
+    }
 
-            Map<String, List<Object>[]> objects = stackFrameAnalyzer.getObjects();
-            String objectCardsPlantUmlString = ObjectDiagramParser.generateObjectCards(objects);
-            try {
-                DebugServerEndpoint.setObjectCardsPlantUmlImage(PlantUMLDiagramGenerator.generateDiagramAsBase64(objectCardsPlantUmlString));
-                DebugServerEndpoint.sendDebugInfo("oc:" + PlantUMLDiagramGenerator.generateDiagramAsBase64(objectCardsPlantUmlString));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            String objectDiagramPlantUmlString = ObjectDiagramParser.generateObjectDiagram(objects);
-            try {
-                DebugServerEndpoint.setObjectDiagramPlantUmlImage(PlantUMLDiagramGenerator.generateDiagramAsBase64(objectDiagramPlantUmlString));
-                DebugServerEndpoint.sendDebugInfo("od:" + PlantUMLDiagramGenerator.generateDiagramAsBase64(objectCardsPlantUmlString));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+    /**
+     * Performs dynamic analysis using the StackFrameAnalyzer.
+     */
+    private void performDynamicAnalysis() {
+        List<PyStackFrame> pyStackFrames = DebuggerUtils.getAllStackFrames(this.session);
+        StackFrameAnalyzer stackFrameAnalyzer = new StackFrameAnalyzer(pyStackFrames);
 
+        stackFrameAnalyzer.analyzeFrames();
 
-            // Statische Code-Analyse
-            String classDiagramPlantUmlString = classDiagramParser.generateClassDiagram(pyDebugProcess.getProject());
-            try {
-                DebugServerEndpoint.setClassDiagramPlantUmlImage(PlantUMLDiagramGenerator.generateDiagramAsBase64(classDiagramPlantUmlString));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+        // Handle variables and objects
+        handleVariables(stackFrameAnalyzer);
+        handleObjects(stackFrameAnalyzer);
+    }
+
+    /**
+     * Handles the collection and sending of variable information.
+     *
+     * @param stackFrameAnalyzer the analyzer responsible for processing stack frames
+     */
+    private void handleVariables(StackFrameAnalyzer stackFrameAnalyzer) {
+        Map<String, List<String>> variables = stackFrameAnalyzer.getVariables();
+        StringBuilder variablesString = new StringBuilder();
+
+        for (Map.Entry<String, List<String>> entry : variables.entrySet()) {
+            String values = String.join(",", entry.getValue());
+            variablesString.append(entry.getKey()).append("=").append(values).append(";");
+        }
+
+        LOGGER.info(variablesString.toString());
+        DebugServerEndpoint.setVariablesString(variablesString.toString());
+        DebugServerEndpoint.sendDebugInfo("variables:" + variablesString.toString());
+    }
+
+    /**
+     * Handles the collection and sending of object information.
+     *
+     * @param stackFrameAnalyzer the analyzer responsible for processing stack frames
+     */
+    private void handleObjects(StackFrameAnalyzer stackFrameAnalyzer) {
+        Map<String, ObjectInfo> objects = stackFrameAnalyzer.getObjects();
+
+        String objectCardsPlantUmlString = ObjectDiagramParser.generateObjectCards(objects);
+        try {
+            String objectCardsBase64 = PlantUMLDiagramGenerator.generateDiagramAsBase64(objectCardsPlantUmlString);
+            DebugServerEndpoint.setObjectCardsPlantUmlImage(objectCardsBase64);
+            DebugServerEndpoint.sendDebugInfo("oc:" + objectCardsBase64);
+        } catch (IOException e) {
+            LOGGER.error("Error generating object cards PlantUML diagram", e);
+            throw new RuntimeException(e);
+        }
+
+        String objectDiagramPlantUmlString = ObjectDiagramParser.generateObjectDiagram(objects);
+        try {
+            String objectDiagramBase64 = PlantUMLDiagramGenerator.generateDiagramAsBase64(objectDiagramPlantUmlString);
+            DebugServerEndpoint.setObjectDiagramPlantUmlImage(objectDiagramBase64);
+            DebugServerEndpoint.sendDebugInfo("od:" + objectDiagramBase64);
+        } catch (IOException e) {
+            LOGGER.error("Error generating object diagram PlantUML diagram", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Performs static code analysis and updates the class diagram.
+     *
+     * @param pyDebugProcess the Python debug process
+     */
+    private void performStaticAnalysis(PyDebugProcess pyDebugProcess) {
+        String classDiagramPlantUmlString = classDiagramParser.generateClassDiagram(pyDebugProcess.getProject());
+        try {
+            String classDiagramBase64 = PlantUMLDiagramGenerator.generateDiagramAsBase64(classDiagramPlantUmlString);
+            DebugServerEndpoint.setClassDiagramPlantUmlImage(classDiagramBase64);
+        } catch (IOException e) {
+            LOGGER.error("Error generating class diagram PlantUML diagram", e);
+            throw new RuntimeException(e);
         }
     }
 
