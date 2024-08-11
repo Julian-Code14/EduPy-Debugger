@@ -1,4 +1,4 @@
-package de.code14.edupydebugger.analysis;
+package de.code14.edupydebugger.analysis.staticanalysis;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.jetbrains.python.psi.*;

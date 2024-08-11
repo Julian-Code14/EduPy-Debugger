@@ -2,8 +2,8 @@ package de.code14.edupydebugger.diagram;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import de.code14.edupydebugger.analysis.ClassInfo;
-import de.code14.edupydebugger.analysis.PythonAnalyzer;
+import de.code14.edupydebugger.analysis.staticanalysis.ClassInfo;
+import de.code14.edupydebugger.analysis.staticanalysis.PythonAnalyzer;
 
 import java.util.List;
 import java.util.Map;

@@ -1,8 +1,8 @@
 package de.code14.edupydebugger.diagram;
 
 import com.intellij.openapi.diagnostic.Logger;
-import de.code14.edupydebugger.analysis.AttributeInfo;
-import de.code14.edupydebugger.analysis.ObjectInfo;
+import de.code14.edupydebugger.analysis.dynamicanalysis.AttributeInfo;
+import de.code14.edupydebugger.analysis.dynamicanalysis.ObjectInfo;
 
 import java.util.ArrayList;
 import java.util.List;

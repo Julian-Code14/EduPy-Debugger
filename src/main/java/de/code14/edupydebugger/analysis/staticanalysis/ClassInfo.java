@@ -1,4 +1,4 @@
-package de.code14.edupydebugger.analysis;
+package de.code14.edupydebugger.analysis.staticanalysis;
 
 import java.util.List;
 
