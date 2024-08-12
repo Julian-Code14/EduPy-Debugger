@@ -18,41 +18,43 @@
 	<button class="control-btn" id="step-into-btn"><img src="icons/stepInto.svg" alt="Step Into"></button>
 	<button class="control-btn" id="step-out-btn"><img src="icons/stepOut.svg" alt="Step Out"></button>
 </div>
-<section>
-	<h2>Variablen</h2>
-	<div class="variables-container">
-		<table>
-			<thead>
-			<tr>
-				<th>ID</th>
-				<th>Name</th>
-				<th>Typ</th>
-				<th>Aktueller Wert</th>
-				<th>Scope</th>
-			</tr>
-			</thead>
-			<tbody>
-			<!-- Dynamische Inhalte hier einfügen -->
-			</tbody>
-		</table>
-	</div>
-</section>
-<section>
-	<div class="object-inspector-header">
-		<h2>Objektinspektor</h2>
-		<div class="switch-container">
-			<label class="switch">
-				<input type="checkbox" id="object-inspector-switch">
-				<span class="slider"></span>
-			</label>
-			<span class="switch-label">OD</span>
+<div id="sections">
+	<section>
+		<h2>Variablen</h2>
+		<div class="variables-container">
+			<table>
+				<thead>
+				<tr>
+					<th>ID</th>
+					<th>Name</th>
+					<th>Typ</th>
+					<th>Aktueller Wert</th>
+					<th>Scope</th>
+				</tr>
+				</thead>
+				<tbody>
+				<!-- Dynamische Inhalte hier einfügen -->
+				</tbody>
+			</table>
 		</div>
-	</div>
-	<div id="object-inspector-container"></div>
-</section>
+	</section>
+	<section>
+		<div class="object-inspector-header">
+			<h2>Objektinspektor</h2>
+			<div class="switch-container">
+				<label class="switch">
+					<input type="checkbox" id="object-inspector-switch">
+					<span class="slider"></span>
+				</label>
+				<span class="switch-label">OD</span>
+			</div>
+		</div>
+		<div id="object-inspector-container"></div>
+	</section>
+</div>
 <div class="bottom-buttons">
 	<button id="to-class-diagram-btn" class="large-btn" onclick="goToClassDiagram()">Klassendiagramm</button>
-	<button id="to-python-tutor-btn" class="large-btn" onclick="goToPythonTutor()">Speicher</button>
+	<button id="to-python-tutor-btn" class="large-btn" onclick="goToPythonTutor()">PythonTutor</button>
 </div>
 </body>
 </html>
