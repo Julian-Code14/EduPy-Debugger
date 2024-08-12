@@ -4,8 +4,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import de.code14.edupydebugger.analysis.dynamicanalysis.AttributeInfo;
 import de.code14.edupydebugger.analysis.dynamicanalysis.ObjectInfo;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -67,6 +66,8 @@ public class ObjectDiagramParser {
         plantUML.append("@startuml\n");
         plantUML.append("!pragma layout smetana\n");
 
+        Map<String, String> associations = new HashMap<>();
+
         objects.forEach((key, objectInfo) -> {
             if (objectInfo == null) {
                 return;
@@ -75,22 +76,22 @@ public class ObjectDiagramParser {
             // Assume the first reference in the list represents the object
             String reference = objectInfo.references().get(0);
             plantUML.append("object \"").append(reference).append("\" as o").append(key).append(" {\n");
+            System.out.println("object \"" + reference + "\" as o" + key + " {\n");
 
-            List<String> associations = new ArrayList<>();
             for (AttributeInfo attribute : objectInfo.attributes()) {
                 if ("static".equals(attribute.visibility())) {
                     plantUML.append("{static} ");
                 }
                 if (attribute.value().startsWith("refid:")) {
-                    associations.add(attribute.value().replace("refid:", ""));
+                    associations.put("o" + key, attribute.value().replace("refid:", ""));
                 }
                 plantUML.append(attribute.name()).append(" = ").append(attribute.value()).append("\n");
             }
             plantUML.append("}\n");
+        });
 
-            for (String association : associations) {
-                plantUML.append("o").append(key).append(" --> o").append(association).append("\n");
-            }
+        associations.forEach((referencing, referenced) -> {
+            plantUML.append(referencing).append(" --> o").append(referenced).append("\n");
         });
 
         plantUML.append("@enduml");
