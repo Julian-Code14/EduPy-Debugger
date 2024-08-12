@@ -109,6 +109,8 @@ public class DebugServerEndpoint {
             handleGetMessage(message.substring("get:".length()));
         } else if (message.startsWith("navigate:")) {
             DebuggerToolWindowFactory.openPythonTutor();
+        } else if (message.startsWith("Success:")) {
+            LOGGER.debug("Action was successfully handled by client.");
         } else {
             LOGGER.warn("Unknown message received: " + message);
         }

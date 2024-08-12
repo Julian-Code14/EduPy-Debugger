@@ -29,9 +29,11 @@ function connectWebSocket() {
             const img = new Image();
             img.src = base64Image;
             img.onload = function() {
+                socket.send("Success: Image loaded successfully.");
                 console.log('Image loaded successfully.');
             };
             img.onerror = function(error) {
+                socket.send("Client: Failed to load image: " + error);
                 console.error('Failed to load image:', error);
             };
 
@@ -65,46 +67,3 @@ function connectWebSocket() {
 
 // Initial Websocket Connection
 connectWebSocket();
-
-
-// Controls
-document.getElementById('resume-btn').addEventListener('click', function() {
-    if (socket.readyState === WebSocket.OPEN) {
-        socket.send("action:resume")
-        console.log('Sent resume action');
-    } else {
-        console.error('WebSocket connection closed');
-    }
-});
-document.getElementById('pause-btn').addEventListener('click', function() {
-    if (socket.readyState === WebSocket.OPEN) {
-        socket.send("action:pause")
-        console.log('Sent pause action');
-    } else {
-        console.error('WebSocket connection closed');
-    }
-});
-document.getElementById('step-over-btn').addEventListener('click', function() {
-    if (socket.readyState === WebSocket.OPEN) {
-        socket.send("action:step-over")
-        console.log('Sent step over action');
-    } else {
-        console.error('WebSocket connection closed');
-    }
-});
-document.getElementById('step-into-btn').addEventListener('click', function() {
-    if (socket.readyState === WebSocket.OPEN) {
-        socket.send("action:step-into")
-        console.log('Sent step into action');
-    } else {
-        console.error('WebSocket connection closed');
-    }
-});
-document.getElementById('step-out-btn').addEventListener('click', function() {
-    if (socket.readyState === WebSocket.OPEN) {
-        socket.send("action:step-out")
-        console.log('Sent step-out action');
-    } else {
-        console.error('WebSocket connection closed');
-    }
-});

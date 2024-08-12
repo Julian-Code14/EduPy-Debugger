@@ -44,12 +44,6 @@ function updateVariablesTable(dataString) {
     // Clear the existing rows
     tableBody.innerHTML = '';
 
-    /*const tr = document.createElement('tr');
-    const td = document.createElement('td');
-    td.textContent = "Hallo";
-    tr.appendChild(td);
-    tableBody.appendChild(tr);*/
-
     // Split the data string by ';' to get each row
     const rows = dataString.split(';');
 
@@ -90,7 +84,7 @@ function updateObjectCardsImage(dataString) {
         const img = new Image();
         img.src = base64Image;
         img.onload = function() {
-            socket.send("Client: Image loaded successfully.");
+            socket.send("Success: Image loaded successfully.");
             console.log('Image loaded successfully.');
         };
         img.onerror = function(error) {
