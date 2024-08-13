@@ -90,9 +90,7 @@ public class ObjectDiagramParser {
             plantUML.append("}\n");
         });
 
-        associations.forEach((referencing, referenced) -> {
-            plantUML.append(referencing).append(" --> o").append(referenced).append("\n");
-        });
+        associations.forEach((referencing, referenced) -> plantUML.append(referencing).append(" --> o").append(referenced).append("\n"));
 
         plantUML.append("@enduml");
 

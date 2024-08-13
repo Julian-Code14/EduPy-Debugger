@@ -34,7 +34,7 @@ public class PythonAnalysisHelper {
     private static final Logger LOGGER = Logger.getInstance(PythonAnalysisHelper.class);
 
     // Set of default Python types that are not considered as references
-    public static final Set<String> defaultTypes = new HashSet<String>() {{
+    public static final Set<String> defaultTypes = new HashSet<>() {{
         add("int");
         add("float");
         add("str");
