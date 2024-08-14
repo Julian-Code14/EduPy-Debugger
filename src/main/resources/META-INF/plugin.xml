@@ -4,14 +4,13 @@
     <name>EduPy-Debugger</name>
     <vendor>Julian Flach</vendor>
 
-    <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.python</depends>
 
     <!--<resource-bundle>messages.MyBundle</resource-bundle>-->
 
     <projectListeners>
-        <listener class="de.code14.edupydebugger.DebugProcessListener" topic="com.intellij.xdebugger.XDebuggerManagerListener" />
-        <listener class="de.code14.edupydebugger.EduPyProjectManagerListener" topic="com.intellij.openapi.project.ProjectManagerListener" />
+        <listener class="de.code14.edupydebugger.core.DebugProcessListener" topic="com.intellij.xdebugger.XDebuggerManagerListener" />
+        <listener class="de.code14.edupydebugger.core.EduPyProjectManagerListener" topic="com.intellij.openapi.project.ProjectManagerListener" />
     </projectListeners>
 
     <extensions defaultExtensionNs="com.intellij">
