@@ -123,6 +123,10 @@ tasks {
         jvmArgs = listOf("--add-exports", "java.base/jdk.internal.vm=ALL-UNNAMED")
     }
 
+    test {
+        useJUnitPlatform()
+    }
+
 
     signPlugin {
         certificateChain = environment("CERTIFICATE_CHAIN")
@@ -137,10 +141,6 @@ tasks {
         // Specify pre-release label to publish the plugin in a custom Release Channel automatically. Read more:
         // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
         channels = properties("pluginVersion").map { listOf(it.substringAfter('-', "").substringBefore('.').ifEmpty { "default" }) }
-    }
-
-    runIde {
-        jvmArgs("--add-exports", "java.base/jdk.internal.vm=ALL-UNNAMED")
     }
 
 }
