@@ -1,0 +1,72 @@
+package de.code14.edupydebugger.analysis.dynamicanalysis;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/**
+ * @author julian
+ * @version 1.0
+ * @since 14.08.24
+ */
+public class AttributeInfoTests {
+
+    @Test
+    void testAttributeInfoCreation() {
+        // Arrange
+        String expectedName = "attributeName";
+        String expectedType = "String";
+        String expectedValue = "value";
+        String expectedVisibility = "public";
+
+        // Act
+        AttributeInfo attributeInfo = new AttributeInfo(expectedName, expectedType, expectedValue, expectedVisibility);
+
+        // Assert
+        assertEquals(expectedName, attributeInfo.name());
+        assertEquals(expectedType, attributeInfo.type());
+        assertEquals(expectedValue, attributeInfo.value());
+        assertEquals(expectedVisibility, attributeInfo.visibility());
+    }
+
+    @Test
+    void testNameMethod() {
+        // Arrange
+        String expectedName = "attributeName";
+        AttributeInfo attributeInfo = new AttributeInfo(expectedName, "String", "value", "public");
+
+        // Act & Assert
+        assertEquals(expectedName, attributeInfo.name());
+    }
+
+    @Test
+    void testTypeMethod() {
+        // Arrange
+        String expectedType = "String";
+        AttributeInfo attributeInfo = new AttributeInfo("attributeName", expectedType, "value", "public");
+
+        // Act & Assert
+        assertEquals(expectedType, attributeInfo.type());
+    }
+
+    @Test
+    void testValueMethod() {
+        // Arrange
+        String expectedValue = "value";
+        AttributeInfo attributeInfo = new AttributeInfo("attributeName", "String", expectedValue, "public");
+
+        // Act & Assert
+        assertEquals(expectedValue, attributeInfo.value());
+    }
+
+    @Test
+    void testVisibilityMethod() {
+        // Arrange
+        String expectedVisibility = "public";
+        AttributeInfo attributeInfo = new AttributeInfo("attributeName", "String", "value", expectedVisibility);
+
+        // Act & Assert
+        assertEquals(expectedVisibility, attributeInfo.visibility());
+    }
+
+}
