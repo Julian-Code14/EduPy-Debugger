@@ -26,8 +26,32 @@ public class DebugWebServer {
 
     private static final Logger LOGGER = Logger.getInstance(DebugWebServer.class);
 
-    private static HttpServer httpServer;
-    private static boolean running = false;
+    private HttpServer httpServer;
+    private boolean running = false;
+
+    // Singleton instance
+    private static DebugWebServer INSTANCE;
+
+    private DebugWebServer() {}
+
+    /**
+     * Constructor for injecting a custom HttpServer instance (used for dependency injection)
+     */
+    public DebugWebServer(HttpServer httpServer) {
+        this.httpServer = httpServer;
+    }
+
+    /**
+     * Returns the singleton instance of the DebugWebSocketServer.
+     *
+     * @return The singleton instance.
+     */
+    public static DebugWebServer getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new DebugWebServer();
+        }
+        return INSTANCE;
+    }
 
     /**
      * Starts the HTTP server to serve static content.
@@ -36,21 +60,30 @@ public class DebugWebServer {
      * If the server is successfully started, a log message is generated.
      * </p>
      */
-    public static void startWebServer() {
-        httpServer = new HttpServer();
-        final NetworkListener networkListener = new NetworkListener("view", "localhost", 8026);
-        httpServer.addListener(networkListener);
+    public synchronized void startWebServer() {
+        if (running) {
+            LOGGER.warn("Web server is already running");
+            return;
+        }
 
-        httpServer.getServerConfiguration().addHttpHandler(new CLStaticHttpHandler(
-                DebugWebServer.class.getClassLoader(), "/static/"
-        ));
+        if (httpServer == null) {
+            // If no server has been injected, create a default HttpServer
+            httpServer = new HttpServer();
+            NetworkListener networkListener = new NetworkListener("view", "localhost", 8026);
+            httpServer.addListener(networkListener);
+
+            httpServer.getServerConfiguration().addHttpHandler(new CLStaticHttpHandler(
+                    DebugWebServer.class.getClassLoader(), "/static/"
+            ));
+        }
 
         try {
             httpServer.start();
             LOGGER.info("Web server started on port 8026");
             running = true;
-        } catch (final Exception e) {
-            LOGGER.error(e);
+        } catch (Exception e) {
+            LOGGER.error("Failed to start web server", e);
+            running = false;
         }
     }
 
@@ -58,10 +91,13 @@ public class DebugWebServer {
      * Stops the HTTP server if it is currently running.
      * The server is shut down immediately, and the running status is updated.
      */
-    public static void stopWebServer() {
-        if (httpServer != null && httpServer.isStarted()) {
+    public synchronized void stopWebServer() {
+        if (httpServer != null && running) {
             httpServer.shutdownNow();
             running = false;
+            LOGGER.info("Web server stopped");
+        } else {
+            LOGGER.warn("Web server is not running");
         }
     }
 
@@ -70,7 +106,14 @@ public class DebugWebServer {
      *
      * @return {@code true} if the server is running, {@code false} otherwise.
      */
-    public static boolean isRunning() {
+    public boolean isRunning() {
         return running;
+    }
+
+    /**
+     * Setter for injecting an HttpServer instance (useful for testing).
+     */
+    public void setHttpServer(HttpServer httpServer) {
+        this.httpServer = httpServer;
     }
 }

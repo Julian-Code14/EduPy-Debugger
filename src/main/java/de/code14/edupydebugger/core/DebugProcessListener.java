@@ -53,18 +53,18 @@ public class DebugProcessListener implements XDebuggerManagerListener {
         LOGGER.info("Debug Process started");
 
         // Start the WebSocket server if it's not already running
-        if (!DebugWebSocketServer.isRunning()) {
+        if (!DebugWebSocketServer.getInstance().isRunning()) {
             try {
-                DebugWebSocketServer.startWebSocketServer();
+                DebugWebSocketServer.getInstance().startWebSocketServer();
             } catch (final Exception e) {
                 LOGGER.error("Failed to start the websocket server", e);
             }
         }
 
         // Start the HTTP server if it's not already running
-        if (!DebugWebServer.isRunning()) {
+        if (!DebugWebServer.getInstance().isRunning()) {
             try {
-                DebugWebServer.startWebServer();
+                DebugWebServer.getInstance().startWebServer();
             } catch (final Exception e) {
                 LOGGER.error("Failed to start the http server", e);
             }

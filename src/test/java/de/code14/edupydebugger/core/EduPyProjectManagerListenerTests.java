@@ -38,13 +38,19 @@ public class EduPyProjectManagerListenerTests {
              MockedStatic<DebugWebServer> webServerMock = mockStatic(DebugWebServer.class);
              MockedStatic<DebuggerToolWindowFactory> toolWindowFactoryMock = mockStatic(DebuggerToolWindowFactory.class)) {
 
-            // Mocking WebSocket Server
-            webSocketServerMock.when(DebugWebSocketServer::isRunning).thenReturn(true);
+            // Mock WebSocketServer and WebServer singletons
+            DebugWebSocketServer mockWebSocketServer = mock(DebugWebSocketServer.class);
+            DebugWebServer mockWebServer = mock(DebugWebServer.class);
 
-            // Mocking Web Server
-            webServerMock.when(DebugWebServer::isRunning).thenReturn(true);
+            // Mock the getInstance calls to return the mocks
+            webSocketServerMock.when(DebugWebSocketServer::getInstance).thenReturn(mockWebSocketServer);
+            webServerMock.when(DebugWebServer::getInstance).thenReturn(mockWebServer);
 
-            // Mocking SwingUtilities.invokeLater to run immediately
+            // Mock isRunning to return true
+            when(mockWebSocketServer.isRunning()).thenReturn(true);
+            when(mockWebServer.isRunning()).thenReturn(true);
+
+            // Mock SwingUtilities.invokeLater to run the task immediately
             swingUtilitiesMock.when(() -> SwingUtilities.invokeLater(any(Runnable.class)))
                     .thenAnswer(invocation -> {
                         Runnable runnable = invocation.getArgument(0);
@@ -55,13 +61,11 @@ public class EduPyProjectManagerListenerTests {
             // Act
             listener.projectClosing(mockProject);
 
-            // Assert that WebSocket Server stop method was called
-            webSocketServerMock.verify(() -> DebugWebSocketServer.stopWebSocketServer(), times(1));
+            // Verify that WebSocket and Web servers were stopped
+            verify(mockWebSocketServer, times(1)).stopWebSocketServer();
+            verify(mockWebServer, times(1)).stopWebServer();
 
-            // Assert that Web Server stop method was called
-            webServerMock.verify(() -> DebugWebServer.stopWebServer(), times(1));
-
-            // Assert that the JBCefBrowser was closed
+            // Verify that the JBCefBrowser was closed
             toolWindowFactoryMock.verify(DebuggerToolWindowFactory::closeJBCefBrowser, times(1));
         }
     }
@@ -75,13 +79,19 @@ public class EduPyProjectManagerListenerTests {
              MockedStatic<DebugWebServer> webServerMock = mockStatic(DebugWebServer.class);
              MockedStatic<DebuggerToolWindowFactory> toolWindowFactoryMock = mockStatic(DebuggerToolWindowFactory.class)) {
 
-            // Mocking WebSocket Server to return false for isRunning
-            webSocketServerMock.when(DebugWebSocketServer::isRunning).thenReturn(false);
+            // Mock WebSocketServer and WebServer singletons
+            DebugWebSocketServer mockWebSocketServer = mock(DebugWebSocketServer.class);
+            DebugWebServer mockWebServer = mock(DebugWebServer.class);
 
-            // Mocking Web Server to return false for isRunning
-            webServerMock.when(DebugWebServer::isRunning).thenReturn(false);
+            // Mock the getInstance calls to return the mocks
+            webSocketServerMock.when(DebugWebSocketServer::getInstance).thenReturn(mockWebSocketServer);
+            webServerMock.when(DebugWebServer::getInstance).thenReturn(mockWebServer);
 
-            // Mocking SwingUtilities.invokeLater to run immediately
+            // Mock isRunning to return false
+            when(mockWebSocketServer.isRunning()).thenReturn(false);
+            when(mockWebServer.isRunning()).thenReturn(false);
+
+            // Mock SwingUtilities.invokeLater to run the task immediately
             swingUtilitiesMock.when(() -> SwingUtilities.invokeLater(any(Runnable.class)))
                     .thenAnswer(invocation -> {
                         Runnable runnable = invocation.getArgument(0);
@@ -92,13 +102,11 @@ public class EduPyProjectManagerListenerTests {
             // Act
             listener.projectClosing(mockProject);
 
-            // Assert that WebSocket Server stop method was not called since it's not running
-            webSocketServerMock.verify(() -> DebugWebSocketServer.stopWebSocketServer(), never());
+            // Verify that WebSocket and Web servers were not stopped since they were not running
+            verify(mockWebSocketServer, never()).stopWebSocketServer();
+            verify(mockWebServer, never()).stopWebServer();
 
-            // Assert that Web Server stop method was not called since it's not running
-            webServerMock.verify(() -> DebugWebServer.stopWebServer(), never());
-
-            // Assert that the JBCefBrowser was still closed
+            // Verify that the JBCefBrowser was still closed
             toolWindowFactoryMock.verify(DebuggerToolWindowFactory::closeJBCefBrowser, times(1));
         }
     }

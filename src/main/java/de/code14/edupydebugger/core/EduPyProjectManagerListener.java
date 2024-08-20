@@ -34,9 +34,9 @@ public class EduPyProjectManagerListener implements ProjectManagerListener {
     public void projectClosing(@NotNull Project project) {
         SwingUtilities.invokeLater(() -> {
             // Stop the Websocket Server
-            if (DebugWebSocketServer.isRunning()) {
+            if (DebugWebSocketServer.getInstance().isRunning()) {
                 try {
-                    DebugWebSocketServer.stopWebSocketServer();
+                    DebugWebSocketServer.getInstance().stopWebSocketServer();
                     LOGGER.info("Stopped debug web socket server");
                 } catch (final Exception e) {
                     LOGGER.error("Failed to stop the websocket server", e);
@@ -44,9 +44,9 @@ public class EduPyProjectManagerListener implements ProjectManagerListener {
             }
 
             // Stop the HTTP Webserver
-            if (DebugWebServer.isRunning()) {
+            if (DebugWebServer.getInstance().isRunning()) {
                 try {
-                    DebugWebServer.stopWebServer();
+                    DebugWebServer.getInstance().stopWebServer();
                     LOGGER.info("Stopped debug web server");
                 } catch (final Exception e) {
                     LOGGER.error("Failed to start the http server", e);

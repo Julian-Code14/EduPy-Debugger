@@ -5,17 +5,12 @@ import com.intellij.openapi.diagnostic.Logger;
 import org.glassfish.tyrus.server.Server;
 
 /**
- * Manages the WebSocket server used for debugging communication.
+ * Singleton class that manages the WebSocket server used for debugging communication.
  * This server facilitates real-time communication between the debugger and the client,
  * allowing for the exchange of debug information, control commands, and other data.
  * <p>
  * The server is built using the Tyrus framework and listens on a specific port (default: 8025).
  * It hosts WebSocket endpoints defined within the application, specifically the {@link DebugServerEndpoint}.
- * </p>
- *
- * <p>
- * The class provides static methods for starting, stopping, and checking the running status of the server.
- * It also handles context classloader management to ensure compatibility within the IntelliJ platform.
  * </p>
  *
  * @author julian
@@ -26,8 +21,32 @@ public class DebugWebSocketServer {
 
     private static final Logger LOGGER = Logger.getInstance(DebugWebSocketServer.class);
 
-    private static Server server;
-    private static boolean running = false;
+    private Server server;
+    private boolean running = false;
+
+    // Singleton instance
+    private static DebugWebSocketServer INSTANCE;
+
+    private DebugWebSocketServer() {}
+
+    /**
+     * Dependency injection of the server instance
+     */
+    public DebugWebSocketServer(Server server) {
+        this.server = server;
+    }
+
+    /**
+     * Returns the singleton instance of the DebugWebSocketServer.
+     *
+     * @return The singleton instance.
+     */
+    public static DebugWebSocketServer getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new DebugWebSocketServer();
+        }
+        return INSTANCE;
+    }
 
     /**
      * Starts the WebSocket server on localhost at port 8025.
@@ -36,8 +55,15 @@ public class DebugWebSocketServer {
      * The context classloader is temporarily switched to ensure that the server starts correctly within the IntelliJ platform.
      * </p>
      */
-    public static void startWebSocketServer() {
-        server = new Server("localhost", 8025, "/websockets", null, DebugServerEndpoint.class);
+    public synchronized void startWebSocketServer() {
+        if (server == null) {
+            this.server = new Server("localhost", 8025, "/websockets", null, DebugServerEndpoint.class);
+        }
+
+        if (running) {
+            LOGGER.warn("WebSocket server is already running.");
+            return;
+        }
 
         // Context ClassLoader Handling
         Thread currentThread = Thread.currentThread();
@@ -50,7 +76,7 @@ public class DebugWebSocketServer {
             LOGGER.info("WebSocket server started on port " + server.getPort());
             running = true;
         } catch (Exception e) {
-            LOGGER.error(e);
+            LOGGER.error("Failed to start WebSocket server", e);
         } finally {
             currentThread.setContextClassLoader(originalClassLoader);
         }
@@ -60,10 +86,13 @@ public class DebugWebSocketServer {
      * Stops the WebSocket server if it is currently running.
      * The server is gracefully shut down, and the running status is updated.
      */
-    public static void stopWebSocketServer() {
-        if (server != null && running) {
+    public synchronized void stopWebSocketServer() {
+        if (running) {
             server.stop();
             running = false;
+            LOGGER.info("WebSocket server stopped.");
+        } else {
+            LOGGER.warn("WebSocket server is not running.");
         }
     }
 
@@ -72,8 +101,12 @@ public class DebugWebSocketServer {
      *
      * @return {@code true} if the server is running, {@code false} otherwise.
      */
-    public static boolean isRunning() {
+    public boolean isRunning() {
         return running;
+    }
+
+    public void setServer(Server server) {
+        this.server = server;
     }
 
 }
