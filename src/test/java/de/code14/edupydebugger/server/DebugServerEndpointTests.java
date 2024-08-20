@@ -1,26 +1,16 @@
 package de.code14.edupydebugger.server;
 
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.xdebugger.XDebugSession;
 import com.jetbrains.python.debugger.PyDebugProcess;
 import de.code14.edupydebugger.core.DebugProcessController;
 import jakarta.websocket.RemoteEndpoint;
 import jakarta.websocket.Session;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
