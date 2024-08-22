@@ -1,16 +1,14 @@
 package de.code14.edupydebugger.analysis.dynamicanalysis;
 
 import com.jetbrains.python.debugger.PyStackFrame;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
 
 /**
@@ -24,8 +22,8 @@ public class StackFrameAnalyzerTests {
     private VariableAnalyzer mockVariableAnalyzer;
     private ObjectAnalyzer mockObjectAnalyzer;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         List<PyStackFrame> pyStackFrames = Collections.emptyList();  // Leere Liste von PyStackFrames
 
         // Mocks erstellen
@@ -54,7 +52,7 @@ public class StackFrameAnalyzerTests {
     }
 
     @Test
-    void testAnalyzeFrames() {
+    public void testAnalyzeFrames() {
         // Ausführen der Methode
         stackFrameAnalyzer.analyzeFrames();
 
@@ -64,7 +62,7 @@ public class StackFrameAnalyzerTests {
     }
 
     @Test
-    void testGetVariables() {
+    public void testGetVariables() {
         // Ausführen der Methode
         Map<String, List<String>> variables = stackFrameAnalyzer.getVariables();
 
@@ -74,7 +72,7 @@ public class StackFrameAnalyzerTests {
     }
 
     @Test
-    void testGetObjects() {
+    public void testGetObjects() {
         // Ausführen der Methode
         Map<String, ObjectInfo> objects = stackFrameAnalyzer.getObjects();
 
@@ -83,3 +81,4 @@ public class StackFrameAnalyzerTests {
         verify(mockObjectAnalyzer, times(1)).getObjects();
     }
 }
+

@@ -9,8 +9,8 @@ import de.code14.edupydebugger.server.DebugServerEndpoint;
 import de.code14.edupydebugger.server.DebugWebServer;
 import de.code14.edupydebugger.server.DebugWebSocketServer;
 import de.code14.edupydebugger.ui.DebuggerToolWindowFactory;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -35,8 +35,8 @@ public class DebugProcessListenerTests {
 
     private DebugProcessListener debugProcessListener;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         MockitoAnnotations.openMocks(this);
         when(pyDebugProcess.getSession()).thenReturn(xDebugSession);
         when(toolWindowManager.getToolWindow(anyString())).thenReturn(toolWindow);
@@ -47,7 +47,7 @@ public class DebugProcessListenerTests {
     }
 
     @Test
-    void testProcessStarted() {
+    public void testProcessStarted() {
         // Mocking static methods for DebugWebSocketServer, DebugWebServer, and DebugServerEndpoint
         try (MockedStatic<DebugWebSocketServer> webSocketServerMock = Mockito.mockStatic(DebugWebSocketServer.class);
              MockedStatic<DebugWebServer> webServerMock = Mockito.mockStatic(DebugWebServer.class);
@@ -78,7 +78,7 @@ public class DebugProcessListenerTests {
     }
 
     @Test
-    void testProcessStopped() {
+    public void testProcessStopped() {
         // Mocking the static method in DebuggerToolWindowFactory
         try (MockedStatic<DebuggerToolWindowFactory> toolWindowFactoryMock = Mockito.mockStatic(DebuggerToolWindowFactory.class)) {
 
@@ -91,3 +91,4 @@ public class DebugProcessListenerTests {
     }
 
 }
+

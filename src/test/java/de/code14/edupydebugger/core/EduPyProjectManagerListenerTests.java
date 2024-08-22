@@ -4,8 +4,8 @@ import com.intellij.openapi.project.Project;
 import de.code14.edupydebugger.server.DebugWebServer;
 import de.code14.edupydebugger.server.DebugWebSocketServer;
 import de.code14.edupydebugger.ui.DebuggerToolWindowFactory;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 
@@ -23,14 +23,14 @@ public class EduPyProjectManagerListenerTests {
 
     private EduPyProjectManagerListener listener;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         MockitoAnnotations.openMocks(this);
         listener = new EduPyProjectManagerListener();
     }
 
     @Test
-    void testProjectClosing() {
+    public void testProjectClosing() {
         Project mockProject = mock(Project.class);
 
         try (MockedStatic<SwingUtilities> swingUtilitiesMock = mockStatic(SwingUtilities.class);
@@ -71,7 +71,7 @@ public class EduPyProjectManagerListenerTests {
     }
 
     @Test
-    void testProjectClosingWhenServersNotRunning() {
+    public void testProjectClosingWhenServersNotRunning() {
         Project mockProject = mock(Project.class);
 
         try (MockedStatic<SwingUtilities> swingUtilitiesMock = mockStatic(SwingUtilities.class);
@@ -111,3 +111,4 @@ public class EduPyProjectManagerListenerTests {
         }
     }
 }
+

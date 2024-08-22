@@ -6,15 +6,15 @@ import com.jetbrains.python.debugger.PyDebugValue;
 import com.jetbrains.python.debugger.PyDebuggerException;
 import com.jetbrains.python.debugger.PyFrameAccessor;
 import com.jetbrains.python.debugger.PyStackFrame;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -29,15 +29,15 @@ public class VariableAnalyzerTests {
     private PyDebugValue mockValue;
     private VariableAnalyzer variableAnalyzer;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         mockStackFrame = mock(PyStackFrame.class);
         mockValue = mock(PyDebugValue.class);
         variableAnalyzer = new VariableAnalyzer(Collections.singletonList(mockStackFrame));
     }
 
     @Test
-    void testAnalyzeVariables() throws PyDebuggerException {
+    public void testAnalyzeVariables() throws PyDebuggerException {
         // Mock the stack frame and value interactions
         doAnswer(invocation -> {
             XValueChildrenList childrenList = new XValueChildrenList();
@@ -79,7 +79,7 @@ public class VariableAnalyzerTests {
     }
 
     @Test
-    void testAnalyzeVariablesHandlesGlobalScope() throws PyDebuggerException {
+    public void testAnalyzeVariablesHandlesGlobalScope() throws PyDebuggerException {
         // Mock the stack frame and value interactions
         doAnswer(invocation -> {
             XValueChildrenList childrenList = new XValueChildrenList();
@@ -121,7 +121,7 @@ public class VariableAnalyzerTests {
     }
 
     @Test
-    void testAnalyzeVariablesHandlesUnknownScope() throws PyDebuggerException {
+    public void testAnalyzeVariablesHandlesUnknownScope() throws PyDebuggerException {
         // Mock the stack frame and value interactions
         doAnswer(invocation -> {
             XValueChildrenList childrenList = new XValueChildrenList();
@@ -161,5 +161,5 @@ public class VariableAnalyzerTests {
         assertEquals("42", variableInfo.get(2));
         assertEquals("unknown", variableInfo.get(3));
     }
-
 }
+

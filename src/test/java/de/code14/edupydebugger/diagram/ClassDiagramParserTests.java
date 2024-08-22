@@ -3,8 +3,8 @@ package de.code14.edupydebugger.diagram;
 import com.intellij.openapi.project.Project;
 import de.code14.edupydebugger.analysis.staticanalysis.ClassInfo;
 import de.code14.edupydebugger.analysis.staticanalysis.PythonAnalyzer;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 /**
@@ -31,14 +31,14 @@ public class ClassDiagramParserTests {
 
     private ClassDiagramParser classDiagramParser;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         MockitoAnnotations.openMocks(this);
         classDiagramParser = new ClassDiagramParser(mockPythonAnalyzer);
     }
 
     @Test
-    void testGenerateClassDiagramWithNoClasses() {
+    public void testGenerateClassDiagramWithNoClasses() {
         // Arrange
         when(mockPythonAnalyzer.getClassDetails()).thenReturn(Collections.emptyMap());
 
@@ -52,7 +52,7 @@ public class ClassDiagramParserTests {
     }
 
     @Test
-    void testGenerateClassDiagramWithSingleClass() {
+    public void testGenerateClassDiagramWithSingleClass() {
         // Arrange
         Map<String, ClassInfo> classDetails = new HashMap<>();
         classDetails.put("TestClass", new ClassInfo(
@@ -76,7 +76,7 @@ public class ClassDiagramParserTests {
     }
 
     @Test
-    void testGenerateClassDiagramWithAbstractClass() {
+    public void testGenerateClassDiagramWithAbstractClass() {
         // Arrange
         Map<String, ClassInfo> classDetails = new HashMap<>();
         classDetails.put("AbstractClass", new ClassInfo(
@@ -96,3 +96,4 @@ public class ClassDiagramParserTests {
     }
 
 }
+

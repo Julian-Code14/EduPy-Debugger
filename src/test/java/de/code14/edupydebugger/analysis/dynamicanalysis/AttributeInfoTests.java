@@ -1,8 +1,7 @@
 package de.code14.edupydebugger.analysis.dynamicanalysis;
 
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author julian
@@ -12,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class AttributeInfoTests {
 
     @Test
-    void testAttributeInfoCreation() {
+    public void testAttributeInfoCreation() {
         // Arrange
         String expectedName = "attributeName";
         String expectedType = "String";
@@ -30,7 +29,7 @@ public class AttributeInfoTests {
     }
 
     @Test
-    void testNameMethod() {
+    public void testNameMethod() {
         // Arrange
         String expectedName = "attributeName";
         AttributeInfo attributeInfo = new AttributeInfo(expectedName, "String", "value", "public");
@@ -40,7 +39,7 @@ public class AttributeInfoTests {
     }
 
     @Test
-    void testTypeMethod() {
+    public void testTypeMethod() {
         // Arrange
         String expectedType = "String";
         AttributeInfo attributeInfo = new AttributeInfo("attributeName", expectedType, "value", "public");
@@ -50,7 +49,7 @@ public class AttributeInfoTests {
     }
 
     @Test
-    void testValueMethod() {
+    public void testValueMethod() {
         // Arrange
         String expectedValue = "value";
         AttributeInfo attributeInfo = new AttributeInfo("attributeName", "String", expectedValue, "public");
@@ -60,7 +59,7 @@ public class AttributeInfoTests {
     }
 
     @Test
-    void testVisibilityMethod() {
+    public void testVisibilityMethod() {
         // Arrange
         String expectedVisibility = "public";
         AttributeInfo attributeInfo = new AttributeInfo("attributeName", "String", "value", expectedVisibility);
@@ -68,5 +67,5 @@ public class AttributeInfoTests {
         // Act & Assert
         assertEquals(expectedVisibility, attributeInfo.visibility());
     }
-
 }
+

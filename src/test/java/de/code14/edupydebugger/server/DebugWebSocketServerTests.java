@@ -1,10 +1,10 @@
 package de.code14.edupydebugger.server;
 
 import org.glassfish.tyrus.server.Server;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -17,14 +17,14 @@ public class DebugWebSocketServerTests {
     private DebugWebSocketServer webSocketServer;
     private Server mockServer;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         mockServer = mock(Server.class);
         webSocketServer = new DebugWebSocketServer(mockServer);
     }
 
     @Test
-    void testStartWebSocketServerSuccess() throws Exception {
+    public void testStartWebSocketServerSuccess() throws Exception {
         // Simulate that the server starts successfully
         doNothing().when(mockServer).start();
 
@@ -39,7 +39,7 @@ public class DebugWebSocketServerTests {
     }
 
     @Test
-    void testStopWebSocketServerSuccess() throws Exception {
+    public void testStopWebSocketServerSuccess() throws Exception {
         // Simulate starting and stopping the server
         doNothing().when(mockServer).start();
         doNothing().when(mockServer).stop();
@@ -53,7 +53,7 @@ public class DebugWebSocketServerTests {
     }
 
     @Test
-    void testStopWebSocketServerWhenNotRunning() {
+    public void testStopWebSocketServerWhenNotRunning() {
         // Stop the server when it's not running
         webSocketServer.stopWebSocketServer();
 
@@ -65,7 +65,7 @@ public class DebugWebSocketServerTests {
     }
 
     @Test
-    void testGetInstance() {
+    public void testGetInstance() {
         // Verify that the singleton instance is not null and remains the same across multiple calls
         DebugWebSocketServer instance1 = DebugWebSocketServer.getInstance();
         DebugWebSocketServer instance2 = DebugWebSocketServer.getInstance();
@@ -75,3 +75,4 @@ public class DebugWebSocketServerTests {
     }
 
 }
+

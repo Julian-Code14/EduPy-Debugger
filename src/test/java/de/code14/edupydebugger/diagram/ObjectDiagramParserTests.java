@@ -2,13 +2,13 @@ package de.code14.edupydebugger.diagram;
 
 import de.code14.edupydebugger.analysis.dynamicanalysis.AttributeInfo;
 import de.code14.edupydebugger.analysis.dynamicanalysis.ObjectInfo;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 public class ObjectDiagramParserTests {
 
     @Test
-    void testGenerateObjectCardsWithNoObjects() {
+    public void testGenerateObjectCardsWithNoObjects() {
         // Arrange
         Map<String, ObjectInfo> emptyObjects = Collections.emptyMap();
 
@@ -33,7 +33,7 @@ public class ObjectDiagramParserTests {
     }
 
     @Test
-    void testGenerateObjectCardsWithSingleObject() {
+    public void testGenerateObjectCardsWithSingleObject() {
         // Arrange
         AttributeInfo attribute1 = mock(AttributeInfo.class);
         when(attribute1.name()).thenReturn("attribute1");
@@ -55,7 +55,7 @@ public class ObjectDiagramParserTests {
     }
 
     @Test
-    void testGenerateObjectDiagramWithNoObjects() {
+    public void testGenerateObjectDiagramWithNoObjects() {
         // Arrange
         Map<String, ObjectInfo> emptyObjects = Collections.emptyMap();
 
@@ -68,7 +68,7 @@ public class ObjectDiagramParserTests {
     }
 
     @Test
-    void testGenerateObjectDiagramWithAssociations() {
+    public void testGenerateObjectDiagramWithAssociations() {
         // Arrange
         AttributeInfo attribute1 = mock(AttributeInfo.class);
         when(attribute1.name()).thenReturn("attribute1");
@@ -98,3 +98,4 @@ public class ObjectDiagramParserTests {
     }
 
 }
+

@@ -6,8 +6,8 @@ import com.jetbrains.python.debugger.PyDebugProcess;
 import com.jetbrains.python.debugger.PyThreadInfo;
 import de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
@@ -39,8 +39,8 @@ public class DebugSessionListenerTests {
     @Mock
     private Project mockProject;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         // Initialize mocks annotated with @Mock
         MockitoAnnotations.openMocks(this);
 
@@ -60,7 +60,7 @@ public class DebugSessionListenerTests {
     // TODO: testStackFrameChangedCallsMethods
 
     @Test
-    void testGenerateAndSendDiagramHandlesObjectCards() throws Exception {
+    public void testGenerateAndSendDiagramHandlesObjectCards() throws Exception {
         // Arrange
         String mockDiagram = "mock diagram";
         String base64Diagram = "mockBase64";
@@ -91,7 +91,7 @@ public class DebugSessionListenerTests {
     }
 
     @Test
-    void testGenerateAndSendDiagramHandlesObjectDiagrams() throws Exception {
+    public void testGenerateAndSendDiagramHandlesObjectDiagrams() throws Exception {
         // Arrange
         String mockDiagram = "mock diagram";
         String base64Diagram = "mockBase64";

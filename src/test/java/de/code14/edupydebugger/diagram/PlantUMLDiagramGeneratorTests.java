@@ -1,7 +1,7 @@
 package de.code14.edupydebugger.diagram;
 
 import net.sourceforge.plantuml.SourceStringReader;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -9,7 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Base64;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -21,7 +21,7 @@ import static org.mockito.Mockito.*;
 public class PlantUMLDiagramGeneratorTests {
 
     @Test
-    void testGenerateDiagramAsBase64_ValidSource() throws IOException {
+    public void testGenerateDiagramAsBase64_ValidSource() throws IOException {
         // Arrange
         String plantUmlSource = "@startuml\nAlice -> Bob: Hello\n@enduml";
         String expectedBase64Prefix = "iVBORw0KGgo";  // The expected prefix for a PNG file encoded in Base64
@@ -36,7 +36,7 @@ public class PlantUMLDiagramGeneratorTests {
 
     // TODO: Make the tests work for invalidBase64 and when throwing an IOException
     /*@Test
-    void testGenerateDiagramAsBase64_InvalidBase64() throws IOException {
+    public void testGenerateDiagramAsBase64_InvalidBase64() throws IOException {
         // Arrange
         String plantUmlSource = "@startuml\nAlice -> Bob: Hello\n@enduml";
 
@@ -58,7 +58,7 @@ public class PlantUMLDiagramGeneratorTests {
     }
 
     @Test
-    void testGenerateDiagramAsBase64_IOExceptionOnGeneration() throws IOException {
+    public void testGenerateDiagramAsBase64_IOExceptionOnGeneration() throws IOException {
         // Arrange
         String plantUmlSource = "@startuml\nAlice -> Bob: Hello\n@enduml";
 

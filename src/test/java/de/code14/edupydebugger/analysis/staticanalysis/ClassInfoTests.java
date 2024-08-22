@@ -1,10 +1,8 @@
 package de.code14.edupydebugger.analysis.staticanalysis;
 
-import org.junit.jupiter.api.Test;
-
+import org.junit.Test;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author julian
@@ -14,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class ClassInfoTests {
 
     @Test
-    void testClassInfoCreation() {
+    public void testClassInfoCreation() {
         List<String> attributes = List.of("attr1", "attr2");
         List<String> methods = List.of("method1()", "method2()");
         List<String> references = List.of("ref1", "ref2");
@@ -29,7 +27,7 @@ public class ClassInfoTests {
     }
 
     @Test
-    void testClassInfoEquality() {
+    public void testClassInfoEquality() {
         List<String> attributes = List.of("attr1", "attr2");
         List<String> methods = List.of("method1()", "method2()");
         List<String> references = List.of("ref1", "ref2");
@@ -43,7 +41,7 @@ public class ClassInfoTests {
     }
 
     @Test
-    void testClassInfoToString() {
+    public void testClassInfoToString() {
         List<String> attributes = List.of("attr1", "attr2");
         List<String> methods = List.of("method1()", "method2()");
         List<String> references = List.of("ref1", "ref2");
@@ -56,3 +54,4 @@ public class ClassInfoTests {
     }
 
 }
+

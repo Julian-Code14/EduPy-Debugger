@@ -2,12 +2,12 @@ package de.code14.edupydebugger.core;
 
 import com.intellij.xdebugger.XDebugSession;
 import com.jetbrains.python.debugger.PyDebugProcess;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
 /**
@@ -25,8 +25,8 @@ public class DebugProcessControllerTests {
 
     private DebugProcessController controller;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         MockitoAnnotations.openMocks(this);
         when(mockDebugProcess.getSession()).thenReturn(mockSession);
         controller = new DebugProcessController();
@@ -34,7 +34,7 @@ public class DebugProcessControllerTests {
     }
 
     @Test
-    void testResume() {
+    public void testResume() {
         // Act
         controller.resume();
 
@@ -43,7 +43,7 @@ public class DebugProcessControllerTests {
     }
 
     @Test
-    void testPause() {
+    public void testPause() {
         // Act
         controller.pause();
 
@@ -52,7 +52,7 @@ public class DebugProcessControllerTests {
     }
 
     @Test
-    void testStepOver() {
+    public void testStepOver() {
         // Act
         controller.stepOver();
 
@@ -61,7 +61,7 @@ public class DebugProcessControllerTests {
     }
 
     @Test
-    void testStepInto() {
+    public void testStepInto() {
         // Act
         controller.stepInto();
 
@@ -70,7 +70,7 @@ public class DebugProcessControllerTests {
     }
 
     @Test
-    void testStepOut() {
+    public void testStepOut() {
         // Act
         controller.stepOut();
 
@@ -79,7 +79,7 @@ public class DebugProcessControllerTests {
     }
 
     @Test
-    void testGetDebugProcess() {
+    public void testGetDebugProcess() {
         // Act
         PyDebugProcess returnedProcess = controller.getDebugProcess();
 
@@ -88,7 +88,7 @@ public class DebugProcessControllerTests {
     }
 
     @Test
-    void testResumeWithNullDebugProcess() {
+    public void testResumeWithNullDebugProcess() {
         // Arrange
         controller.setDebugProcess(null);
 
@@ -100,7 +100,7 @@ public class DebugProcessControllerTests {
     }
 
     @Test
-    void testPauseWithNullDebugProcess() {
+    public void testPauseWithNullDebugProcess() {
         // Arrange
         controller.setDebugProcess(null);
 
@@ -112,7 +112,7 @@ public class DebugProcessControllerTests {
     }
 
     @Test
-    void testStepOverWithNullDebugProcess() {
+    public void testStepOverWithNullDebugProcess() {
         // Arrange
         controller.setDebugProcess(null);
 
@@ -124,7 +124,7 @@ public class DebugProcessControllerTests {
     }
 
     @Test
-    void testStepIntoWithNullDebugProcess() {
+    public void testStepIntoWithNullDebugProcess() {
         // Arrange
         controller.setDebugProcess(null);
 
@@ -136,7 +136,7 @@ public class DebugProcessControllerTests {
     }
 
     @Test
-    void testStepOutWithNullDebugProcess() {
+    public void testStepOutWithNullDebugProcess() {
         // Arrange
         controller.setDebugProcess(null);
 
@@ -146,5 +146,5 @@ public class DebugProcessControllerTests {
         // Assert
         verify(mockSession, never()).stepOut(); // Should not interact with session
     }
-
 }
+
