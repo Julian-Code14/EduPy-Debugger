@@ -32,7 +32,7 @@ dependencies {
     // https://mvnrepository.com/artifact/org.glassfish.tyrus/tyrus-server
     implementation("org.glassfish.tyrus:tyrus-server:2.1.5")
     // https://mvnrepository.com/artifact/org.glassfish.tyrus/tyrus-container-grizzly-server
-    implementation("org.glassfish.tyrus:tyrus-container-grizzly-server:2.1.5")
+    implementation("org.glassfish.tyrus:tyrus-container-grizzly-server:2.2.0")
 
     // Plant UML
     // https://mvnrepository.com/artifact/net.sourceforge.plantuml/plantuml
