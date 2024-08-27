@@ -23,7 +23,29 @@ repositories {
 
 // Dependencies are managed with Gradle version catalog - read more: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
 dependencies {
-//    implementation(libs.annotations)
+
+    // Webserver Dependencies
+    // https://mvnrepository.com/artifact/jakarta.websocket/jakarta.websocket-api
+    implementation("jakarta.websocket:jakarta.websocket-api:2.2.0")
+    // https://mvnrepository.com/artifact/jakarta.servlet/jakarta.servlet-api
+    implementation("jakarta.servlet:jakarta.servlet-api:6.1.0")
+    // https://mvnrepository.com/artifact/org.glassfish.tyrus/tyrus-server
+    implementation("org.glassfish.tyrus:tyrus-server:2.1.5")
+    // https://mvnrepository.com/artifact/org.glassfish.tyrus/tyrus-container-grizzly-server
+    implementation("org.glassfish.tyrus:tyrus-container-grizzly-server:2.1.5")
+
+    // Plant UML
+    // https://mvnrepository.com/artifact/net.sourceforge.plantuml/plantuml
+    implementation("net.sourceforge.plantuml:plantuml:1.2024.5")
+
+
+    // Testing Setup
+    //testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
+    //testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.0")
+    testImplementation("org.mockito:mockito-core:5.7.0")
+    //testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.1")
+    //testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.1")
+    testImplementation("junit:junit:4.13.2")
 }
 
 // Set the JVM language level used to build the project.
@@ -48,12 +70,8 @@ changelog {
 }
 
 // Configure Gradle Kover Plugin - read more: https://github.com/Kotlin/kotlinx-kover#configuration
-koverReport {
-    defaults {
-        xml {
-            onCheck = true
-        }
-    }
+kover {
+
 }
 
 tasks {
@@ -102,6 +120,16 @@ tasks {
         systemProperty("jb.consents.confirmation.enabled", "false")
     }
 
+    runIde {
+        jvmArgs = listOf("--add-exports", "java.base/jdk.internal.vm=ALL-UNNAMED")
+    }
+
+    test {
+        //useJUnitPlatform() // JUnit 5
+        useJUnit()
+    }
+
+
     signPlugin {
         certificateChain = environment("CERTIFICATE_CHAIN")
         privateKey = environment("PRIVATE_KEY")
@@ -116,4 +144,7 @@ tasks {
         // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
         channels = properties("pluginVersion").map { listOf(it.substringAfter('-', "").substringBefore('.').ifEmpty { "default" }) }
     }
+
 }
+
+
