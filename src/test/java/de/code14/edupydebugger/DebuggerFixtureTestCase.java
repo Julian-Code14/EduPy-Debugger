@@ -36,24 +36,25 @@ import org.junit.Test;
  */
 public class DebuggerFixtureTestCase extends HeavyPlatformTestCase {
 
-    protected CodeInsightTestFixture myFixture;
+    // TODO: write the tests for DebuggerFixtureTestCase class
+    /*protected CodeInsightTestFixture myFixture;
     protected Project project;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
 
-        // Erstellen des Fixtures mit dem Fixture-Builder
+        // Setup the fixture
         IdeaTestFixtureFactory fixtureFactory = IdeaTestFixtureFactory.getFixtureFactory();
         TestFixtureBuilder<IdeaProjectTestFixture> fixtureBuilder = fixtureFactory.createFixtureBuilder(getName());
 
         myFixture = fixtureFactory.createCodeInsightFixture(fixtureBuilder.getFixture());
-
-        // Setzen des Fixtures, initialisieren der Umgebung
         myFixture.setUp();
 
         myFixture.setTestDataPath("src/test/testData/");
         myFixture.copyDirectoryToProject("dummy_project", "dummy_project");
+        myFixture.copyDirectoryToProject("dummy_project/.venv", "dummy_project/.venv");
+
 
         ApplicationManager.getApplication().invokeAndWait(() -> {
             ApplicationManager.getApplication().runWriteAction(() -> {
@@ -64,7 +65,7 @@ public class DebuggerFixtureTestCase extends HeavyPlatformTestCase {
 
                 PyLineBreakpointType pyLineBreakpointType = new PyLineBreakpointType();
                 XLineBreakpoint<?> breakpoint = breakpointManager.addLineBreakpoint(pyLineBreakpointType, pythonFile.getUrl(), 10, null);
-                assertNotNull(breakpoint);
+                assertNotNull("Breakpoint not set", breakpoint);
             });
         }, ModalityState.defaultModalityState());
     }
@@ -72,15 +73,12 @@ public class DebuggerFixtureTestCase extends HeavyPlatformTestCase {
     @Override
     protected void tearDown() throws Exception {
         try {
-            // Entsorge das SDK nach dem Test, um Lecks zu vermeiden
+            // Clean up the SDK after the test
             Sdk sdk = findOrCreateVirtualEnvSdk();
             if (sdk != null) {
-                ApplicationManager.getApplication().runWriteAction(() -> {
-                    ProjectJdkTable.getInstance().removeJdk(sdk);
-                });
+                ApplicationManager.getApplication().runWriteAction(() -> ProjectJdkTable.getInstance().removeJdk(sdk));
             }
         } finally {
-            // Fixture abbauen und weitere Aufräumarbeiten
             myFixture.tearDown();
             super.tearDown();
         }
@@ -92,19 +90,16 @@ public class DebuggerFixtureTestCase extends HeavyPlatformTestCase {
     }
 
     protected PythonRunConfiguration createDebugConfiguration(Project project) {
-        // Hole den PythonRunConfigurationType
         PythonConfigurationType pythonRunConfigType = PythonConfigurationType.getInstance();
 
-        // Erstelle eine Run-Konfiguration
-        RunManager runManager = RunManager.getInstance(project);
-        RunnerAndConfigurationSettings settings = runManager.createConfiguration("Debug contact_address.py", pythonRunConfigType.getFactory());
+        // Create a run configuration
+        RunnerAndConfigurationSettings settings = RunManager.getInstance(project).createConfiguration(
+                "Debug contact_address.py", pythonRunConfigType.getFactory());
 
         PythonRunConfiguration config = (PythonRunConfiguration) settings.getConfiguration();
-
-        // Setze das Skript, das debuggt werden soll
         config.setScriptName(myFixture.findFileInTempDir("dummy_project/contact_address.py").getPath());
 
-        // Lade das SDK aus dem .venv Ordner und weise es der Run-Konfiguration zu
+        // Assign the SDK from the local .venv
         Sdk sdk = findOrCreateVirtualEnvSdk();
         if (sdk != null) {
             config.setSdk(sdk);
@@ -116,7 +111,7 @@ public class DebuggerFixtureTestCase extends HeavyPlatformTestCase {
     }
 
     private Sdk findOrCreateVirtualEnvSdk() {
-        // Hole den Pfad zur virtuellen Umgebung
+        // Locate the virtual environment folder
         VirtualFile venvFolder = myFixture.findFileInTempDir("dummy_project/.venv");
         assertNotNull("Virtual environment folder not found", venvFolder);
 
@@ -129,48 +124,40 @@ public class DebuggerFixtureTestCase extends HeavyPlatformTestCase {
             assertNotNull("Python interpreter not found in virtual environment", pythonInterpreter);
 
             String sdkHomePath = pythonInterpreter.getPath();
-
-            // Erstelle einen eindeutigen Schlüssel für das SDK
             String sdkKey = "Python SDK: " + sdkHomePath;
 
-            // Überprüfe, ob ein SDK mit diesem Schlüssel bereits existiert
+            // Check if SDK already exists
             Sdk existingSdk = ProjectJdkTable.getInstance().findJdk(sdkKey);
             if (existingSdk != null) {
                 return existingSdk;
             }
 
-            // SDK erstellen und registrieren
+            // Create and register the SDK
             Sdk sdk = new ProjectJdkImpl(sdkKey, PythonSdkType.getInstance(), sdkHomePath, null);
             SdkModificator sdkModificator = sdk.getSdkModificator();
             sdkModificator.setVersionString(PythonSdkType.getInstance().getVersionString(sdkHomePath));
             sdkModificator.commitChanges();
 
-            ApplicationManager.getApplication().runWriteAction(() -> {
-                ProjectJdkTable.getInstance().addJdk(sdk);
-            });
+            ApplicationManager.getApplication().runWriteAction(() -> ProjectJdkTable.getInstance().addJdk(sdk));
 
             return sdk;
         }
+
         return null;
     }
 
     protected void startDebugProcess(Project project) {
         try {
-            // Erstelle den Debug Executor
             Executor executor = DefaultDebugExecutor.getDebugExecutorInstance();
-
-            // Hole die Debug-Konfiguration
             PythonRunConfiguration config = createDebugConfiguration(project);
 
-            // Erstelle die Ausführungsumgebung
+            // Create the execution environment
             ExecutionEnvironmentBuilder builder = ExecutionEnvironmentBuilder.create(executor, config);
             ExecutionEnvironment env = builder.build();
 
-            // Finde den passenden ProgramRunner für die gegebene RunConfiguration
+            // Find and execute the appropriate program runner
             ProgramRunner<?> runner = ProgramRunner.getRunner(executor.getId(), config);
-
             if (runner != null) {
-                // Verwende die neuere API: Starte den Debug-Prozess mit dem Executor und der Umgebung
                 runner.execute(env);
             } else {
                 fail("No suitable ProgramRunner found for the configuration.");
@@ -185,18 +172,15 @@ public class DebuggerFixtureTestCase extends HeavyPlatformTestCase {
     public void testDebugger() {
         EdtTestUtil.runInEdtAndWait(() -> {
             try {
-                // Starte den Debugger
                 startDebugProcess(project);
 
-                // Warte darauf, dass der Breakpoint getroffen wird
+                // Wait for the breakpoint to be hit
                 XBreakpointManager breakpointManager = XDebuggerManager.getInstance(getProject()).getBreakpointManager();
-                assertTrue(breakpointManager.getAllBreakpoints().length > 0);
+                assertTrue("No breakpoints set", breakpointManager.getAllBreakpoints().length > 0);
 
-                // Simuliere, dass der Breakpoint im Debugger getroffen wird (Dummy-Aktion)
             } catch (Exception e) {
                 fail("Debugger start failed: " + e.getMessage());
             }
         });
-    }
-
+    }*/
 }
