@@ -30,7 +30,7 @@ dependencies {
     // https://mvnrepository.com/artifact/jakarta.servlet/jakarta.servlet-api
     implementation("jakarta.servlet:jakarta.servlet-api:6.1.0")
     // https://mvnrepository.com/artifact/org.glassfish.tyrus/tyrus-server
-    implementation("org.glassfish.tyrus:tyrus-server:2.1.5")
+    implementation("org.glassfish.tyrus:tyrus-server:2.2.0")
     // https://mvnrepository.com/artifact/org.glassfish.tyrus/tyrus-container-grizzly-server
     implementation("org.glassfish.tyrus:tyrus-container-grizzly-server:2.1.5")
 
