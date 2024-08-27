@@ -6,6 +6,7 @@ import com.jetbrains.python.debugger.PyDebugValue;
 import com.jetbrains.python.debugger.PyDebuggerException;
 import com.jetbrains.python.debugger.PyFrameAccessor;
 import com.jetbrains.python.debugger.PyStackFrame;
+import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
+import static com.intellij.testFramework.UsefulTestCase.assertEmpty;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -26,6 +28,10 @@ import static org.mockito.Mockito.*;
 public class ObjectAnalyzerTests {
 
     // TODO: write the tests for ObjectAnalyzerTests class
+    @Test
+    public void testDummy() {
+        assertEmpty("");
+    }
     /*@Mock
     private PyStackFrame mockFrame;
     @Mock

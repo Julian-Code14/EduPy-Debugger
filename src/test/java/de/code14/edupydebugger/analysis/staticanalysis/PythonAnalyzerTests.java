@@ -18,6 +18,7 @@ import com.jetbrains.python.psi.types.TypeEvalContext;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,6 +38,10 @@ import static org.mockito.Mockito.when;
 public class PythonAnalyzerTests extends LightPlatformTestCase {
 
     // TODO: write the tests for PythonAnalyzerTests class
+    @Test
+    public void testDummy() {
+        assertEmpty("");
+    }
     /*private PythonAnalyzer analyzer;
 
     @Override

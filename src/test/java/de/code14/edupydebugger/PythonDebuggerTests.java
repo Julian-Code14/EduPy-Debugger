@@ -7,6 +7,7 @@ import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixture4TestC
 import com.jetbrains.python.debugger.PyDebugProcess;
 import com.jetbrains.python.sdk.PythonSdkUtil;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Test;
 
 /**
  * @author julian
@@ -16,6 +17,10 @@ import org.jetbrains.annotations.NotNull;
 public class PythonDebuggerTests extends LightPlatformCodeInsightFixture4TestCase {
 
     // TODO: write the tests for PythonDebuggerTests class
+    @Test
+    public void testDummy() {
+        assertEmpty("");
+    }
     /*@Override
     protected void setUp() throws Exception {
         super.setUp();

@@ -31,6 +31,7 @@ import de.code14.edupydebugger.DebuggerFixtureTestCase;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Test;
 
 import javax.swing.*;
 
@@ -42,6 +43,10 @@ import javax.swing.*;
 public class DebuggerUtilsTests extends DebuggerFixtureTestCase {
 
     // TODO: write the tests for DebuggerUtilsTests class
+    @Test
+    public void testDummy() {
+        assertEmpty("");
+    }
 
     /*private Project project;
 

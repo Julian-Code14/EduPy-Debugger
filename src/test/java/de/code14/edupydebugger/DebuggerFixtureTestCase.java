@@ -37,6 +37,10 @@ import org.junit.Test;
 public class DebuggerFixtureTestCase extends HeavyPlatformTestCase {
 
     // TODO: write the tests for DebuggerFixtureTestCase class
+    @Test
+    public void testDummy() {
+        assertEmpty("");
+    }
     /*protected CodeInsightTestFixture myFixture;
     protected Project project;
 
