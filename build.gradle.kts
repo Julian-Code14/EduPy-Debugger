@@ -40,11 +40,12 @@ dependencies {
 
 
     // Testing Setup
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.0")
+    //testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
+    //testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.0")
     testImplementation("org.mockito:mockito-core:5.7.0")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.1")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.1")
+    //testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.1")
+    //testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.1")
+    testImplementation("junit:junit:4.13.2")
 }
 
 // Set the JVM language level used to build the project.
@@ -123,6 +124,11 @@ tasks {
         jvmArgs = listOf("--add-exports", "java.base/jdk.internal.vm=ALL-UNNAMED")
     }
 
+    test {
+        //useJUnitPlatform() // JUnit 5
+        useJUnit()
+    }
+
 
     signPlugin {
         certificateChain = environment("CERTIFICATE_CHAIN")
@@ -137,10 +143,6 @@ tasks {
         // Specify pre-release label to publish the plugin in a custom Release Channel automatically. Read more:
         // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
         channels = properties("pluginVersion").map { listOf(it.substringAfter('-', "").substringBefore('.').ifEmpty { "default" }) }
-    }
-
-    runIde {
-        jvmArgs("--add-exports", "java.base/jdk.internal.vm=ALL-UNNAMED")
     }
 
 }
