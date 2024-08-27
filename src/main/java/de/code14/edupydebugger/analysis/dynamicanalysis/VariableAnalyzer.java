@@ -26,6 +26,8 @@ public class VariableAnalyzer {
 
     private static final Logger LOGGER = Logger.getInstance(VariableAnalyzer.class);
 
+    private static final String ID_EXPRESSION_FORMAT = "__builtins__.id(%s)";
+
     // Map to store variables, where the key is the variable ID and the value is a list containing the name, type, current value, and scope.
     private final Map<String, List<String>> variables = new HashMap<>();
 
@@ -73,8 +75,11 @@ public class VariableAnalyzer {
 
                 for (int i = 0; i < children.size(); i++) {
                     PyDebugValue value = (PyDebugValue) children.getValue(i);
-                    String id = evaluateExpression(value, "__builtins__.id(" + value.getName() + ")");
-                    variables.put(id, new ArrayList<>(Arrays.asList(value.getName(), value.getType(), value.getValue(), determineScope(value))));
+                    String id = determinePythonId(value, value.getName());
+                    // If the file changes, variables from another file would not be defined -> exclude
+                    if (!id.contains("is not defined")) {
+                        variables.put(id, new ArrayList<>(Arrays.asList(value.getName(), value.getType(), value.getValue(), determineScope(value))));
+                    }
                 }
 
                 if (last) {
@@ -139,6 +144,27 @@ public class VariableAnalyzer {
             LOGGER.error("Error evaluating expression: " + expression, e);
             return "";
         }
+    }
+
+    /**
+     * Determines the Python object's unique identifier (ID).
+     * This method evaluates a Python expression to retrieve the object's ID using the built-in `id()` function.
+     * If the ID cannot be determined due to the object overwriting built-in methods or attributes,
+     * it attempts to retrieve the ID via `__builtins__.id()`.
+     *
+     * @param value the Python debug value representing the object
+     * @param valueName the name of the Python object as a string
+     * @return the ID of the Python object as a string, or an empty string if an error occurs
+     */
+    private String determinePythonId(PyDebugValue value, String valueName) {
+        String id = evaluateExpression(value, String.format(ID_EXPRESSION_FORMAT, valueName));
+
+        // In case some objects/variables are overwriting inbuilt attributes/methods
+        if (id.contains("object has no attribute 'id'")) {
+            id = evaluateExpression(value, String.format("id(%s)", valueName));
+        }
+
+        return id;
     }
 
     /**

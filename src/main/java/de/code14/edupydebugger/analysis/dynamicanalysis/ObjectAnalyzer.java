@@ -28,7 +28,7 @@ public class ObjectAnalyzer {
 
     private static final Logger LOGGER = Logger.getInstance(ObjectAnalyzer.class);
 
-    private static final String ID_EXPRESSION_FORMAT = "__builtins__.id(%s)";
+    private static final String ID_EXPRESSION_FORMAT = "id(%s)";
     private static final String DIR_EXPRESSION_FORMAT = "dir(%s)";
     private static final String UNKNOWN_VALUE = "unknown";
     private static final String PRIVATE_PREFIX = "__";
@@ -83,7 +83,7 @@ public class ObjectAnalyzer {
 
                 for (int i = 0; i < children.size(); i++) {
                     PyDebugValue value = (PyDebugValue) children.getValue(i);
-                    String id = evaluateExpression(value, String.format(ID_EXPRESSION_FORMAT, value.getName()));
+                    String id = determinePythonId(value, value.getName());
 
                     if (isUserDefinedInstance(value)) {
                         gatherAttributeInformation(value, id);
@@ -171,6 +171,27 @@ public class ObjectAnalyzer {
     }
 
     /**
+     * Determines the Python object's unique identifier (ID).
+     * This method evaluates a Python expression to retrieve the object's ID using the built-in `id()` function.
+     * If the ID cannot be determined due to the object overwriting built-in methods or attributes,
+     * it attempts to retrieve the ID via `__builtins__.id()`.
+     *
+     * @param value the Python debug value representing the object
+     * @param valueName the name of the Python object as a string
+     * @return the ID of the Python object as a string, or an empty string if an error occurs
+     */
+    private String determinePythonId(PyDebugValue value, String valueName) {
+        String id = evaluateExpression(value, String.format(ID_EXPRESSION_FORMAT, valueName));
+
+        // In case some objects/variables are overwriting inbuilt attributes/methods
+        if (id.contains("not callable")) {
+            id = evaluateExpression(value, String.format("__builtins__.id(%s)", valueName));
+        }
+
+        return id;
+    }
+
+    /**
      * Determines the value of an attribute, including handling references to other objects.
      *
      * @param value the Python debug value representing the object
@@ -182,7 +203,7 @@ public class ObjectAnalyzer {
         if (Objects.requireNonNull(attrValue.getValue()).contains("object")) {
             // Get the ID of the referenced object
             try {
-                String id = evaluateExpression(value, String.format(ID_EXPRESSION_FORMAT, value.getName() + "." + attrName));
+                String id = determinePythonId(value, value.getName() + "." + attrName);
                 if (!Objects.requireNonNull(attrValue.getType()).contains("_abc_data")) {
                     gatherAttributeInformation(attrValue, id);
                 }
