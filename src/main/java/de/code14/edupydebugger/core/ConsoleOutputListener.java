@@ -1,12 +1,10 @@
 package de.code14.edupydebugger.core;
 
-import com.intellij.execution.process.ProcessAdapter;
 import com.intellij.execution.process.ProcessEvent;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessListener;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Key;
-import com.jetbrains.python.debugger.PyDebugProcess;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
 import org.jetbrains.annotations.NotNull;
 
