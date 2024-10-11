@@ -3,6 +3,15 @@ const websocketUrl = 'ws://localhost:8025/websockets/debug'
 let socket;
 const reconnectInterval = 5000;
 
+function logToConsole(message, isPrompt = false) {
+    const outputContainer = document.getElementById("output-container");
+    const newEntry = document.createElement('div');
+    newEntry.classList.add('log-entry'); // Für Animation
+    newEntry.textContent = (isPrompt ? "> " : "") + message;
+    outputContainer.appendChild(newEntry); // Neue Ausgabe hinzufügen
+    outputContainer.scrollTop = outputContainer.scrollHeight;  // Auto-Scroll nach unten
+}
+
 function goToClassDiagram() {
     window.location.href = 'pages/class-diagram.html';
     try {
@@ -215,4 +224,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Hinzufügen eines Event-Listeners, um den Status bei Änderungen zu überprüfen
     switchElement.addEventListener('change', checkSwitchStatus);
+});
+
+document.getElementById("console-input").addEventListener("keydown", function(event) {
+    const inputField = document.getElementById("console-input");
+
+    // Wenn Enter gedrückt wird
+    if (event.key === "Enter") {
+        const inputValue = inputField.value;
+        logToConsole(inputValue); // Eingabe anzeigen
+        inputField.value = "";  // Eingabefeld leeren
+    }
 });
