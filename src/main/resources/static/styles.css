@@ -157,8 +157,10 @@ input:checked + .slider:before {
     font-size: 14px;
     color: #fff;
     line-height: 1.5;
-    white-space: pre-wrap;
-    overflow: hidden; /* Kein Wachstum des Fensters */
+    white-space: pre-wrap; /* Ermöglicht den Zeilenumbruch */
+    word-wrap: break-word; /* Lange Wörter werden umgebrochen */
+    word-break: break-all; /* Lange Wörter oder Zeichenfolgen ohne Leerzeichen werden umgebrochen */
+    overflow-y: auto; /* Ermöglicht das Scrollen, wenn der Inhalt zu groß wird */
     display: flex;
     flex-direction: column;
     justify-content: flex-start;

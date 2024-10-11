@@ -19,6 +19,8 @@ public class ConsoleOutputListener {
 
     private static final Logger LOGGER = Logger.getInstance(ConsoleOutputListener.class);
 
+    private static final String CONSOLE_PREFIX = "console:";
+
     private final ProcessHandler processHandler;
 
     public ConsoleOutputListener(ProcessHandler processHandler) {
@@ -39,7 +41,7 @@ public class ConsoleOutputListener {
                 String text = event.getText();
                 LOGGER.info("Console Output: " + text);
 
-                // Further processing, e.g., send to WebSocket
+                sendToWebSocket(text);
             }
         });
     }
@@ -51,7 +53,7 @@ public class ConsoleOutputListener {
      */
     private void sendToWebSocket(String text) {
         // Example logic to send console output to WebSocket or another system
-        DebugServerEndpoint.sendDebugInfo("consoleOutput:" + text);
+        DebugServerEndpoint.sendDebugInfo(CONSOLE_PREFIX + text);
     }
 
 }

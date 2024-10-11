@@ -133,6 +133,9 @@ function connectWebSocket() {
                     updateObjectCardsImage(eventData.at(1));
                 } else
                 break;
+            case "console:":
+                logToConsole(eventData.at(1));
+                break;
             default:
                 console.error(eventData);
         }

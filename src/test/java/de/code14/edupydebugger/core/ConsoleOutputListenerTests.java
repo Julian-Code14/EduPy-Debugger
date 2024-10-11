@@ -6,11 +6,10 @@ import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessListener;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Key;
+import de.code14.edupydebugger.server.DebugServerEndpoint;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.*;
 
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,6 +30,7 @@ public class ConsoleOutputListenerTests {
 
     @Before
     public void setUp() {
+        // Initialize mocks
         MockitoAnnotations.openMocks(this);
         // Create instance of ConsoleOutputListener with the mocked ProcessHandler
         consoleOutputListener = new ConsoleOutputListener(processHandler);
@@ -38,24 +38,33 @@ public class ConsoleOutputListenerTests {
 
     @Test
     public void testAttachConsoleListeners_whenProcessHandlerIsNotNull() {
-        // Act: Call the method that attaches listeners
-        consoleOutputListener.attachConsoleListeners();
+        // Mock the static method DebugServerEndpoint.sendDebugInfo
+        try (MockedStatic<DebugServerEndpoint> debugServerEndpointMock = Mockito.mockStatic(DebugServerEndpoint.class)) {
 
-        // Capture the listener that was added to the processHandler
-        ArgumentCaptor<ProcessListener> listenerCaptor = ArgumentCaptor.forClass(ProcessListener.class);
-        verify(processHandler).addProcessListener(listenerCaptor.capture());
+            // Act: Call the method that attaches listeners
+            consoleOutputListener.attachConsoleListeners();
 
-        // Simulate a process event with sample text
-        ProcessListener capturedListener = listenerCaptor.getValue();
-        when(processEvent.getText()).thenReturn("Sample output");
-        capturedListener.onTextAvailable(processEvent, outputType);
+            // Capture the listener that was added to the processHandler
+            ArgumentCaptor<ProcessListener> listenerCaptor = ArgumentCaptor.forClass(ProcessListener.class);
+            verify(processHandler).addProcessListener(listenerCaptor.capture());
 
-        // Verify that the event text was captured and used
-        verify(processEvent, times(1)).getText();
+            // Simulate a process event with sample text
+            ProcessListener capturedListener = listenerCaptor.getValue();
+            when(processEvent.getText()).thenReturn("Sample console output");
+            capturedListener.onTextAvailable(processEvent, outputType);
+
+            // Verify that the event text was captured and used
+            verify(processEvent, times(1)).getText();
+
+            // Verify that the WebSocket received the correct message
+            String expectedMessage = "console:Sample console output";
+            debugServerEndpointMock.verify(() -> DebugServerEndpoint.sendDebugInfo(expectedMessage), times(1));
+        }
     }
 
+
     @Test
-    public void testAttachConsoleListeners_whenProcessHandlerIsNull() {
+    public void testAttachConsoleListeners_whenProcessHandlerIsNull_throwsException() {
         // Arrange: Create a new ConsoleOutputListener with a null ProcessHandler
         ConsoleOutputListener consoleOutputListenerWithNullHandler = new ConsoleOutputListener(null);
 
