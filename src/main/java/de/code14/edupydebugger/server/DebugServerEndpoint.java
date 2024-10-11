@@ -1,8 +1,10 @@
 package de.code14.edupydebugger.server;
 
 
+import com.intellij.execution.process.ProcessHandler;
 import com.intellij.openapi.diagnostic.Logger;
 import com.jetbrains.python.debugger.PyDebugProcess;
+import de.code14.edupydebugger.core.ConsoleController;
 import de.code14.edupydebugger.core.DebugProcessController;
 import de.code14.edupydebugger.ui.DebuggerToolWindowFactory;
 import jakarta.servlet.annotation.WebListener;
@@ -39,6 +41,7 @@ public class DebugServerEndpoint {
     private static final Set<Session> sessions = Collections.synchronizedSet(new HashSet<>());
     private static final BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>();
     private static final DebugProcessController debugProcessController = new DebugProcessController();
+    private static final ConsoleController consoleController = new ConsoleController();
 
     private static volatile boolean isConnected = false;
 
@@ -146,11 +149,23 @@ public class DebugServerEndpoint {
      * @param action the action command received
      */
     private void handleActionMessage(String action) {
-        Runnable command = actionMap.get(action);
-        if (command != null) {
-            command.run();
+        if (action.startsWith("console-input:")) {
+            // Extract the actual input string after "console-input:"
+            String consoleInput = action.substring("console-input:".length());
+
+            // Forward the input to ConsoleController
+            try {
+                consoleController.sendInputToProcess(consoleInput);
+            } catch (IOException e) {
+                LOGGER.error("Error sending input to the process: " + consoleInput, e);
+            }
         } else {
-            LOGGER.warn("Unknown action received: " + action);
+            Runnable command = actionMap.get(action);
+            if (command != null) {
+                command.run();
+            } else {
+                LOGGER.warn("Unknown action received: " + action);
+            }
         }
     }
 
@@ -196,6 +211,15 @@ public class DebugServerEndpoint {
      */
     public static void setDebugProcess(PyDebugProcess debugProcess) {
         debugProcessController.setDebugProcess(debugProcess);
+    }
+
+    /**
+     * Sets the current process handler for controlling the console.
+     *
+     * @param processHandler the ProcessHandler to control the console
+     */
+    public static void setProcessHandler(ProcessHandler processHandler) {
+        consoleController.setProcessHandler(processHandler);
     }
 
     /**

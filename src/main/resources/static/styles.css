@@ -147,6 +147,83 @@ input:checked + .slider:before {
     color: #333;
 }
 
+#console {
+    position: relative;
+    height: 100px;  /* Feste Höhe für das Konsolenfenster */
+    background-color: #282828;
+    border: 1px solid #333;
+    padding: 10px;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 14px;
+    color: #fff;
+    line-height: 1.5;
+    white-space: pre-wrap; /* Ermöglicht den Zeilenumbruch */
+    word-wrap: break-word; /* Lange Wörter werden umgebrochen */
+    word-break: break-all; /* Lange Wörter oder Zeichenfolgen ohne Leerzeichen werden umgebrochen */
+    overflow-y: auto; /* Ermöglicht das Scrollen, wenn der Inhalt zu groß wird */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+#output-container {
+    flex-grow: 1;
+    overflow-y: auto; /* Scrollbarer Inhalt */
+}
+
+#input-container {
+    display: flex;
+    align-items: center;
+    position: relative;
+    margin-top: auto; /* Verankert am unteren Rand */
+    padding-top: 10px;
+}
+
+#prompt-symbol {
+    color: #fff;
+    flex-shrink: 0;
+}
+
+#console-input {
+    background-color: #282828;
+    color: #fff;
+    border: none;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 14px;
+    outline: none;
+    caret-color: #fff;
+    width: 100%;
+    flex-grow: 1;
+}
+
+#console-input::placeholder {
+    color: #555;
+}
+
+.blinking-cursor::after {
+    content: '|';
+    animation: blink 1s step-start infinite;
+}
+
+@keyframes blink {
+    50% {
+        opacity: 0;
+    }
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+#console .log-entry {
+    animation: fade-in 0.3s ease-in-out;
+}
+
 .bottom-buttons {
     display: flex;
     flex-direction: row;
