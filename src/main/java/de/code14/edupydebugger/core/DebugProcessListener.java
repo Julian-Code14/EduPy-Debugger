@@ -1,5 +1,6 @@
 package de.code14.edupydebugger.core;
 
+import com.intellij.execution.process.ProcessHandler;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
@@ -73,6 +74,10 @@ public class DebugProcessListener implements XDebuggerManagerListener {
         // Set the debug process in the WebSocket endpoint
         DebugServerEndpoint.setDebugProcess((PyDebugProcess) debugProcess);
 
+        // Attach ConsoleOutputListener to capture console output
+        ConsoleOutputListener consoleOutputListener = this.createConsoleOutputListener(debugProcess.getProcessHandler());
+        consoleOutputListener.attachConsoleListeners();
+
         // Update UI components in the Swing event dispatch thread
         SwingUtilities.invokeLater(() -> {
             // Hide the default Debug Tool Window content
@@ -98,6 +103,16 @@ public class DebugProcessListener implements XDebuggerManagerListener {
     @Override
     public void processStopped(@NotNull XDebugProcess debugProcess) {
         DebuggerToolWindowFactory.reloadEduPyDebugger();
+    }
+
+    /**
+     * Factory method to create a ConsoleOutputListener. This method can be overridden in tests.
+     *
+     * @param processHandler the process handler used by the ConsoleOutputListener
+     * @return a new instance of ConsoleOutputListener
+     */
+    protected ConsoleOutputListener createConsoleOutputListener(ProcessHandler processHandler) {
+        return new ConsoleOutputListener(processHandler);
     }
 
 }
