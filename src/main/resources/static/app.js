@@ -235,7 +235,13 @@ document.getElementById("console-input").addEventListener("keydown", function(ev
     // Wenn Enter gedrückt wird
     if (event.key === "Enter") {
         const inputValue = inputField.value;
-        logToConsole(inputValue); // Eingabe anzeigen
+        //logToConsole(inputValue); // Eingabe anzeigen
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.send("action:console-input:" + inputValue)
+            console.log('Sent console action');
+        } else {
+            console.error('WebSocket connection closed');
+        }
         inputField.value = "";  // Eingabefeld leeren
     }
 });

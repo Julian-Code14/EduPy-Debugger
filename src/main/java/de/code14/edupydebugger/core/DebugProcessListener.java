@@ -74,6 +74,9 @@ public class DebugProcessListener implements XDebuggerManagerListener {
         // Set the debug process in the WebSocket endpoint
         DebugServerEndpoint.setDebugProcess((PyDebugProcess) debugProcess);
 
+        // Set the process handler in the Websocket endpoint
+        DebugServerEndpoint.setProcessHandler(debugProcess.getProcessHandler());
+
         // Attach ConsoleOutputListener to capture console output
         ConsoleOutputListener consoleOutputListener = this.createConsoleOutputListener(debugProcess.getProcessHandler());
         consoleOutputListener.attachConsoleListeners();

@@ -1,6 +1,8 @@
 package de.code14.edupydebugger.server;
 
+import com.intellij.execution.process.ProcessHandler;
 import com.jetbrains.python.debugger.PyDebugProcess;
+import de.code14.edupydebugger.core.ConsoleController;
 import de.code14.edupydebugger.core.DebugProcessController;
 import jakarta.websocket.RemoteEndpoint;
 import jakarta.websocket.Session;
@@ -9,6 +11,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.util.Set;
 
@@ -106,6 +109,27 @@ public class DebugServerEndpointTests {
     }
 
     @Test
+    public void testHandleActionMessageForConsoleInput() throws Exception {
+        // Arrange: Mock ProcessHandler and set it in the ConsoleController
+        ProcessHandler mockProcessHandler = mock(ProcessHandler.class);
+        DebugServerEndpoint.setProcessHandler(mockProcessHandler);
+
+        OutputStream mockOutputStream = mock(OutputStream.class);
+        when(mockProcessHandler.getProcessInput()).thenReturn(mockOutputStream);
+
+        DebugServerEndpoint endpoint = new DebugServerEndpoint();
+
+        // Act: Simulate sending a console-input message
+        String inputMessage = "action:console-input:Test Input";
+        endpoint.onMessage(inputMessage, mockSession);
+
+        // Assert: Verify that the input was written to the process input stream
+        verify(mockOutputStream, times(1)).write(("Test Input\n").getBytes());
+        verify(mockOutputStream, times(1)).flush();
+    }
+
+
+    @Test
     public void testHandleActionMessageForResume() {
         when(mockDebugProcess.getSession()).thenReturn(mockXDebugSession);
         DebugServerEndpoint.setDebugProcess(mockDebugProcess);
@@ -126,6 +150,27 @@ public class DebugServerEndpointTests {
 
         assertEquals(mockDebugProcess, debugProcessController.getDebugProcess());
     }
+
+    @Test
+    public void testSetProcessHandler() throws Exception {
+        ProcessHandler mockProcessHandler = mock(ProcessHandler.class);
+
+        // Act: Call the setProcessHandler method
+        DebugServerEndpoint.setProcessHandler(mockProcessHandler);
+
+        // Use reflection to verify that the processHandler is correctly set in ConsoleController
+        Field consoleControllerField = DebugServerEndpoint.class.getDeclaredField("consoleController");
+        consoleControllerField.setAccessible(true);
+        ConsoleController consoleController = (ConsoleController) consoleControllerField.get(null);
+
+        // Assert that the process handler was correctly passed to ConsoleController
+        Field processHandlerField = ConsoleController.class.getDeclaredField("processHandler");
+        processHandlerField.setAccessible(true);
+        ProcessHandler actualProcessHandler = (ProcessHandler) processHandlerField.get(consoleController);
+
+        assertEquals(mockProcessHandler, actualProcessHandler);
+    }
+
 
     private boolean getIsConnected() throws Exception {
         Field isConnectedField = DebugServerEndpoint.class.getDeclaredField("isConnected");

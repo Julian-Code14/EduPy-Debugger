@@ -80,6 +80,9 @@ public class DebugProcessListenerTests {
             // Verify that DebugServerEndpoint.setDebugProcess() was called
             debugServerEndpointMock.verify(() -> DebugServerEndpoint.setDebugProcess(pyDebugProcess), times(1));
 
+            // Verify that DebugServerEndpoint.setProcessHandler() was called
+            debugServerEndpointMock.verify(() -> DebugServerEndpoint.setProcessHandler(processHandler), times(1));
+
             // Verify that attachConsoleListeners() was called on the Spy
             verify(consoleOutputListener, times(1)).attachConsoleListeners();
         }
