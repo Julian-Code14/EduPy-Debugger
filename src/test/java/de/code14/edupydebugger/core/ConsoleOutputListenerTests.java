@@ -62,14 +62,15 @@ public class ConsoleOutputListenerTests {
         }
     }
 
-
     @Test
     public void testAttachConsoleListeners_whenProcessHandlerIsNull_throwsException() {
-        // Arrange: Create a new ConsoleOutputListener with a null ProcessHandler
-        ConsoleOutputListener consoleOutputListenerWithNullHandler = new ConsoleOutputListener(null);
+        // Arrange: Use Mockito to mock the exception thrown by the constructor
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> {
+            new ConsoleOutputListener(null);
+        });
 
-        // Act & Assert: Ensure that IllegalStateException is thrown
-        assertThrows(IllegalStateException.class, consoleOutputListenerWithNullHandler::attachConsoleListeners);
+        // Assert: Check that the exception message is as expected
+        assert(thrown.getMessage().contains("Argument for @NotNull parameter 'processHandler'"));
     }
 
 }
