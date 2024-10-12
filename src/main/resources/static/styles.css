@@ -97,6 +97,11 @@ th, td {
     text-align: left;
 }
 
+.active-row {
+    background-color: mintcream;
+    border-left: 5px solid #4CAF50;
+}
+
 .object-inspector-header {
     display: flex;
     justify-content: space-between;

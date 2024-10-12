@@ -25,38 +25,46 @@ function splitStringAtFirstColon(input) {
     return [firstPart, secondPart];
 }
 
+let activeRow = null; // Variable to keep track of the currently active row
+
 function updateVariablesTable(dataString) {
-    // Get the table body element
     const tableBody = document.querySelector('.variables-container tbody');
+    tableBody.innerHTML = ''; // Clear existing rows
 
-    // Clear the existing rows
-    tableBody.innerHTML = '';
-
-    // Split the data string by ';' to get each row
     const rows = dataString.split(';');
-
-    // Iterate over each row and create table rows
     rows.forEach(row => {
-        if (row.trim() === '') return; // Skip empty rows
+        if (row.trim() === '') return;
 
-        // Split the row into columns by '=' and ','
         const [id, rest] = row.split('=');
         const [name, type, currentValue, scope] = rest.split(',');
 
-        // Create a new row element
         const tr = document.createElement('tr');
-
-        // Create and append cell elements for each value
-        [extractNameList(name), type, processCellContent(extractComplexValue(currentValue)), scope, id].forEach(value => {
+        [extractNameList(name), type, processCellContent(extractComplexValue(currentValue)), scope, id].forEach((value, index) => {
             const td = document.createElement('td');
-
-            // If the value contains refid, process it for links
-            td.innerHTML = value;  // Using innerHTML since processCellContent may return HTML
+            td.innerHTML = value;
             tr.appendChild(td);
         });
 
-        // Append the row to the table body
-        tableBody.appendChild(tr);
+        // Add click event to the row to use the ID from the last cell to jump to the corresponding slide
+        tr.addEventListener('click', function(event) {
+            // Check if the target is a link (<a>), if so, don't trigger row click
+            if (event.target.tagName.toLowerCase() === 'a') {
+                return; // If the click is on a link, do nothing (let the link work)
+            }
+
+            // Remove active class from the previously active row
+            if (activeRow) {
+                activeRow.classList.remove('active-row');
+            }
+
+            // Mark the clicked row as active
+            tr.classList.add('active-row');
+            activeRow = tr; // Store the active row
+
+            jumpToSlide(id);  // Jump to the slide with this ID
+        });
+
+        tableBody.appendChild(tr); // Append the row to the table body
     });
 }
 
