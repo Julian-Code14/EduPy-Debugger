@@ -79,6 +79,16 @@ function updateVariablesTable(dataString) {
     });
 }
 
+let currentIndex = 0;
+
+function moveSlide(direction) {
+    const slides = document.querySelector('#object-slides');
+    const totalSlides = document.querySelectorAll('.slide').length;
+
+    currentIndex = (currentIndex + direction + totalSlides) % totalSlides;
+    slides.style.transform = `translateX(-${currentIndex * 100}%)`;
+}
+
 function updateObjectCardsImage(dataString) {
     // Receive and proceed with the Base64 Image
     const base64Image = 'data:image/png;base64,' + dataString;
@@ -101,10 +111,14 @@ function updateObjectCardsImage(dataString) {
             console.error('Failed to load image:', error);
         };
 
-        // Add the image to DOM to show it
-        const umlOutputDiv = document.getElementById('object-inspector-container');
-        umlOutputDiv.innerHTML = ''; // Empty div
-        umlOutputDiv.appendChild(img);
+        // Create a new slide div and append the image
+        const slide = document.createElement('div');
+        slide.classList.add('slide');
+        slide.appendChild(img);
+
+        // Add the slide to the slider
+        const slidesContainer = document.getElementById('object-slides');
+        slidesContainer.appendChild(slide);
     } else {
         socket.send("Client: Received non-image data");
         console.log('Received non-image data:', base64Image);
