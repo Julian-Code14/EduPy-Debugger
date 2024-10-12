@@ -9,33 +9,6 @@ const websocketUrl = 'ws://localhost:8025/websockets/debug'
 let socket;
 const reconnectInterval = 5000;
 
-function logToConsole(message, isPrompt = false) {
-    const outputContainer = document.getElementById("output-container");
-    const newEntry = document.createElement('div');
-    newEntry.classList.add('log-entry'); // Für Animation
-    newEntry.textContent = (isPrompt ? "> " : "") + message;
-    outputContainer.appendChild(newEntry); // Neue Ausgabe hinzufügen
-    outputContainer.scrollTop = outputContainer.scrollHeight;  // Auto-Scroll nach unten
-}
-
-function goToClassDiagram() {
-    window.location.href = 'pages/class-diagram.html';
-    try {
-        socket.close();
-    } catch (e) {
-        console.error(e);
-    }
-}
-
-function goToPythonTutor() {
-    socket.send("navigate:")
-    try {
-        socket.close();
-    } catch (e) {
-        console.error(e);
-    }
-}
-
 function splitStringAtFirstColon(input) {
     // Finden des Index des ersten Doppelpunkts
     const index = input.indexOf(':');
@@ -74,7 +47,7 @@ function updateVariablesTable(dataString) {
         const tr = document.createElement('tr');
 
         // Create and append cell elements for each value
-        [id, name, type, currentValue, scope].forEach(value => {
+        [name, type, currentValue, scope, id].forEach(value => {
             const td = document.createElement('td');
             td.textContent = value;
             tr.appendChild(td);
@@ -185,6 +158,19 @@ connectWebSocket();
 
 
 // Controls
+document.addEventListener('DOMContentLoaded', function () {
+    const controls = document.querySelector('.controls');
+    const initialOffsetTop = controls.offsetTop;
+
+    window.addEventListener('scroll', function () {
+        if (window.scrollY > initialOffsetTop) {
+            controls.classList.add('sticky-controls');
+        } else {
+            controls.classList.remove('sticky-controls');
+        }
+    });
+});
+
 document.getElementById('resume-btn').addEventListener('click', function() {
     if (socket.readyState === WebSocket.OPEN) {
         socket.send("action:resume")
@@ -228,6 +214,7 @@ document.getElementById('step-out-btn').addEventListener('click', function() {
 
 // TODO: get:od und get:oc wurden früher durch Drücken des Switches angefordert - wird das noch benötigt?
 
+// Console
 document.getElementById("console-input").addEventListener("keydown", function(event) {
     const inputField = document.getElementById("console-input");
 
@@ -244,3 +231,31 @@ document.getElementById("console-input").addEventListener("keydown", function(ev
         inputField.value = "";  // Eingabefeld leeren
     }
 });
+
+function logToConsole(message, isPrompt = false) {
+    const outputContainer = document.getElementById("output-container");
+    const newEntry = document.createElement('div');
+    newEntry.classList.add('log-entry'); // Für Animation
+    newEntry.textContent = (isPrompt ? "> " : "") + message;
+    outputContainer.appendChild(newEntry); // Neue Ausgabe hinzufügen
+    outputContainer.scrollTop = outputContainer.scrollHeight;  // Auto-Scroll nach unten
+}
+
+// Bottom Buttons
+function goToClassDiagram() {
+    window.location.href = 'pages/class-diagram.html';
+    try {
+        socket.close();
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function goToPythonTutor() {
+    socket.send("navigate:")
+    try {
+        socket.close();
+    } catch (e) {
+        console.error(e);
+    }
+}
