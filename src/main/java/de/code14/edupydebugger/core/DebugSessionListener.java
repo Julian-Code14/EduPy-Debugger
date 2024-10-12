@@ -169,6 +169,19 @@ public class DebugSessionListener implements XDebugSessionListener {
         }
     }
 
+    /**
+     * Generates PlantUML diagrams for object cards from the given map of PlantUML strings,
+     * and sends these diagrams to the WebSocket server.
+     * <p>
+     * The diagrams are encoded as Base64 strings and formatted as follows:
+     * Each entry consists of the key and the corresponding Base64 diagram, separated by "|".
+     * Multiple entries are concatenated with "###" as the delimiter.
+     * The complete string is prefixed with {@link #OBJECT_CARDS_PREFIX}.
+     * <p>
+     * The resulting string is then sent to the WebSocket server for visualization.
+     *
+     * @param objectCardPlantUmlStrings a map where the key is the object identifier and the value is the PlantUML string representing the object card
+     */
     private void generateAndSendObjectCards(Map<String, String> objectCardPlantUmlStrings) {
         StringBuilder objectCardPlantUmlImagesData = new StringBuilder();
         objectCardPlantUmlImagesData.append(OBJECT_CARDS_PREFIX);
