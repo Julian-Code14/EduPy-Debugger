@@ -89,40 +89,43 @@ function moveSlide(direction) {
     slides.style.transform = `translateX(-${currentIndex * 100}%)`;
 }
 
-function updateObjectCardsImage(dataString) {
-    // Receive and proceed with the Base64 Image
-    const base64Image = 'data:image/png;base64,' + dataString;
-    console.log(base64Image);
+function updateObjectCardImages(dataString) {
+    const slidesContainer = document.getElementById('object-slides');
+    slidesContainer.innerHTML = ``; // Empty div
 
-    // Check if it is a correct encoded Base64 Image
-    if (base64Image.startsWith('data:image/png;base64,')) {
-        const base64String = base64Image.split(',')[1];
-        console.log('Received Base64 string:', base64String);
+    // Split the data string by '###' to get each image block
+    const imageBlocks = dataString.split('###').filter(block => block.trim() !== '');
 
-        // Versuchen, das Bild anzuzeigen
-        const img = new Image();
-        img.src = base64Image;
-        img.onload = function() {
-            socket.send("Success: Image loaded successfully.");
-            console.log('Image loaded successfully.');
-        };
-        img.onerror = function(error) {
-            socket.send("Client: Failed to load image: " + error);
-            console.error('Failed to load image:', error);
-        };
+    imageBlocks.forEach(block => {
+        const [id, base64Data] = block.split('|');
+        const base64Image = 'data:image/png;base64,' + base64Data;
 
-        // Create a new slide div and append the image
-        const slide = document.createElement('div');
-        slide.classList.add('slide');
-        slide.appendChild(img);
+        // Check if it is a correct encoded Base64 Image
+        if (base64Image.startsWith('data:image/png;base64,')) {
+            const img = new Image();
+            img.src = base64Image;
+            img.onload = function() {
+                socket.send("Success: Image loaded successfully with ID " + id);
+                console.log('Image loaded successfully with ID:', id);
+            };
+            img.onerror = function(error) {
+                socket.send("Client: Failed to load image with ID " + id + ": " + error);
+                console.error('Failed to load image with ID:', id, error);
+            };
 
-        // Add the slide to the slider
-        const slidesContainer = document.getElementById('object-slides');
-        slidesContainer.appendChild(slide);
-    } else {
-        socket.send("Client: Received non-image data");
-        console.log('Received non-image data:', base64Image);
-    }
+            // Create a new slide div and append the image
+            const slide = document.createElement('div');
+            slide.classList.add('slide');
+            slide.id = `slide-${id}`;
+            slide.appendChild(img);
+
+            // Add the slide to the slider
+            slidesContainer.appendChild(slide);
+        } else {
+            socket.send("Client: Received non-image data with ID " + id);
+            console.log('Received non-image data with ID:', id, base64Image);
+        }
+    });
 }
 
 
@@ -137,7 +140,7 @@ function connectWebSocket() {
                 updateVariablesTable(eventData.at(1));
                 break;
             case "oc:":
-                updateObjectCardsImage(eventData.at(1));
+                updateObjectCardImages(eventData.at(1));
                 break;
             case "od:":
                 // TODO: Bring back object diagrams at another level

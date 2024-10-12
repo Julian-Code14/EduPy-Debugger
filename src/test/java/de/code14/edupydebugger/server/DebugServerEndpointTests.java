@@ -21,8 +21,8 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author julian
- * @version 1.0
- * @since 14.08.24
+ * @version 0.1.0
+ * @since 0.1.0
  */
 public class DebugServerEndpointTests {
 
@@ -171,6 +171,27 @@ public class DebugServerEndpointTests {
         assertEquals(mockProcessHandler, actualProcessHandler);
     }
 
+    @Test
+    public void testSendObjectCardPlantUmlImagesData() throws Exception {
+        setIsConnected(true);
+
+        DebugServerEndpoint endpoint = new DebugServerEndpoint();
+        when(mockSession.getBasicRemote()).thenReturn(mockBasicRemote);
+        doNothing().when(mockBasicRemote).sendText(anyString());
+
+        // Simuliere das Öffnen der Verbindung
+        endpoint.onOpen(mockSession);
+
+        // Simuliere das Setzen der Object Cards Daten
+        String objectCardPlantUmlData = "mockObjectCardData";
+        DebugServerEndpoint.setObjectCardPlantUmlImagesData(objectCardPlantUmlData);
+
+        // Teste das Senden der Object Cards Daten
+        DebugServerEndpoint.sendDebugInfo("oc:" + objectCardPlantUmlData);
+
+        // Überprüfe, dass die Nachricht gesendet wurde
+        verify(mockBasicRemote, times(1)).sendText("oc:mockObjectCardData");
+    }
 
     private boolean getIsConnected() throws Exception {
         Field isConnectedField = DebugServerEndpoint.class.getDeclaredField("isConnected");

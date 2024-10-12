@@ -29,8 +29,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  * </p>
  *
  * @author julian
- * @version 1.0
- * @since 19.06.24
+ * @version 0.1.0
+ * @since 0.1.0
  */
 @WebListener
 @ServerEndpoint(value = "/debug")
@@ -48,7 +48,7 @@ public class DebugServerEndpoint {
     // Debug content to be shared with clients
     private static String classDiagramPlantUmlImage;
     private static String variablesString;
-    private static String objectCardsPlantUmlImage;
+    private static String objectCardPlantUmlImagesData;
     private static String objectDiagramPlantUmlImage;
 
     private static final Map<String, Runnable> actionMap = new HashMap<>();
@@ -181,7 +181,7 @@ public class DebugServerEndpoint {
                 sendDebugInfo(classDiagramPlantUmlImage);
                 break;
             case "oc":
-                sendDebugInfo("oc:" + objectCardsPlantUmlImage);
+                sendDebugInfo(objectCardPlantUmlImagesData);
                 break;
             case "od":
                 sendDebugInfo("od:" + objectDiagramPlantUmlImage);
@@ -243,10 +243,10 @@ public class DebugServerEndpoint {
     /**
      * Sets the PlantUML image for the object cards diagram.
      *
-     * @param base64PlantUml the Base64 encoded PlantUML image
+     * @param base64PlantUmlData the Base64 encoded PlantUML image
      */
-    public static void setObjectCardsPlantUmlImage(String base64PlantUml) {
-        objectCardsPlantUmlImage = base64PlantUml;
+    public static void setObjectCardPlantUmlImagesData(String base64PlantUmlData) {
+        objectCardPlantUmlImagesData = base64PlantUmlData;
     }
 
     /**

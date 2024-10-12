@@ -14,8 +14,8 @@ import static org.mockito.Mockito.when;
 
 /**
  * @author julian
- * @version 1.0
- * @since 14.08.24
+ * @version 0.1.0
+ * @since 0.1.0
  */
 public class ObjectDiagramParserTests {
 
@@ -25,11 +25,10 @@ public class ObjectDiagramParserTests {
         Map<String, ObjectInfo> emptyObjects = Collections.emptyMap();
 
         // Act
-        String result = ObjectDiagramParser.generateObjectCards(emptyObjects);
+        Map<String, String> result = ObjectDiagramParser.generateObjectCards(emptyObjects);
 
         // Assert
-        assertTrue(result.contains("@startuml"));
-        assertTrue(result.contains("@enduml"));
+        assertTrue(result.isEmpty());
     }
 
     @Test
@@ -47,11 +46,13 @@ public class ObjectDiagramParserTests {
         Map<String, ObjectInfo> objects = Map.of("1", objectInfo);
 
         // Act
-        String result = ObjectDiagramParser.generateObjectCards(objects);
+        Map<String, String> result = ObjectDiagramParser.generateObjectCards(objects);
 
         // Assert
-        assertTrue(result.contains("object \"TestObject\" as o1"));
-        assertTrue(result.contains("attribute1 = value1"));
+        assertTrue(result.containsKey("1"));
+        String plantUml = result.get("1");
+        assertTrue(plantUml.contains("object \"TestObject\" as o1"));
+        assertTrue(plantUml.contains("attribute1 = value1"));
     }
 
     @Test

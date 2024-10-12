@@ -8,6 +8,7 @@ import de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
@@ -15,13 +16,16 @@ import org.mockito.MockitoAnnotations;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 /**
  * @author julian
- * @version 1.0
- * @since 14.08.24
+ * @version 0.1.0
+ * @since 0.1.0
  */
 public class DebugSessionListenerTests {
 
@@ -60,35 +64,43 @@ public class DebugSessionListenerTests {
     // TODO: testStackFrameChangedCallsMethods
 
     @Test
-    public void testGenerateAndSendDiagramHandlesObjectCards() throws Exception {
+    public void testGenerateAndSendObjectCards() throws Exception {
         // Arrange
-        String mockDiagram = "mock diagram";
-        String base64Diagram = "mockBase64";
+        Map<String, String> mockObjectCards = Map.of("1", "mockPlantUML1", "2", "mockPlantUML2");
+        String base64Diagram1 = "mockBase64_1";
+        String base64Diagram2 = "mockBase64_2";
 
         try (MockedStatic<PlantUMLDiagramGenerator> plantUMLDiagramGeneratorMock = mockStatic(PlantUMLDiagramGenerator.class);
              MockedStatic<DebugServerEndpoint> debugServerEndpointMock = mockStatic(DebugServerEndpoint.class)) {
 
-            plantUMLDiagramGeneratorMock.when(() -> PlantUMLDiagramGenerator.generateDiagramAsBase64(mockDiagram))
-                    .thenReturn(base64Diagram);
+            // Mock the behavior of the diagram generator
+            plantUMLDiagramGeneratorMock.when(() -> PlantUMLDiagramGenerator.generateDiagramAsBase64("mockPlantUML1"))
+                    .thenReturn(base64Diagram1);
+            plantUMLDiagramGeneratorMock.when(() -> PlantUMLDiagramGenerator.generateDiagramAsBase64("mockPlantUML2"))
+                    .thenReturn(base64Diagram2);
 
-            // Access the private method generateAndSendDiagram
-            Method method = DebugSessionListener.class.getDeclaredMethod("generateAndSendDiagram", String.class, String.class);
+            // Access the private method generateAndSendObjectCards
+            Method method = DebugSessionListener.class.getDeclaredMethod("generateAndSendObjectCards", Map.class);
             method.setAccessible(true);
 
             // Act: Call the private method via reflection
-            method.invoke(debugSessionListener, mockDiagram, "objectCards");
+            method.invoke(debugSessionListener, mockObjectCards);
 
-            // Access the private static field OBJECT_CARDS_PREFIX
-            Field field = DebugSessionListener.class.getDeclaredField("OBJECT_CARDS_PREFIX");
-            field.setAccessible(true);
-            String objectCardsPrefix = (String) field.get(null);
+            // Verify that the method was called with the correct object cards data
+            ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+            debugServerEndpointMock.verify(() -> DebugServerEndpoint.setObjectCardPlantUmlImagesData(captor.capture()), times(1));
 
-            // Assert: Verify the calls
-            plantUMLDiagramGeneratorMock.verify(() -> PlantUMLDiagramGenerator.generateDiagramAsBase64(mockDiagram), times(1));
-            debugServerEndpointMock.verify(() -> DebugServerEndpoint.setObjectCardsPlantUmlImage(base64Diagram), times(1));
-            debugServerEndpointMock.verify(() -> DebugServerEndpoint.sendDebugInfo(objectCardsPrefix + base64Diagram), times(1));
+            // Split the actual captured value and check the individual components
+            String capturedValue = captor.getValue();
+            assertTrue(capturedValue.startsWith("oc:"));
+            assertTrue(capturedValue.contains("1|mockBase64_1"));
+            assertTrue(capturedValue.contains("2|mockBase64_2"));
+
+            // Verify that the final data was sent
+            debugServerEndpointMock.verify(() -> DebugServerEndpoint.sendDebugInfo(capturedValue), times(1));
         }
     }
+
 
     @Test
     public void testGenerateAndSendDiagramHandlesObjectDiagrams() throws Exception {
@@ -118,6 +130,32 @@ public class DebugSessionListenerTests {
             plantUMLDiagramGeneratorMock.verify(() -> PlantUMLDiagramGenerator.generateDiagramAsBase64(mockDiagram), times(1));
             debugServerEndpointMock.verify(() -> DebugServerEndpoint.setObjectDiagramPlantUmlImage(base64Diagram), times(1));
             debugServerEndpointMock.verify(() -> DebugServerEndpoint.sendDebugInfo(objectDiagramPrefix + base64Diagram), times(1));
+        }
+    }
+
+    @Test
+    public void testGenerateAndSendDiagramHandlesClassDiagrams() throws Exception {
+        // Arrange
+        String mockDiagram = "mock class diagram";
+        String base64Diagram = "mockBase64Class";
+
+        try (MockedStatic<PlantUMLDiagramGenerator> plantUMLDiagramGeneratorMock = mockStatic(PlantUMLDiagramGenerator.class);
+             MockedStatic<DebugServerEndpoint> debugServerEndpointMock = mockStatic(DebugServerEndpoint.class)) {
+
+            // Mock the behavior of the diagram generator
+            plantUMLDiagramGeneratorMock.when(() -> PlantUMLDiagramGenerator.generateDiagramAsBase64(mockDiagram))
+                    .thenReturn(base64Diagram);
+
+            // Access the private method generateAndSendDiagram
+            Method method = DebugSessionListener.class.getDeclaredMethod("generateAndSendDiagram", String.class, String.class);
+            method.setAccessible(true);
+
+            // Act: Call the private method via reflection
+            method.invoke(debugSessionListener, mockDiagram, "classDiagram");
+
+            // Assert: Verify the calls
+            plantUMLDiagramGeneratorMock.verify(() -> PlantUMLDiagramGenerator.generateDiagramAsBase64(mockDiagram), times(1));
+            debugServerEndpointMock.verify(() -> DebugServerEndpoint.setClassDiagramPlantUmlImage(base64Diagram), times(1));
         }
     }
 

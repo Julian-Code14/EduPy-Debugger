@@ -30,8 +30,8 @@ import java.util.Map;
  * The class diagram and object diagram generated during the analysis are encoded as PlantUML diagrams.
  *
  * @author julian
- * @version 1.0
- * @since 05.07.24
+ * @version 0.1.0
+ * @since 0.1.0
  */
 public class DebugSessionListener implements XDebugSessionListener {
 
@@ -123,9 +123,9 @@ public class DebugSessionListener implements XDebugSessionListener {
     private void handleObjects(StackFrameAnalyzer stackFrameAnalyzer) {
         Map<String, ObjectInfo> objects = stackFrameAnalyzer.getObjects();
 
-        // TODO: Generate the object cards diagram in PlantUML format
-        String objectCardsPlantUmlString = ObjectDiagramParser.generateObjectCards(objects);
-        generateAndSendDiagram(objectCardsPlantUmlString, "objectCards");
+        // Generate the object cards diagram in PlantUML format and send it
+        Map<String, String> objectCardPlantUmlStrings = ObjectDiagramParser.generateObjectCards(objects);
+        generateAndSendObjectCards(objectCardPlantUmlStrings);
 
         // Generate the object relationships diagram in PlantUML format
         String objectDiagramPlantUmlString = ObjectDiagramParser.generateObjectDiagram(objects);
@@ -147,16 +147,12 @@ public class DebugSessionListener implements XDebugSessionListener {
      * Generates a PlantUML diagram and sends it to the debug server endpoint.
      *
      * @param plantUmlString the PlantUML string to generate the diagram from
-     * @param type           the type of diagram being generated ("objectCards", "objectDiagram", "classDiagram")
+     * @param type           the type of diagram being generated ("objectDiagram", "classDiagram")
      */
     private void generateAndSendDiagram(String plantUmlString, String type) {
         try {
             String base64Diagram = PlantUMLDiagramGenerator.generateDiagramAsBase64(plantUmlString);
             switch (type) {
-                case "objectCards":
-                    DebugServerEndpoint.setObjectCardsPlantUmlImage(base64Diagram);
-                    DebugServerEndpoint.sendDebugInfo(OBJECT_CARDS_PREFIX + base64Diagram);
-                    break;
                 case "objectDiagram":
                     DebugServerEndpoint.setObjectDiagramPlantUmlImage(base64Diagram);
                     DebugServerEndpoint.sendDebugInfo(OBJECT_DIAGRAM_PREFIX + base64Diagram);
@@ -171,6 +167,24 @@ public class DebugSessionListener implements XDebugSessionListener {
             LOGGER.error("Error generating " + type + " PlantUML diagram", e);
             throw new RuntimeException(e);
         }
+    }
+
+    private void generateAndSendObjectCards(Map<String, String> objectCardPlantUmlStrings) {
+        StringBuilder objectCardPlantUmlImagesData = new StringBuilder();
+        objectCardPlantUmlImagesData.append(OBJECT_CARDS_PREFIX);
+
+        objectCardPlantUmlStrings.forEach((key, plantUmlString) -> {
+            try {
+                String base64Diagram = PlantUMLDiagramGenerator.generateDiagramAsBase64(plantUmlString);
+                objectCardPlantUmlImagesData.append(key).append("|").append(base64Diagram).append("###");
+            } catch (IOException e) {
+                LOGGER.error("Error generating object card (PlantUML)", e);
+                throw new RuntimeException(e);
+            }
+        });
+
+        DebugServerEndpoint.setObjectCardPlantUmlImagesData(objectCardPlantUmlImagesData.toString());
+        DebugServerEndpoint.sendDebugInfo(objectCardPlantUmlImagesData.toString());
     }
 
 }
