@@ -1,6 +1,8 @@
 package de.code14.edupydebugger.server;
 
+import com.intellij.execution.process.ProcessHandler;
 import com.jetbrains.python.debugger.PyDebugProcess;
+import de.code14.edupydebugger.core.ConsoleController;
 import de.code14.edupydebugger.core.DebugProcessController;
 import jakarta.websocket.RemoteEndpoint;
 import jakarta.websocket.Session;
@@ -9,6 +11,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.util.Set;
 
@@ -18,8 +21,8 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author julian
- * @version 1.0
- * @since 14.08.24
+ * @version 0.2.0
+ * @since 0.1.0
  */
 public class DebugServerEndpointTests {
 
@@ -106,6 +109,27 @@ public class DebugServerEndpointTests {
     }
 
     @Test
+    public void testHandleActionMessageForConsoleInput() throws Exception {
+        // Arrange: Mock ProcessHandler and set it in the ConsoleController
+        ProcessHandler mockProcessHandler = mock(ProcessHandler.class);
+        DebugServerEndpoint.setProcessHandler(mockProcessHandler);
+
+        OutputStream mockOutputStream = mock(OutputStream.class);
+        when(mockProcessHandler.getProcessInput()).thenReturn(mockOutputStream);
+
+        DebugServerEndpoint endpoint = new DebugServerEndpoint();
+
+        // Act: Simulate sending a console-input message
+        String inputMessage = "action:console-input:Test Input";
+        endpoint.onMessage(inputMessage, mockSession);
+
+        // Assert: Verify that the input was written to the process input stream
+        verify(mockOutputStream, times(1)).write(("Test Input\n").getBytes());
+        verify(mockOutputStream, times(1)).flush();
+    }
+
+
+    @Test
     public void testHandleActionMessageForResume() {
         when(mockDebugProcess.getSession()).thenReturn(mockXDebugSession);
         DebugServerEndpoint.setDebugProcess(mockDebugProcess);
@@ -125,6 +149,48 @@ public class DebugServerEndpointTests {
         DebugProcessController debugProcessController = (DebugProcessController) debugProcessControllerField.get(null);
 
         assertEquals(mockDebugProcess, debugProcessController.getDebugProcess());
+    }
+
+    @Test
+    public void testSetProcessHandler() throws Exception {
+        ProcessHandler mockProcessHandler = mock(ProcessHandler.class);
+
+        // Act: Call the setProcessHandler method
+        DebugServerEndpoint.setProcessHandler(mockProcessHandler);
+
+        // Use reflection to verify that the processHandler is correctly set in ConsoleController
+        Field consoleControllerField = DebugServerEndpoint.class.getDeclaredField("consoleController");
+        consoleControllerField.setAccessible(true);
+        ConsoleController consoleController = (ConsoleController) consoleControllerField.get(null);
+
+        // Assert that the process handler was correctly passed to ConsoleController
+        Field processHandlerField = ConsoleController.class.getDeclaredField("processHandler");
+        processHandlerField.setAccessible(true);
+        ProcessHandler actualProcessHandler = (ProcessHandler) processHandlerField.get(consoleController);
+
+        assertEquals(mockProcessHandler, actualProcessHandler);
+    }
+
+    @Test
+    public void testSendObjectCardPlantUmlImagesData() throws Exception {
+        setIsConnected(true);
+
+        DebugServerEndpoint endpoint = new DebugServerEndpoint();
+        when(mockSession.getBasicRemote()).thenReturn(mockBasicRemote);
+        doNothing().when(mockBasicRemote).sendText(anyString());
+
+        // Simuliere das Öffnen der Verbindung
+        endpoint.onOpen(mockSession);
+
+        // Simuliere das Setzen der Object Cards Daten
+        String objectCardPlantUmlData = "mockObjectCardData";
+        DebugServerEndpoint.setObjectCardPlantUmlImagesData(objectCardPlantUmlData);
+
+        // Teste das Senden der Object Cards Daten
+        DebugServerEndpoint.sendDebugInfo("oc:" + objectCardPlantUmlData);
+
+        // Überprüfe, dass die Nachricht gesendet wurde
+        verify(mockBasicRemote, times(1)).sendText("oc:mockObjectCardData");
     }
 
     private boolean getIsConnected() throws Exception {

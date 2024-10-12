@@ -32,8 +32,8 @@ import static org.mockito.Mockito.when;
 
 /**
  * @author julian
- * @version 1.0
- * @since 14.08.24
+ * @version 0.1.0
+ * @since 0.1.0
  */
 public class PythonAnalyzerTests extends LightPlatformTestCase {
 

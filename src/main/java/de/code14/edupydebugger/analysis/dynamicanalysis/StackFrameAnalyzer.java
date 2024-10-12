@@ -10,8 +10,8 @@ import java.util.*;
  * It delegates the task of analyzing variables and objects to separate analyzers.
  *
  * @author julian
- * @version 1.0
- * @since 17.07.24
+ * @version 0.1.0
+ * @since 0.1.0
  */
 public class StackFrameAnalyzer {
 

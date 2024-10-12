@@ -31,8 +31,8 @@ import org.junit.Test;
 
 /**
  * @author julian
- * @version 1.0
- * @since 21.08.24
+ * @version 0.1.0
+ * @since 0.1.0
  */
 public class DebuggerFixtureTestCase extends HeavyPlatformTestCase {
 

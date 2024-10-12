@@ -21,8 +21,8 @@ import java.util.concurrent.CountDownLatch;
  * and stores this information in a map for further use.
  *
  * @author julian
- * @version 1.0
- * @since 11.08.24
+ * @version 0.1.0
+ * @since 0.1.0
  */
 public class ObjectAnalyzer {
 

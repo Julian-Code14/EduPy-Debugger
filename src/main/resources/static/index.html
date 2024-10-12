@@ -1,3 +1,5 @@
+<!--@version 0.2.0-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -25,11 +27,11 @@
 			<table>
 				<thead>
 				<tr>
-					<th>ID</th>
-					<th>Name</th>
+					<th>Name(n)</th>
 					<th>Typ</th>
 					<th>Aktueller Wert</th>
 					<th>Scope</th>
+					<th>ID</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -41,15 +43,25 @@
 	<section>
 		<div class="object-inspector-header">
 			<h2>Objektinspektor</h2>
-			<div class="switch-container">
-				<label class="switch">
-					<input type="checkbox" id="object-inspector-switch">
-					<span class="slider"></span>
-				</label>
-				<span class="switch-label">Referenzen</span>
+		</div>
+		<div id="object-inspector-container">
+			<div id="object-slider" class="slider">
+				<div class="slides" id="object-slides">
+					<!-- Dynamische Inhalte hier einfügen -->
+				</div>
+				<button class="arrow arrow-left" onclick="moveSlide(-1)">&#8249;</button>
+				<button class="arrow arrow-right" onclick="moveSlide(1)">&#8250;</button>
 			</div>
 		</div>
-		<div id="object-inspector-container"></div>
+	</section>
+	<section>
+		<div id="console">
+			<div id="output-container"></div>
+			<div id="input-container">
+				<span id="prompt-symbol">&gt; </span>
+				<input type="text" id="console-input" autofocus />
+			</div>
+		</div>
 	</section>
 </div>
 <div class="bottom-buttons">

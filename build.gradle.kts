@@ -30,19 +30,20 @@ dependencies {
     // https://mvnrepository.com/artifact/jakarta.servlet/jakarta.servlet-api
     implementation("jakarta.servlet:jakarta.servlet-api:6.1.0")
     // https://mvnrepository.com/artifact/org.glassfish.tyrus/tyrus-server
-    implementation("org.glassfish.tyrus:tyrus-server:2.1.5")
+    implementation("org.glassfish.tyrus:tyrus-server:2.2.0")
     // https://mvnrepository.com/artifact/org.glassfish.tyrus/tyrus-container-grizzly-server
-    implementation("org.glassfish.tyrus:tyrus-container-grizzly-server:2.1.5")
+    implementation("org.glassfish.tyrus:tyrus-container-grizzly-server:2.2.0")
 
     // Plant UML
     // https://mvnrepository.com/artifact/net.sourceforge.plantuml/plantuml
-    implementation("net.sourceforge.plantuml:plantuml:1.2024.5")
+    implementation("net.sourceforge.plantuml:plantuml:1.2024.7")
 
 
     // Testing Setup
     //testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
     //testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.0")
-    testImplementation("org.mockito:mockito-core:5.7.0")
+    testImplementation("org.mockito:mockito-core:5.14.1")
+    testImplementation("net.bytebuddy:byte-buddy:1.14.8") // for compatibility with Java 21
     //testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.1")
     //testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.1")
     testImplementation("junit:junit:4.13.2")
