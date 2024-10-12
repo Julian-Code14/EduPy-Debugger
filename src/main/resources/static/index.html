@@ -1,3 +1,5 @@
+<!--@version 0.2.0-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -41,15 +43,16 @@
 	<section>
 		<div class="object-inspector-header">
 			<h2>Objektinspektor</h2>
-			<div class="switch-container">
-				<label class="switch">
-					<input type="checkbox" id="object-inspector-switch">
-					<span class="slider"></span>
-				</label>
-				<span class="switch-label">Referenzen</span>
+		</div>
+		<div id="object-inspector-container">
+			<div id="object-slider" class="slider">
+				<div class="slides" id="object-slides">
+					<!-- Dynamische Inhalte hier einfügen -->
+				</div>
+				<button class="arrow arrow-left" onclick="moveSlide(-1)">&#8249;</button>
+				<button class="arrow arrow-right" onclick="moveSlide(1)">&#8250;</button>
 			</div>
 		</div>
-		<div id="object-inspector-container"></div>
 	</section>
 	<section>
 		<div id="console">

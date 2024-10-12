@@ -14,8 +14,8 @@ import org.glassfish.tyrus.server.Server;
  * </p>
  *
  * @author julian
- * @version 1.0
- * @since 11.06.24
+ * @version 0.1.0
+ * @since 0.1.0
  */
 public class DebugWebSocketServer {
 

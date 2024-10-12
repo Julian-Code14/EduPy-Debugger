@@ -1,3 +1,9 @@
+/*
+* @author julian
+* @version 0.2.0
+* @since 0.1.0
+* */
+
 // Websocket
 const websocketUrl = 'ws://localhost:8025/websockets/debug'
 let socket;
@@ -79,36 +85,53 @@ function updateVariablesTable(dataString) {
     });
 }
 
-function updateObjectCardsImage(dataString) {
-    // Receive and proceed with the Base64 Image
-    const base64Image = 'data:image/png;base64,' + dataString;
-    console.log(base64Image);
+let currentIndex = 0;
 
-    // Check if it is a correct encoded Base64 Image
-    if (base64Image.startsWith('data:image/png;base64,')) {
-        const base64String = base64Image.split(',')[1];
-        console.log('Received Base64 string:', base64String);
+function moveSlide(direction) {
+    const slides = document.querySelector('#object-slides');
+    const totalSlides = document.querySelectorAll('.slide').length;
 
-        // Versuchen, das Bild anzuzeigen
-        const img = new Image();
-        img.src = base64Image;
-        img.onload = function() {
-            socket.send("Success: Image loaded successfully.");
-            console.log('Image loaded successfully.');
-        };
-        img.onerror = function(error) {
-            socket.send("Client: Failed to load image: " + error);
-            console.error('Failed to load image:', error);
-        };
+    currentIndex = (currentIndex + direction + totalSlides) % totalSlides;
+    slides.style.transform = `translateX(-${currentIndex * 100}%)`;
+}
 
-        // Add the image to DOM to show it
-        const umlOutputDiv = document.getElementById('object-inspector-container');
-        umlOutputDiv.innerHTML = ''; // Empty div
-        umlOutputDiv.appendChild(img);
-    } else {
-        socket.send("Client: Received non-image data");
-        console.log('Received non-image data:', base64Image);
-    }
+function updateObjectCardImages(dataString) {
+    const slidesContainer = document.getElementById('object-slides');
+    slidesContainer.innerHTML = ``; // Empty div
+
+    // Split the data string by '###' to get each image block
+    const imageBlocks = dataString.split('###').filter(block => block.trim() !== '');
+
+    imageBlocks.forEach(block => {
+        const [id, base64Data] = block.split('|');
+        const base64Image = 'data:image/png;base64,' + base64Data;
+
+        // Check if it is a correct encoded Base64 Image
+        if (base64Image.startsWith('data:image/png;base64,')) {
+            const img = new Image();
+            img.src = base64Image;
+            img.onload = function() {
+                socket.send("Success: Image loaded successfully with ID " + id);
+                console.log('Image loaded successfully with ID:', id);
+            };
+            img.onerror = function(error) {
+                socket.send("Client: Failed to load image with ID " + id + ": " + error);
+                console.error('Failed to load image with ID:', id, error);
+            };
+
+            // Create a new slide div and append the image
+            const slide = document.createElement('div');
+            slide.classList.add('slide');
+            slide.id = `slide-${id}`;
+            slide.appendChild(img);
+
+            // Add the slide to the slider
+            slidesContainer.appendChild(slide);
+        } else {
+            socket.send("Client: Received non-image data with ID " + id);
+            console.log('Received non-image data with ID:', id, base64Image);
+        }
+    });
 }
 
 
@@ -117,21 +140,16 @@ function connectWebSocket() {
 
     socket.onmessage = function(event) {
         const eventData = splitStringAtFirstColon(event.data);
-        const switchElement = document.getElementById('object-inspector-switch');
 
         switch (eventData.at(0)) {
             case "variables:":
                 updateVariablesTable(eventData.at(1));
                 break;
             case "oc:":
-                if (!switchElement.checked && event.data.startsWith("oc:")) {
-                    updateObjectCardsImage(eventData.at(1));
-                }
+                updateObjectCardImages(eventData.at(1));
                 break;
             case "od:":
-                if (switchElement.checked && event.data.startsWith("od:")) {
-                    updateObjectCardsImage(eventData.at(1));
-                } else
+                // TODO: Bring back object diagrams at another level
                 break;
             case "console:":
                 logToConsole(eventData.at(1));
@@ -208,26 +226,7 @@ document.getElementById('step-out-btn').addEventListener('click', function() {
     }
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    const switchElement = document.getElementById('object-inspector-switch');
-
-    // Überprüfen, ob der Switch aktiviert ist oder nicht
-    function checkSwitchStatus() {
-        if (switchElement.checked) {
-            socket.send("get:od");
-            console.log('Der Switch ist aktiviert.');
-        } else {
-            socket.send("get:oc");
-            console.log('Der Switch ist deaktiviert.');
-        }
-    }
-
-    // Überprüfen des Status beim Laden der Seite
-    //checkSwitchStatus();
-
-    // Hinzufügen eines Event-Listeners, um den Status bei Änderungen zu überprüfen
-    switchElement.addEventListener('change', checkSwitchStatus);
-});
+// TODO: get:od und get:oc wurden früher durch Drücken des Switches angefordert - wird das noch benötigt?
 
 document.getElementById("console-input").addEventListener("keydown", function(event) {
     const inputField = document.getElementById("console-input");

@@ -7,8 +7,8 @@ import java.util.List;
  * It contains references to other objects and a list of attributes associated with the object.
  *
  * @author julian
- * @version 1.0
- * @since 11.08.24
+ * @version 0.1.0
+ * @since 0.1.0
  */
 public record ObjectInfo(List<String> references, List<AttributeInfo> attributes) {
 

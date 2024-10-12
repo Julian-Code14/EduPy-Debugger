@@ -17,8 +17,8 @@ import java.util.Objects;
  * </p>
  *
  * @author julian
- * @version 1.0
- * @since 11.10.24
+ * @version 0.2.0
+ * @since 0.2.0
  */
 public class ConsoleController {
 
