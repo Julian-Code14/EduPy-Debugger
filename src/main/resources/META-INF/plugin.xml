@@ -2,6 +2,7 @@
 <idea-plugin>
     <id>de.code14.edupydebugger</id>
     <name>EduPy-Debugger</name>
+    <version>0.1.0</version>
     <vendor>Julian Flach</vendor>
 
     <depends>com.intellij.modules.python</depends>

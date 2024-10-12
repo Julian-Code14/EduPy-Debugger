@@ -9,9 +9,18 @@ import de.code14.edupydebugger.server.DebugServerEndpoint;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * The {@code ConsoleOutputListener} class is responsible for listening to the console output
+ * (both stdout and stderr) from a process being debugged and forwarding that output for further
+ * processing, such as sending it to a WebSocket.
+ * <p>
+ * This class is primarily used to capture output from a process being debugged and log it,
+ * as well as send the captured output to another system, such as a WebSocket endpoint.
+ * This can be useful for monitoring, debugging, or providing feedback to users in real-time.
+ * </p>
+ *
  * @author julian
- * @version 1.0
- * @since 11.10.24
+ * @version 0.2.0
+ * @since 0.2.0
  */
 public class ConsoleOutputListener {
 
@@ -21,12 +30,17 @@ public class ConsoleOutputListener {
 
     private final ProcessHandler processHandler;
 
-    public ConsoleOutputListener(ProcessHandler processHandler) {
+    public ConsoleOutputListener(@NotNull ProcessHandler processHandler) {
         this.processHandler = processHandler;
     }
 
     /**
-     * Attaches listeners to capture stdout and stderr from the debugged process.
+     * Attaches listeners to the {@link ProcessHandler} to capture stdout and stderr from the debugged process.
+     * <p>
+     * The captured output is forwarded to the WebSocket for further processing.
+     * </p>
+     *
+     * @throws IllegalStateException if the {@code processHandler} is {@code null}
      */
     public void attachConsoleListeners() {
         if (processHandler == null) {

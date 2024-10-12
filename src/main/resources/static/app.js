@@ -1,3 +1,9 @@
+/*
+* @author julian
+* @version 0.2.0
+* @since 0.1.0
+* */
+
 // Websocket
 const websocketUrl = 'ws://localhost:8025/websockets/debug'
 let socket;

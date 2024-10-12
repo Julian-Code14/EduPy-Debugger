@@ -30,7 +30,7 @@ import java.util.Map;
  * The class diagram and object diagram generated during the analysis are encoded as PlantUML diagrams.
  *
  * @author julian
- * @version 0.1.0
+ * @version 0.2.0
  * @since 0.1.0
  */
 public class DebugSessionListener implements XDebugSessionListener {
