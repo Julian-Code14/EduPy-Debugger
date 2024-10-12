@@ -5,6 +5,7 @@ import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebugSessionListener;
 import com.jetbrains.python.debugger.*;
+import de.code14.edupydebugger.analysis.dynamicanalysis.AttributeInfo;
 import de.code14.edupydebugger.analysis.dynamicanalysis.DebuggerUtils;
 import de.code14.edupydebugger.analysis.dynamicanalysis.ObjectInfo;
 import de.code14.edupydebugger.analysis.dynamicanalysis.StackFrameAnalyzer;
@@ -16,8 +17,10 @@ import de.code14.edupydebugger.diagram.ObjectDiagramParser;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The DebugSessionListener class listens for changes in the debug session's stack frame.
@@ -45,6 +48,18 @@ public class DebugSessionListener implements XDebugSessionListener {
     private final XDebugSession session;
 
     private final ClassDiagramParser classDiagramParser;
+
+    // Set of default Python types that are not considered as references
+    public static final Set<String> defaultTypes = new HashSet<>() {{
+        add("int");
+        add("float");
+        add("str");
+        add("bool");
+        add("list");
+        add("dict");
+        add("tuple");
+        add("set");
+    }};
 
 
     /**
@@ -89,8 +104,8 @@ public class DebugSessionListener implements XDebugSessionListener {
         stackFrameAnalyzer.analyzeFrames();
 
         // Handle variables and objects extracted from the stack frames
-        handleVariables(stackFrameAnalyzer);
-        handleObjects(stackFrameAnalyzer);
+        Map<String, ObjectInfo> objects = handleObjects(stackFrameAnalyzer);
+        handleVariables(stackFrameAnalyzer, objects);
     }
 
     /**
@@ -99,14 +114,36 @@ public class DebugSessionListener implements XDebugSessionListener {
      *
      * @param stackFrameAnalyzer the analyzer responsible for processing stack frames
      */
-    private void handleVariables(StackFrameAnalyzer stackFrameAnalyzer) {
+    private void handleVariables(StackFrameAnalyzer stackFrameAnalyzer, Map<String, ObjectInfo> objects) {
         Map<String, List<String>> variables = stackFrameAnalyzer.getVariables();
         StringBuilder variablesString = new StringBuilder();
 
         // Construct the variables string in the format "key=value;"
         for (Map.Entry<String, List<String>> entry : variables.entrySet()) {
-            String values = String.join(",", entry.getValue());
-            variablesString.append(entry.getKey()).append("=").append(values).append(";");
+            if (entry.getValue().size() > 2) {
+                String variableType = entry.getValue().get(1); // Take the type in the list
+                if (!defaultTypes.contains(variableType)) { // If it is a complex type further infos needed (attributes)
+                    ObjectInfo currentObject = objects.get(entry.getKey()); // Extract the ObjectInfo
+                    List<AttributeInfo> currentAttributeInfos = currentObject.attributes();
+
+                    // Form of the variable string -> id=name,type,attr1|val1###attr2|val2###...,scope;
+                    variablesString.append(entry.getKey())
+                            .append("=")
+                            .append(entry.getValue().get(0))
+                            .append(",")
+                            .append(variableType)
+                            .append(",");
+
+                    for (AttributeInfo attributeInfo : currentAttributeInfos) {
+                        variablesString.append(attributeInfo.name()).append("|").append(attributeInfo.value()).append("###");
+                    }
+
+                    variablesString.append(",").append(entry.getValue().get(3)).append(";");
+                } else { // For default Python types string style -> id=name,type,value,scope;
+                    String values = String.join(",", entry.getValue());
+                    variablesString.append(entry.getKey()).append("=").append(values).append(";");
+                }
+            }
         }
 
         LOGGER.info(variablesString.toString());
@@ -120,7 +157,7 @@ public class DebugSessionListener implements XDebugSessionListener {
      *
      * @param stackFrameAnalyzer the analyzer responsible for processing stack frames
      */
-    private void handleObjects(StackFrameAnalyzer stackFrameAnalyzer) {
+    private Map<String, ObjectInfo> handleObjects(StackFrameAnalyzer stackFrameAnalyzer) {
         Map<String, ObjectInfo> objects = stackFrameAnalyzer.getObjects();
 
         // Generate the object cards diagram in PlantUML format and send it
@@ -130,6 +167,8 @@ public class DebugSessionListener implements XDebugSessionListener {
         // Generate the object relationships diagram in PlantUML format
         String objectDiagramPlantUmlString = ObjectDiagramParser.generateObjectDiagram(objects);
         generateAndSendDiagram(objectDiagramPlantUmlString, "objectDiagram");
+
+        return objects;
     }
 
     /**

@@ -47,7 +47,7 @@ function updateVariablesTable(dataString) {
         const tr = document.createElement('tr');
 
         // Create and append cell elements for each value
-        [extractNameList(name), type, currentValue, scope, id].forEach(value => {
+        [extractNameList(name), type, extractComplexValue(currentValue), scope, id].forEach(value => {
             const td = document.createElement('td');
             td.textContent = value;
             tr.appendChild(td);
@@ -61,6 +61,10 @@ function updateVariablesTable(dataString) {
 function extractNameList(dataString) {
     const names = dataString.split('###');
     return names.join(", ");
+}
+
+function extractComplexValue(dataString) {
+    return dataString.replaceAll("|", ": ").replaceAll("###", "\n");
 }
 
 let currentIndex = 0;
