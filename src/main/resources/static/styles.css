@@ -39,11 +39,28 @@ h1 {
     gap: 5px;
 }
 
+.sticky-controls {
+    position: fixed;  /* Fixed position, bleibt immer sichtbar */
+    top: 0;           /* Bleibt am oberen Rand des Bildschirms */
+    left: 50%;
+    transform: translateX(-50%); /* Zentriert die Buttons horizontal */
+    z-index: 1000;  /* Stellt sicher, dass das Element über anderen Elementen bleibt */
+    background-color: rgba(255, 255, 255, 0.8); /* Halbtransparenter Hintergrund */
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
 .control-btn {
     background-color: white;
     border: 1px solid #ddd;
     border-radius: 5px;
     padding: 5px;
+}
+
+.control-btn:hover {
+    background-color: mintcream;
+    border: 1px solid #000;
 }
 
 .control-btn img {
