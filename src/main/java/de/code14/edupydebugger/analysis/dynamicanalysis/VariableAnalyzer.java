@@ -78,7 +78,11 @@ public class VariableAnalyzer {
                     String id = determinePythonId(value, value.getName());
                     // If the file changes, variables from another file would not be defined -> exclude
                     if (!id.contains("is not defined")) {
-                        variables.put(id, new ArrayList<>(Arrays.asList(value.getName(), value.getType(), value.getValue(), determineScope(value))));
+                        if (variables.containsKey(id)) { // If there are more names for an id
+                            variables.get(id).set(0, variables.get(id).get(0) + "###" + value.getName());
+                        } else { // Default: new variable found -> put key-value-pair into the map
+                            variables.put(id, new ArrayList<>(Arrays.asList(value.getName(), value.getType(), value.getValue(), determineScope(value))));
+                        }
                     }
                 }
 
