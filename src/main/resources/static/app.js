@@ -117,21 +117,16 @@ function connectWebSocket() {
 
     socket.onmessage = function(event) {
         const eventData = splitStringAtFirstColon(event.data);
-        const switchElement = document.getElementById('object-inspector-switch');
 
         switch (eventData.at(0)) {
             case "variables:":
                 updateVariablesTable(eventData.at(1));
                 break;
             case "oc:":
-                if (!switchElement.checked && event.data.startsWith("oc:")) {
-                    updateObjectCardsImage(eventData.at(1));
-                }
+                updateObjectCardsImage(eventData.at(1));
                 break;
             case "od:":
-                if (switchElement.checked && event.data.startsWith("od:")) {
-                    updateObjectCardsImage(eventData.at(1));
-                } else
+                // TODO: Bring back object diagrams at another level
                 break;
             case "console:":
                 logToConsole(eventData.at(1));
@@ -208,26 +203,7 @@ document.getElementById('step-out-btn').addEventListener('click', function() {
     }
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    const switchElement = document.getElementById('object-inspector-switch');
-
-    // Überprüfen, ob der Switch aktiviert ist oder nicht
-    function checkSwitchStatus() {
-        if (switchElement.checked) {
-            socket.send("get:od");
-            console.log('Der Switch ist aktiviert.');
-        } else {
-            socket.send("get:oc");
-            console.log('Der Switch ist deaktiviert.');
-        }
-    }
-
-    // Überprüfen des Status beim Laden der Seite
-    //checkSwitchStatus();
-
-    // Hinzufügen eines Event-Listeners, um den Status bei Änderungen zu überprüfen
-    switchElement.addEventListener('change', checkSwitchStatus);
-});
+// TODO: get:od und get:oc wurden früher durch Drücken des Switches angefordert - wird das noch benötigt?
 
 document.getElementById("console-input").addEventListener("keydown", function(event) {
     const inputField = document.getElementById("console-input");

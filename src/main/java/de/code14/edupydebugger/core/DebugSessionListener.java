@@ -123,7 +123,7 @@ public class DebugSessionListener implements XDebugSessionListener {
     private void handleObjects(StackFrameAnalyzer stackFrameAnalyzer) {
         Map<String, ObjectInfo> objects = stackFrameAnalyzer.getObjects();
 
-        // Generate the object cards diagram in PlantUML format
+        // TODO: Generate the object cards diagram in PlantUML format
         String objectCardsPlantUmlString = ObjectDiagramParser.generateObjectCards(objects);
         generateAndSendDiagram(objectCardsPlantUmlString, "objectCards");
 
