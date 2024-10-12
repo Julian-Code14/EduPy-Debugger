@@ -11,8 +11,8 @@ import java.util.Map;
  * The ObjectDiagramParser class is responsible for generating PlantUML diagrams representing objects and their associations.
  *
  * @author julian
- * @version 0.2.0
- * @since 0.1.0
+ * @version 1.0
+ * @since 06.08.24
  */
 public class ObjectDiagramParser {
 
@@ -22,16 +22,14 @@ public class ObjectDiagramParser {
      * Generates a PlantUML diagram representing object cards with attributes.
      *
      * @param objects the map of object IDs to lists of ObjectInfo, representing object details
-     * @return a map of strings containing the keys and the PlantUML syntax for the object cards
+     * @return a string containing the PlantUML syntax for the object cards diagram
      */
-    public static Map<String, String> generateObjectCards(Map<String, ObjectInfo> objects) {
-        Map<String, String> plantUmlStrings = new HashMap<>();
+    public static String generateObjectCards(Map<String, ObjectInfo> objects) {
+        StringBuilder plantUML = new StringBuilder();
+        plantUML.append("@startuml\n");
+        plantUML.append("!pragma layout smetana\n");
 
         objects.forEach((key, objectInfo) -> {
-            StringBuilder plantUML = new StringBuilder();
-            plantUML.append("@startuml\n");
-            plantUML.append("!pragma layout smetana\n");
-
             if (objectInfo == null) {
                 return;
             }
@@ -48,15 +46,13 @@ public class ObjectDiagramParser {
             }
 
             plantUML.append("}\n");
-
-            plantUML.append("@enduml");
-
-            LOGGER.info(plantUML.toString());
-
-            plantUmlStrings.put(key, plantUML.toString());
         });
 
-        return plantUmlStrings;
+        plantUML.append("@enduml");
+
+        LOGGER.info(plantUML.toString());
+
+        return plantUML.toString();
     }
 
     /**
@@ -80,7 +76,7 @@ public class ObjectDiagramParser {
             // Assume the first reference in the list represents the object
             String reference = objectInfo.references().get(0);
             plantUML.append("object \"").append(reference).append("\" as o").append(key).append(" {\n");
-            LOGGER.debug("object \"" + reference + "\" as o" + key + " {\n");
+            System.out.println("object \"" + reference + "\" as o" + key + " {\n");
 
             for (AttributeInfo attribute : objectInfo.attributes()) {
                 if ("static".equals(attribute.visibility())) {

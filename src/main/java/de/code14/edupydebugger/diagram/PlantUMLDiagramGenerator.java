@@ -16,8 +16,8 @@ import java.util.Base64;
  * </p>
  *
  * @author julian
- * @version 0.1.0
- * @since 0.1.0
+ * @version 1.0
+ * @since 06.07.24
  */
 public class PlantUMLDiagramGenerator {
 

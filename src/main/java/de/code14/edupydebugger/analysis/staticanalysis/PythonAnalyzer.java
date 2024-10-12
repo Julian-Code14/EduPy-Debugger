@@ -20,8 +20,8 @@ import java.util.*;
  * The analysis includes both static code analysis and gathering type information using the PyCharm API.
  *
  * @author julian
- * @version 0.1.0
- * @since 0.1.0
+ * @version 1.0
+ * @since 16.07.24
  */
 public class PythonAnalyzer {
 

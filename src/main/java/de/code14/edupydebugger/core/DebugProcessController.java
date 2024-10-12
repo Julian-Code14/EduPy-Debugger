@@ -9,8 +9,8 @@ import com.jetbrains.python.debugger.PyDebugProcess;
  * This class interacts with the PyDebugProcess to perform these actions.
  *
  * @author julian
- * @version 0.1.0
- * @since 0.1.0
+ * @version 1.0
+ * @since 05.08.24
  */
 public class DebugProcessController {
 

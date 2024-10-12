@@ -1,10 +1,8 @@
 package de.code14.edupydebugger.server;
 
 
-import com.intellij.execution.process.ProcessHandler;
 import com.intellij.openapi.diagnostic.Logger;
 import com.jetbrains.python.debugger.PyDebugProcess;
-import de.code14.edupydebugger.core.ConsoleController;
 import de.code14.edupydebugger.core.DebugProcessController;
 import de.code14.edupydebugger.ui.DebuggerToolWindowFactory;
 import jakarta.servlet.annotation.WebListener;
@@ -29,8 +27,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  * </p>
  *
  * @author julian
- * @version 0.2.0
- * @since 0.1.0
+ * @version 1.0
+ * @since 19.06.24
  */
 @WebListener
 @ServerEndpoint(value = "/debug")
@@ -41,14 +39,13 @@ public class DebugServerEndpoint {
     private static final Set<Session> sessions = Collections.synchronizedSet(new HashSet<>());
     private static final BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>();
     private static final DebugProcessController debugProcessController = new DebugProcessController();
-    private static final ConsoleController consoleController = new ConsoleController();
 
     private static volatile boolean isConnected = false;
 
     // Debug content to be shared with clients
     private static String classDiagramPlantUmlImage;
     private static String variablesString;
-    private static String objectCardPlantUmlImagesData;
+    private static String objectCardsPlantUmlImage;
     private static String objectDiagramPlantUmlImage;
 
     private static final Map<String, Runnable> actionMap = new HashMap<>();
@@ -149,23 +146,11 @@ public class DebugServerEndpoint {
      * @param action the action command received
      */
     private void handleActionMessage(String action) {
-        if (action.startsWith("console-input:")) {
-            // Extract the actual input string after "console-input:"
-            String consoleInput = action.substring("console-input:".length());
-
-            // Forward the input to ConsoleController
-            try {
-                consoleController.sendInputToProcess(consoleInput);
-            } catch (IOException e) {
-                LOGGER.error("Error sending input to the process: " + consoleInput, e);
-            }
+        Runnable command = actionMap.get(action);
+        if (command != null) {
+            command.run();
         } else {
-            Runnable command = actionMap.get(action);
-            if (command != null) {
-                command.run();
-            } else {
-                LOGGER.warn("Unknown action received: " + action);
-            }
+            LOGGER.warn("Unknown action received: " + action);
         }
     }
 
@@ -181,7 +166,7 @@ public class DebugServerEndpoint {
                 sendDebugInfo(classDiagramPlantUmlImage);
                 break;
             case "oc":
-                sendDebugInfo(objectCardPlantUmlImagesData);
+                sendDebugInfo("oc:" + objectCardsPlantUmlImage);
                 break;
             case "od":
                 sendDebugInfo("od:" + objectDiagramPlantUmlImage);
@@ -214,15 +199,6 @@ public class DebugServerEndpoint {
     }
 
     /**
-     * Sets the current process handler for controlling the console.
-     *
-     * @param processHandler the ProcessHandler to control the console
-     */
-    public static void setProcessHandler(ProcessHandler processHandler) {
-        consoleController.setProcessHandler(processHandler);
-    }
-
-    /**
      * Sets the PlantUML image for the class diagram.
      *
      * @param base64PlantUml the Base64 encoded PlantUML image
@@ -243,10 +219,10 @@ public class DebugServerEndpoint {
     /**
      * Sets the PlantUML image for the object cards diagram.
      *
-     * @param base64PlantUmlData the Base64 encoded PlantUML image
+     * @param base64PlantUml the Base64 encoded PlantUML image
      */
-    public static void setObjectCardPlantUmlImagesData(String base64PlantUmlData) {
-        objectCardPlantUmlImagesData = base64PlantUmlData;
+    public static void setObjectCardsPlantUmlImage(String base64PlantUml) {
+        objectCardsPlantUmlImage = base64PlantUml;
     }
 
     /**

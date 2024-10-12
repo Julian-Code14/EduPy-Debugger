@@ -10,8 +10,8 @@ package de.code14.edupydebugger.analysis.dynamicanalysis;
  * @param visibility the visibility of the object (e.g., public, protected, private, or static)
  *
  * @author julian
- * @version 0.1.0
- * @since 0.1.0
+ * @version 1.0
+ * @since 11.08.24
  */
 public record AttributeInfo(String name, String type, String value, String visibility) {
 

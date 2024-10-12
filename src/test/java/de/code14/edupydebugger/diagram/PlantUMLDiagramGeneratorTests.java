@@ -15,8 +15,8 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author julian
- * @version 0.1.0
- * @since 0.1.0
+ * @version 1.0
+ * @since 14.08.24
  */
 public class PlantUMLDiagramGeneratorTests {
 

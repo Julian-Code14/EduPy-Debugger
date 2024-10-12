@@ -16,8 +16,8 @@ import javax.swing.*;
  * Specifically, it ensures that the web server and web socket server are stopped when the project is closed.
  *
  * @author julian
- * @version 0.1.0
- * @since 0.1.0
+ * @version 1.0
+ * @since 11.06.24
  */
 public class EduPyProjectManagerListener implements ProjectManagerListener {
 

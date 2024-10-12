@@ -14,8 +14,8 @@ import java.util.Map;
  * to gather the necessary class details such as attributes, methods, references, and superclasses.
  *
  * @author julian
- * @version 0.1.0
- * @since 0.1.0
+ * @version 1.0
+ * @since 16.07.24
  */
 public class ClassDiagramParser {
 

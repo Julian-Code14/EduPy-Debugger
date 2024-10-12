@@ -19,8 +19,8 @@ import java.util.concurrent.CountDownLatch;
  * The VariableAnalyzer class is responsible for analyzing variables within Python stack frames.
  *
  * @author julian
- * @version 0.2.0
- * @since 0.1.0
+ * @version 1.0
+ * @since 11.08.24
  */
 public class VariableAnalyzer {
 
@@ -78,11 +78,7 @@ public class VariableAnalyzer {
                     String id = determinePythonId(value, value.getName());
                     // If the file changes, variables from another file would not be defined -> exclude
                     if (!id.contains("is not defined")) {
-                        if (variables.containsKey(id)) { // If there are more names for an id
-                            variables.get(id).set(0, variables.get(id).get(0) + "###" + value.getName());
-                        } else { // Default: new variable found -> put key-value-pair into the map
-                            variables.put(id, new ArrayList<>(Arrays.asList(value.getName(), value.getType(), value.getValue(), determineScope(value))));
-                        }
+                        variables.put(id, new ArrayList<>(Arrays.asList(value.getName(), value.getType(), value.getValue(), determineScope(value))));
                     }
                 }
 

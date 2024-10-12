@@ -12,8 +12,8 @@ import java.util.List;
  * @param superClasses  List of superclasses of the class.
  *
  * @author julian
- * @version 0.1.0
- * @since 0.1.0
+ * @version 1.0
+ * @since 11.08.24
  */
 public record ClassInfo(List<String> attributes, List<String> methods, List<String> references, List<String> superClasses) {
 
