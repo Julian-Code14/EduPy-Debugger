@@ -47,9 +47,11 @@ function updateVariablesTable(dataString) {
         const tr = document.createElement('tr');
 
         // Create and append cell elements for each value
-        [extractNameList(name), type, extractComplexValue(currentValue), scope, id].forEach(value => {
+        [extractNameList(name), type, processCellContent(extractComplexValue(currentValue)), scope, id].forEach(value => {
             const td = document.createElement('td');
-            td.textContent = value;
+
+            // If the value contains refid, process it for links
+            td.innerHTML = value;  // Using innerHTML since processCellContent may return HTML
             tr.appendChild(td);
         });
 
@@ -57,6 +59,16 @@ function updateVariablesTable(dataString) {
         tableBody.appendChild(tr);
     });
 }
+
+function processCellContent(content) {
+    // This function looks for the pattern refid:1234 and replaces it with a link to the Object Card
+    const refidPattern = /refid:(\d+)/g;
+    return content.replace(refidPattern, function(match, refid) {
+        // Replace with an HTML anchor link that calls jumpToSlide with the refid
+        return `<a href="javascript:void(0);" onclick="jumpToSlide(${refid})">${refid}</a>`;
+    });
+}
+
 
 function extractNameList(dataString) {
     const names = dataString.split('###');
@@ -76,6 +88,26 @@ function moveSlide(direction) {
     currentIndex = (currentIndex + direction + totalSlides) % totalSlides;
     slides.style.transform = `translateX(-${currentIndex * 100}%)`;
 }
+
+function jumpToSlide(refid) {
+    const slides = document.querySelectorAll('.slide');
+    let targetIndex = -1;
+
+    // Find the index of the slide with the corresponding refid
+    slides.forEach((slide, index) => {
+        if (slide.id === `slide-${refid}`) {
+            targetIndex = index;
+        }
+    });
+
+    if (targetIndex !== -1) {
+        // Update the currentIndex to the targetIndex and move the slider
+        currentIndex = targetIndex;
+        const slidesContainer = document.querySelector('#object-slides');
+        slidesContainer.style.transform = `translateX(-${currentIndex * 100}%)`;
+    }
+}
+
 
 function updateObjectCardImages(dataString) {
     const slidesContainer = document.getElementById('object-slides');
