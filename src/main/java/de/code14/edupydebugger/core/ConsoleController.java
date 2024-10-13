@@ -66,5 +66,7 @@ public class ConsoleController {
         // Write the input to the process's stdin, appending a newline character
         Objects.requireNonNull(processHandler.getProcessInput()).write((input + "\n").getBytes());
         processHandler.getProcessInput().flush();
+
+        LOGGER.info("User input was sent to the Process Handler");
     }
 }

@@ -25,42 +25,66 @@ function splitStringAtFirstColon(input) {
     return [firstPart, secondPart];
 }
 
+let activeRow = null; // Variable to keep track of the currently active row
+
 function updateVariablesTable(dataString) {
-    // Get the table body element
     const tableBody = document.querySelector('.variables-container tbody');
+    tableBody.innerHTML = ''; // Clear existing rows
 
-    // Clear the existing rows
-    tableBody.innerHTML = '';
-
-    // Split the data string by ';' to get each row
     const rows = dataString.split(';');
-
-    // Iterate over each row and create table rows
     rows.forEach(row => {
-        if (row.trim() === '') return; // Skip empty rows
+        if (row.trim() === '') return;
 
-        // Split the row into columns by '=' and ','
         const [id, rest] = row.split('=');
         const [name, type, currentValue, scope] = rest.split(',');
 
-        // Create a new row element
         const tr = document.createElement('tr');
-
-        // Create and append cell elements for each value
-        [extractNameList(name), type, currentValue, scope, id].forEach(value => {
+        [extractNameList(name), type, processCellContent(extractComplexValue(currentValue)), scope, id].forEach((value, index) => {
             const td = document.createElement('td');
-            td.textContent = value;
+            td.innerHTML = value;
             tr.appendChild(td);
         });
 
-        // Append the row to the table body
-        tableBody.appendChild(tr);
+        // Add click event to the row to use the ID from the last cell to jump to the corresponding slide
+        tr.addEventListener('click', function(event) {
+            // Check if the target is a link (<a>), if so, don't trigger row click
+            if (event.target.tagName.toLowerCase() === 'a') {
+                return; // If the click is on a link, do nothing (let the link work)
+            }
+
+            // Remove active class from the previously active row
+            if (activeRow) {
+                activeRow.classList.remove('active-row');
+            }
+
+            // Mark the clicked row as active
+            tr.classList.add('active-row');
+            activeRow = tr; // Store the active row
+
+            jumpToSlide(id);  // Jump to the slide with this ID
+        });
+
+        tableBody.appendChild(tr); // Append the row to the table body
     });
 }
+
+function processCellContent(content) {
+    // This function looks for the pattern refid:1234 and replaces it with a link to the Object Card
+    const refidPattern = /refid:(\d+)/g;
+    return content.replace(refidPattern, function(match, refid) {
+        // Replace with an HTML anchor link that calls jumpToSlide with the refid
+        return `<a href="javascript:void(0);" onclick="jumpToSlide(${refid})">${refid}</a>`;
+    });
+}
+
 
 function extractNameList(dataString) {
     const names = dataString.split('###');
     return names.join(", ");
+}
+
+function extractComplexValue(dataString) {
+    return dataString.replaceAll("|", ": ").replaceAll("###", "\n");
 }
 
 let currentIndex = 0;
@@ -73,41 +97,74 @@ function moveSlide(direction) {
     slides.style.transform = `translateX(-${currentIndex * 100}%)`;
 }
 
+function jumpToSlide(refid) {
+    const slides = document.querySelectorAll('.slide');
+    let targetIndex = -1;
+
+    // Find the index of the slide with the corresponding refid
+    slides.forEach((slide, index) => {
+        if (slide.id === `slide-${refid}`) {
+            targetIndex = index;
+        }
+    });
+
+    if (targetIndex !== -1) {
+        // Update the currentIndex to the targetIndex and move the slider
+        currentIndex = targetIndex;
+        const slidesContainer = document.querySelector('#object-slides');
+        slidesContainer.style.transform = `translateX(-${currentIndex * 100}%)`;
+    }
+}
+
+
 function updateObjectCardImages(dataString) {
     const slidesContainer = document.getElementById('object-slides');
-    slidesContainer.innerHTML = ``; // Empty div
+    slidesContainer.innerHTML = ''; // Empty div
 
     // Split the data string by '###' to get each image block
     const imageBlocks = dataString.split('###').filter(block => block.trim() !== '');
 
     imageBlocks.forEach(block => {
         const [id, base64Data] = block.split('|');
-        const base64Image = 'data:image/png;base64,' + base64Data;
 
-        // Check if it is a correct encoded Base64 Image
-        if (base64Image.startsWith('data:image/png;base64,')) {
+        // Check if it's a PNG or an SVG
+        if (base64Data.startsWith('iVBORw0KGgo')) {
+            // PNG handling
+            const base64Image = 'data:image/png;base64,' + base64Data;
             const img = new Image();
             img.src = base64Image;
-            img.onload = function() {
+            img.onload = function () {
                 socket.send("Success: Image loaded successfully with ID " + id);
                 console.log('Image loaded successfully with ID:', id);
             };
-            img.onerror = function(error) {
+            img.onerror = function (error) {
                 socket.send("Client: Failed to load image with ID " + id + ": " + error);
                 console.error('Failed to load image with ID:', id, error);
             };
-
-            // Create a new slide div and append the image
             const slide = document.createElement('div');
             slide.classList.add('slide');
             slide.id = `slide-${id}`;
             slide.appendChild(img);
-
-            // Add the slide to the slider
             slidesContainer.appendChild(slide);
         } else {
-            socket.send("Client: Received non-image data with ID " + id);
-            console.log('Received non-image data with ID:', id, base64Image);
+            // SVG handling
+            const decodedSVG = atob(base64Data);  // Decode the base64-encoded SVG
+            const svgElement = document.createElement('div');
+            svgElement.classList.add('slide');
+            svgElement.id = `slide-${id}`;
+
+            // Insert the SVG into the DOM
+            svgElement.innerHTML = decodedSVG;
+
+            // Add onclick to links in SVG dynamically
+            const svgLinks = svgElement.querySelectorAll('a');
+            svgLinks.forEach(link => {
+                const refid = link.getAttribute('href').split("/").at(1);
+                link.setAttribute('href', 'javascript:void(0);'); // Avoid default behavior
+                link.setAttribute('onclick', `jumpToSlide(${refid})`); // Attach the JS function
+            });
+
+            slidesContainer.appendChild(svgElement); // Add the slide to the slider
         }
     });
 }

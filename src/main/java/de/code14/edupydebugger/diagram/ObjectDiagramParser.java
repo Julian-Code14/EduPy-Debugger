@@ -44,7 +44,19 @@ public class ObjectDiagramParser {
                 if ("static".equals(attribute.visibility())) {
                     plantUML.append("{static} ");
                 }
-                plantUML.append(attribute.name()).append(" = ").append(attribute.value()).append("\n");
+                plantUML.append(attribute.name())
+                        .append(" = ");
+                if (attribute.value().startsWith("refid:")) {
+                    plantUML.append(attribute.value().replace("refid:", ""))
+                            .append(" ")
+                            .append("[[[localhost:8026/")
+                            .append(attribute.value().replace("refid:", ""))
+                            .append("]]]");
+                } else {
+                    plantUML.append(attribute.value());
+                }
+
+                plantUML.append("\n");
             }
 
             plantUML.append("}\n");
