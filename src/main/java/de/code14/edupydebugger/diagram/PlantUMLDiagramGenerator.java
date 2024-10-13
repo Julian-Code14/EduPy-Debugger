@@ -40,26 +40,28 @@ public class PlantUMLDiagramGenerator {
      *
      * <p>
      * The generated SVG diagram is first encoded in UTF-8 before being converted to a Base64 string.
+     * The diagram is generated using the {@code outputImage} method of the {@code SourceStringReader} class.
      * </p>
      *
      * @param plantUmlSource the PlantUML source code as a string
      * @return the Base64-encoded string of the generated SVG diagram
      * @throws IOException if an error occurs during diagram generation, encoding, or validation
+     * @since 0.1.0
      */
     public static String generateDiagramAsBase64(String plantUmlSource) throws IOException {
         String base64EncodedSvg;
         SourceStringReader reader = new SourceStringReader(plantUmlSource);
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            // Generate the diagram in SVG format
-            String desc = reader.generateImage(baos, new FileFormatOption(FileFormat.SVG));
-            if (desc == null) {
-                throw new IOException("Error generating SVG diagram.");
-            }
+            // Neue Methode zum Erzeugen des Diagramms
+            reader.outputImage(baos, new FileFormatOption(FileFormat.SVG));
+
+            // Umwandlung der Ausgabe in ein Base64-kodiertes SVG
             byte[] svgBytes = baos.toString(StandardCharsets.UTF_8).getBytes(StandardCharsets.UTF_8);
             base64EncodedSvg = Base64.getEncoder().encodeToString(svgBytes);
             LOGGER.debug("Encoded diagram (SVG, base64): " + base64EncodedSvg);
         }
-        // Validate Base64-String
+
+        // Validierung des Base64-Strings
         try {
             byte[] decodedBytes = Base64.getDecoder().decode(base64EncodedSvg);
             LOGGER.debug("Base64 decoded successfully. Base64 string validated.");
@@ -69,5 +71,6 @@ public class PlantUMLDiagramGenerator {
             throw new IOException("Invalid Base64 encoding", e);
         }
     }
+
 
 }
