@@ -43,9 +43,6 @@ public class ConsoleOutputListener {
      * @throws IllegalStateException if the {@code processHandler} is {@code null}
      */
     public void attachConsoleListeners() {
-        if (processHandler == null) {
-            throw new IllegalStateException("ProcessHandler cannot be null when attaching console listeners");
-        }
 
         processHandler.addProcessListener(new ProcessListener() {
             @Override

@@ -31,8 +31,6 @@ import java.util.Set;
  */
 public class PythonAnalysisHelper {
 
-    private static final Logger LOGGER = Logger.getInstance(PythonAnalysisHelper.class);
-
     // Set of default Python types that are not considered as references
     public static final Set<String> defaultTypes = new HashSet<>() {{
         add("int");
@@ -46,7 +44,7 @@ public class PythonAnalysisHelper {
     }};
 
     /**
-     * Retrieves the type of a given Python element as a string.
+     * Retrieves the type of given Python element as a string.
      * This method is used for attributes, parameters, and functions.
      *
      * @param element the Python element to analyze
