@@ -119,39 +119,52 @@ function jumpToSlide(refid) {
 
 function updateObjectCardImages(dataString) {
     const slidesContainer = document.getElementById('object-slides');
-    slidesContainer.innerHTML = ``; // Empty div
+    slidesContainer.innerHTML = ''; // Empty div
 
     // Split the data string by '###' to get each image block
     const imageBlocks = dataString.split('###').filter(block => block.trim() !== '');
 
     imageBlocks.forEach(block => {
         const [id, base64Data] = block.split('|');
-        const base64Image = 'data:image/png;base64,' + base64Data;
 
-        // Check if it is a correct encoded Base64 Image
-        if (base64Image.startsWith('data:image/png;base64,')) {
+        // Check if it's a PNG or an SVG
+        if (base64Data.startsWith('iVBORw0KGgo')) {
+            // PNG handling
+            const base64Image = 'data:image/png;base64,' + base64Data;
             const img = new Image();
             img.src = base64Image;
-            img.onload = function() {
+            img.onload = function () {
                 socket.send("Success: Image loaded successfully with ID " + id);
                 console.log('Image loaded successfully with ID:', id);
             };
-            img.onerror = function(error) {
+            img.onerror = function (error) {
                 socket.send("Client: Failed to load image with ID " + id + ": " + error);
                 console.error('Failed to load image with ID:', id, error);
             };
-
-            // Create a new slide div and append the image
             const slide = document.createElement('div');
             slide.classList.add('slide');
             slide.id = `slide-${id}`;
             slide.appendChild(img);
-
-            // Add the slide to the slider
             slidesContainer.appendChild(slide);
         } else {
-            socket.send("Client: Received non-image data with ID " + id);
-            console.log('Received non-image data with ID:', id, base64Image);
+            // SVG handling
+            const decodedSVG = atob(base64Data);  // Decode the base64-encoded SVG
+            const svgElement = document.createElement('div');
+            svgElement.classList.add('slide');
+            svgElement.id = `slide-${id}`;
+
+            // Insert the SVG into the DOM
+            svgElement.innerHTML = decodedSVG;
+
+            // Add onclick to links in SVG dynamically
+            const svgLinks = svgElement.querySelectorAll('a');
+            svgLinks.forEach(link => {
+                const refid = link.getAttribute('href').split("/").at(1);
+                link.setAttribute('href', 'javascript:void(0);'); // Avoid default behavior
+                link.setAttribute('onclick', `jumpToSlide(${refid})`); // Attach the JS function
+            });
+
+            slidesContainer.appendChild(svgElement); // Add the slide to the slider
         }
     });
 }

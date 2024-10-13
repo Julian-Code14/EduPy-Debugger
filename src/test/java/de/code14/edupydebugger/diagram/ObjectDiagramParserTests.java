@@ -56,6 +56,30 @@ public class ObjectDiagramParserTests {
     }
 
     @Test
+    public void testGenerateObjectCardsWithRefidLink() {
+        // Arrange
+        AttributeInfo attribute1 = mock(AttributeInfo.class);
+        when(attribute1.name()).thenReturn("attribute1");
+        when(attribute1.value()).thenReturn("refid:2");
+        when(attribute1.visibility()).thenReturn("public");
+
+        ObjectInfo objectInfo = mock(ObjectInfo.class);
+        when(objectInfo.attributes()).thenReturn(List.of(attribute1));
+        when(objectInfo.references()).thenReturn(List.of("TestObjectWithRef"));
+
+        Map<String, ObjectInfo> objects = Map.of("1", objectInfo);
+
+        // Act
+        Map<String, String> result = ObjectDiagramParser.generateObjectCards(objects);
+
+        // Assert
+        assertTrue(result.containsKey("1"));
+        String plantUml = result.get("1");
+        assertTrue(plantUml.contains("object \"TestObjectWithRef\" as o1"));
+        assertTrue(plantUml.contains("attribute1 = 2 [[[localhost:8026/2]]]"));
+    }
+
+    @Test
     public void testGenerateObjectDiagramWithNoObjects() {
         // Arrange
         Map<String, ObjectInfo> emptyObjects = Collections.emptyMap();
@@ -97,6 +121,4 @@ public class ObjectDiagramParserTests {
         assertTrue(result.contains("object \"Object2\" as o2"));
         assertTrue(result.contains("o1 --> o2"));
     }
-
 }
-

@@ -1,5 +1,6 @@
 package de.code14.edupydebugger.diagram;
 
+import net.sourceforge.plantuml.FileFormatOption;
 import net.sourceforge.plantuml.SourceStringReader;
 import org.junit.Test;
 import org.mockito.MockedStatic;
@@ -15,7 +16,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author julian
- * @version 0.1.0
+ * @version 0.2.0
  * @since 0.1.0
  */
 public class PlantUMLDiagramGeneratorTests {
@@ -24,14 +25,14 @@ public class PlantUMLDiagramGeneratorTests {
     public void testGenerateDiagramAsBase64_ValidSource() throws IOException {
         // Arrange
         String plantUmlSource = "@startuml\nAlice -> Bob: Hello\n@enduml";
-        String expectedBase64Prefix = "iVBORw0KGgo";  // The expected prefix for a PNG file encoded in Base64
+        String expectedBase64Prefix = "PHN2Zy";  // The expected prefix for an SVG file encoded in Base64
 
         // Act
         String base64String = PlantUMLDiagramGenerator.generateDiagramAsBase64(plantUmlSource);
 
         // Assert
         assertNotNull(base64String);
-        assertTrue(base64String.startsWith(expectedBase64Prefix));  // Ensure the string looks like a valid PNG file
+        assertTrue(base64String.startsWith(expectedBase64Prefix));  // Ensure the string looks like a valid SVG file
     }
 
     // TODO: Make the tests work for invalidBase64 and when throwing an IOException
