@@ -40,6 +40,8 @@ public class PythonAnalysisHelper {
         add("dict");
         add("tuple");
         add("set");
+        add("None");
+        add("?");
     }};
 
     /**
@@ -108,6 +110,9 @@ public class PythonAnalysisHelper {
             PyParameter parameter = parameters[i];
             String paramName = parameter.getName();
             String paramType = getTypeString(parameter, context);
+            if (paramType.startsWith("{")) {
+                paramType = "?";
+            }
             if (paramType.equals("?")) {
                 signature.append(paramName);
             } else {
