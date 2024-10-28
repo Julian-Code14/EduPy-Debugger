@@ -1,6 +1,5 @@
 package de.code14.edupydebugger.analysis.staticanalysis;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.jetbrains.python.psi.*;
 import com.jetbrains.python.psi.types.PyType;
 import com.jetbrains.python.psi.types.TypeEvalContext;
@@ -26,7 +25,7 @@ import java.util.Set;
  * </ul>
  *
  * @author julian
- * @version 0.1.0
+ * @version 0.2.0
  * @since 0.1.0
  */
 public class PythonAnalysisHelper {
@@ -41,6 +40,8 @@ public class PythonAnalysisHelper {
         add("dict");
         add("tuple");
         add("set");
+        add("None");
+        add("?");
     }};
 
     /**
@@ -109,6 +110,9 @@ public class PythonAnalysisHelper {
             PyParameter parameter = parameters[i];
             String paramName = parameter.getName();
             String paramType = getTypeString(parameter, context);
+            if (paramType.startsWith("{")) {
+                paramType = "?";
+            }
             if (paramType.equals("?")) {
                 signature.append(paramName);
             } else {
