@@ -16,16 +16,15 @@ function connectWebSocket() {
     socket = new WebSocket(websocketUrl);
 
     socket.onmessage = function(event) {
-        // Receive and proceed with the Base64 Image
-        const base64Image = 'data:image/png;base64,' + event.data;
-        console.log(base64Image);
+        const base64Data = event.data;
 
-        // Check if it is a correct encoded Base64 Image
-        if (base64Image.startsWith('data:image/png;base64,')) {
-            const base64String = base64Image.split(',')[1];
-            console.log('Received Base64 string:', base64String);
+        const container = document.getElementById('class-diagram-container');
+        container.innerHTML = ''; // Container leeren
 
-            // Versuchen, das Bild anzuzeigen
+        // Prüfe, ob die empfangenen Daten SVG oder PNG sind
+        if (base64Data.startsWith('iVBORw0KGgo')) {
+            // PNG-Daten werden verarbeitet
+            const base64Image = 'data:image/png;base64,' + base64Data;
             const img = new Image();
             img.src = base64Image;
             img.onload = function() {
@@ -36,13 +35,14 @@ function connectWebSocket() {
                 socket.send("Client: Failed to load image: " + error);
                 console.error('Failed to load image:', error);
             };
-
-            // Add the image to DOM to show it
-            const umlOutputDiv = document.getElementById('class-diagram-container');
-            umlOutputDiv.innerHTML = ''; // Empty div
-            umlOutputDiv.appendChild(img);
+            container.appendChild(img); // Bild hinzufügen
         } else {
-            console.log('Received non-image data:', base64Image);
+            // SVG-Daten werden verarbeitet
+            const decodedSVG = atob(base64Data); // Base64-Dekodierung des SVG
+            const svgElement = document.createElement('div');
+            svgElement.innerHTML = decodedSVG;
+
+            container.appendChild(svgElement); // SVG zur Anzeige hinzufügen
         }
     };
 
