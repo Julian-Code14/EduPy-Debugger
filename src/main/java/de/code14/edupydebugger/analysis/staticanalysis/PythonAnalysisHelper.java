@@ -1,6 +1,5 @@
 package de.code14.edupydebugger.analysis.staticanalysis;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.jetbrains.python.psi.*;
 import com.jetbrains.python.psi.types.PyType;
 import com.jetbrains.python.psi.types.TypeEvalContext;
