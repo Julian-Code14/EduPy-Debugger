@@ -298,24 +298,26 @@ th, td {
 
 .diagram-section {
     width: 100%;
-    padding: 20px;
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 20px;
+    overflow: hidden; /* Verhindert überflüssiges Scrollen */
 }
 
-.image-container {
+#class-diagram-container {
     width: 100%;
-    max-width: 800px;
-    height: auto;
-    overflow: hidden;
+    max-width: 100vw;
+    overflow: auto;
     border: 1px solid #ddd;
     background-color: white;
+    padding: 10px;
+    text-align: center;
 }
 
-.diagram-image {
-    width: 100%;
+.diagram-image,
+#class-diagram-container svg {
+    display: inline-block;
     height: auto;
-    display: block;
 }
 
