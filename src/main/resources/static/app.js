@@ -84,7 +84,7 @@ function extractNameList(dataString) {
 }
 
 function extractComplexValue(dataString) {
-    return dataString.replaceAll("|", ": ").replaceAll("###", "\n");
+    return dataString.replaceAll("|", ": ").replaceAll("###", "\n").replaceAll("~", ",<br>");
 }
 
 let currentIndex = 0;
