@@ -276,6 +276,40 @@ th, td {
     }
 }
 
+/* Graue Trennlinie */
+.footer-separator {
+    width: 90%; /* Passt die Breite an */
+    height: 1px;
+    background-color: #ddd;
+    margin: 20px auto;
+}
+
+/* Footer */
+.footer {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    padding: 10px 0;
+    font-size: 0.75rem;
+    color: #888; /* Helles Grau für die Schriftfarbe */
+}
+
+.footer-menu {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.footer-menu a {
+    color: #888;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.footer-menu a:hover {
+    color: #4CAF50; /* Grüne Farbe beim Hover */
+}
+
 
 /* Class Diagram & Object Diagram subpages */
 .close-btn {

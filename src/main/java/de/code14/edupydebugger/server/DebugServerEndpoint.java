@@ -110,8 +110,6 @@ public class DebugServerEndpoint {
             handleActionMessage(message.substring("action:".length()));
         } else if (message.startsWith("get:")) {
             handleGetMessage(message.substring("get:".length()));
-        } else if (message.startsWith("navigate:")) {
-            DebuggerToolWindowFactory.openPythonTutor();
         } else if (message.startsWith("Success:")) {
             LOGGER.debug("Action was successfully handled by client.");
         } else {
