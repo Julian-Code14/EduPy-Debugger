@@ -166,7 +166,7 @@ public class DebugSessionListener implements XDebugSessionListener {
 
         // Generate the object relationships diagram in PlantUML format
         String objectDiagramPlantUmlString = ObjectDiagramParser.generateObjectDiagram(objects);
-        generateAndSendDiagram(objectDiagramPlantUmlString, "objectDiagram");
+        generateAndUpdateDiagramInServerEndpoint(objectDiagramPlantUmlString, "objectDiagram");
 
         return objects;
     }
@@ -179,22 +179,21 @@ public class DebugSessionListener implements XDebugSessionListener {
      */
     private void performStaticAnalysis(PyDebugProcess pyDebugProcess) {
         String classDiagramPlantUmlString = classDiagramParser.generateClassDiagram(pyDebugProcess.getProject());
-        generateAndSendDiagram(classDiagramPlantUmlString, "classDiagram");
+        generateAndUpdateDiagramInServerEndpoint(classDiagramPlantUmlString, "classDiagram");
     }
 
     /**
-     * Generates a PlantUML diagram and sends it to the debug server endpoint.
+     * Generates a PlantUML diagram and updates it in the debug server endpoint for get requests.
      *
      * @param plantUmlString the PlantUML string to generate the diagram from
      * @param type           the type of diagram being generated ("objectDiagram", "classDiagram")
      */
-    private void generateAndSendDiagram(String plantUmlString, String type) {
+    private void generateAndUpdateDiagramInServerEndpoint(String plantUmlString, String type) {
         try {
             String base64Diagram = PlantUMLDiagramGenerator.generateDiagramAsBase64(plantUmlString);
             switch (type) {
                 case "objectDiagram":
                     DebugServerEndpoint.setObjectDiagramPlantUmlImage(base64Diagram);
-                    DebugServerEndpoint.sendDebugInfo(OBJECT_DIAGRAM_PREFIX + base64Diagram);
                     break;
                 case "classDiagram":
                     DebugServerEndpoint.setClassDiagramPlantUmlImage(base64Diagram);

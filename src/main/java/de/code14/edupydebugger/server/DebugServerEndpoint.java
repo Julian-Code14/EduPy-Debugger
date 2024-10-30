@@ -184,7 +184,7 @@ public class DebugServerEndpoint {
                 sendDebugInfo(objectCardPlantUmlImagesData);
                 break;
             case "od":
-                sendDebugInfo("od:" + objectDiagramPlantUmlImage);
+                sendDebugInfo(objectDiagramPlantUmlImage);
                 break;
             case "variables":
                 sendDebugInfo("variables:" + variablesString);

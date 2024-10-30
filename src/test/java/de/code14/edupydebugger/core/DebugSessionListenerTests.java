@@ -101,9 +101,8 @@ public class DebugSessionListenerTests {
         }
     }
 
-
     @Test
-    public void testGenerateAndSendDiagramHandlesObjectDiagrams() throws Exception {
+    public void testGenerateAndUpdateDiagramInServerEndpointHandlesObjectDiagrams() throws Exception {
         // Arrange
         String mockDiagram = "mock diagram";
         String base64Diagram = "mockBase64";
@@ -115,26 +114,20 @@ public class DebugSessionListenerTests {
                     .thenReturn(base64Diagram);
 
             // Access the private method generateAndSendDiagram
-            Method method = DebugSessionListener.class.getDeclaredMethod("generateAndSendDiagram", String.class, String.class);
+            Method method = DebugSessionListener.class.getDeclaredMethod("generateAndUpdateDiagramInServerEndpoint", String.class, String.class);
             method.setAccessible(true);
 
             // Act: Call the private method via reflection
             method.invoke(debugSessionListener, mockDiagram, "objectDiagram");
 
-            // Access the private static field OBJECT_DIAGRAM_PREFIX
-            Field field = DebugSessionListener.class.getDeclaredField("OBJECT_DIAGRAM_PREFIX");
-            field.setAccessible(true);
-            String objectDiagramPrefix = (String) field.get(null);
-
-            // Assert: Verify the calls
+            // Assert: Verify the calls for objectDiagram
             plantUMLDiagramGeneratorMock.verify(() -> PlantUMLDiagramGenerator.generateDiagramAsBase64(mockDiagram), times(1));
             debugServerEndpointMock.verify(() -> DebugServerEndpoint.setObjectDiagramPlantUmlImage(base64Diagram), times(1));
-            debugServerEndpointMock.verify(() -> DebugServerEndpoint.sendDebugInfo(objectDiagramPrefix + base64Diagram), times(1));
         }
     }
 
     @Test
-    public void testGenerateAndSendDiagramHandlesClassDiagrams() throws Exception {
+    public void testGenerateAndUpdateDiagramInServerEndpointHandlesClassDiagrams() throws Exception {
         // Arrange
         String mockDiagram = "mock class diagram";
         String base64Diagram = "mockBase64Class";
@@ -147,15 +140,16 @@ public class DebugSessionListenerTests {
                     .thenReturn(base64Diagram);
 
             // Access the private method generateAndSendDiagram
-            Method method = DebugSessionListener.class.getDeclaredMethod("generateAndSendDiagram", String.class, String.class);
+            Method method = DebugSessionListener.class.getDeclaredMethod("generateAndUpdateDiagramInServerEndpoint", String.class, String.class);
             method.setAccessible(true);
 
             // Act: Call the private method via reflection
             method.invoke(debugSessionListener, mockDiagram, "classDiagram");
 
-            // Assert: Verify the calls
+            // Assert: Verify that sendDebugInfo is not called for classDiagram
             plantUMLDiagramGeneratorMock.verify(() -> PlantUMLDiagramGenerator.generateDiagramAsBase64(mockDiagram), times(1));
             debugServerEndpointMock.verify(() -> DebugServerEndpoint.setClassDiagramPlantUmlImage(base64Diagram), times(1));
+            debugServerEndpointMock.verifyNoMoreInteractions();
         }
     }
 
