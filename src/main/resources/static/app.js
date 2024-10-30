@@ -313,6 +313,15 @@ function goToClassDiagram() {
     }
 }
 
+function goToObjectDiagram() {
+    window.location.href = 'pages/object-diagram.html';
+    try {
+        socket.close();
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 function goToPythonTutor() {
     socket.send("navigate:")
     try {
