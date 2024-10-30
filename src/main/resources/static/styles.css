@@ -277,7 +277,7 @@ th, td {
 }
 
 
-/* Class Diagram */
+/* Class Diagram & Object Diagram subpages */
 .close-btn {
     position: absolute;
     top: 10px;
@@ -305,7 +305,8 @@ th, td {
     overflow: hidden; /* Verhindert überflüssiges Scrollen */
 }
 
-#class-diagram-container {
+#class-diagram-container,
+#object-diagram-container {
     width: 100%;
     max-width: 100vw;
     overflow: auto;
@@ -316,7 +317,8 @@ th, td {
 }
 
 .diagram-image,
-#class-diagram-container svg {
+#class-diagram-container svg,
+#object-diagram-container svg {
     display: inline-block;
     height: auto;
 }
