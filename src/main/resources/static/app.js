@@ -323,10 +323,5 @@ function goToObjectDiagram() {
 }
 
 function goToPythonTutor() {
-    socket.send("navigate:")
-    try {
-        socket.close();
-    } catch (e) {
-        console.error(e);
-    }
+    window.open('https://pythontutor.com/python-compiler.html#mode=edit', '_blank');
 }
