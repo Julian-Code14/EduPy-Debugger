@@ -1,6 +1,6 @@
 /*
 * @author julian
-* @version 0.2.0
+* @version 0.3.0
 * @since 0.1.0
 * */
 
@@ -276,6 +276,28 @@ document.getElementById('step-out-btn').addEventListener('click', function() {
 
 // TODO: get:od und get:oc wurden früher durch Drücken des Switches angefordert - wird das noch benötigt?
 
+// Threads Toggle
+const threadsToggle = document.getElementById("threads-checkbox");
+
+// Füge den "change"-EventListener hinzu:
+threadsToggle.addEventListener("change", function() {
+    if (threadsToggle.checked) {
+        threadsActivated();
+    } else {
+        threadsDeactivated();
+    }
+});
+
+const threadsContent = document.getElementById("threads-content");
+
+function threadsActivated() {
+    threadsContent.style.display = "block";
+}
+
+function threadsDeactivated() {
+    threadsContent.style.display = "none";
+}
+
 // Console
 document.getElementById("console-input").addEventListener("keydown", function(event) {
     const inputField = document.getElementById("console-input");
@@ -315,6 +337,15 @@ function goToClassDiagram() {
 
 function goToObjectDiagram() {
     window.location.href = 'pages/object-diagram.html';
+    try {
+        socket.close();
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function goToThreadsWindow() {
+    window.location.href = 'pages/threads.html';
     try {
         socket.close();
     } catch (e) {
