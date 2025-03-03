@@ -42,7 +42,7 @@ dependencies {
     // Testing Setup
     //testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
     //testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.0")
-    testImplementation("org.mockito:mockito-core:5.14.2")
+    testImplementation("org.mockito:mockito-core:5.15.2")
     testImplementation("net.bytebuddy:byte-buddy:1.17.0") // for compatibility with Java 21
     //testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.1")
     //testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.1")
