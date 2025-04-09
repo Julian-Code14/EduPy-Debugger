@@ -33,7 +33,7 @@ import java.util.Set;
  * The class diagram and object diagram generated during the analysis are encoded as PlantUML diagrams.
  *
  * @author julian
- * @version 0.2.0
+ * @version 0.3.0
  * @since 0.1.0
  */
 public class DebugSessionListener implements XDebugSessionListener {
@@ -98,8 +98,31 @@ public class DebugSessionListener implements XDebugSessionListener {
      * This includes extracting variables and objects and sending this data to the WebSocket server.
      */
     private void performDynamicAnalysis() {
-        List<PyStackFrame> pyStackFrames = DebuggerUtils.getAllStackFrames(this.session);
-        StackFrameAnalyzer stackFrameAnalyzer = new StackFrameAnalyzer(pyStackFrames);
+        Map<PyThreadInfo, List<PyStackFrame>> perThreadFrames = DebuggerUtils.getStackFramesPerThread(this.session);
+
+        List<PyStackFrame> firstPyStackFrames = null;
+
+        // Thread-Namen und zugehörige Methodenstacks ausgeben
+        LOGGER.debug("=== Thread- und Stack-Informationen ===");
+        for (Map.Entry<PyThreadInfo, List<PyStackFrame>> entry : perThreadFrames.entrySet()) {
+            PyThreadInfo threadInfo = entry.getKey();
+            List<PyStackFrame> frames = entry.getValue();
+
+            if (firstPyStackFrames == null) {
+                firstPyStackFrames = frames;
+            }
+
+            // Thread-Namen und ID
+            LOGGER.debug("Thread: " + threadInfo.getName() + " (ID: " + threadInfo.getId() + ")");
+
+            // Methodennamen ausgeben (Reihenfolge: erstes Element ist der "Top-Frame")
+            for (PyStackFrame frame : frames) {
+                String methodName = frame.getName();
+                LOGGER.debug("   -> " + methodName);
+            }
+        }
+
+        StackFrameAnalyzer stackFrameAnalyzer = new StackFrameAnalyzer(firstPyStackFrames);
 
         stackFrameAnalyzer.analyzeFrames();
 
