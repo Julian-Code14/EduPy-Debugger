@@ -4,14 +4,10 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.frame.XExecutionStack;
 import com.intellij.xdebugger.frame.XStackFrame;
-import com.jetbrains.python.debugger.PyDebugProcess;
-import com.jetbrains.python.debugger.PyExecutionStack;
-import com.jetbrains.python.debugger.PyStackFrame;
-import com.jetbrains.python.debugger.PyThreadInfo;
+import com.jetbrains.python.debugger.*;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -19,7 +15,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Provides methods to retrieve all stack frames from a given debugging session.
  *
  * @author julian
- * @version 0.1.0
+ * @version 0.3.0
  * @since 0.1.0
  */
 public class DebuggerUtils {
@@ -30,31 +26,53 @@ public class DebuggerUtils {
     private static final int INITIAL_FRAME_INDEX = 1;
 
     /**
-     * Retrieves all stack frames from the current debugging session.
-     * This method iterates over all threads in the current session, extracts the stack frames,
-     * and returns them as a list of {@link PyStackFrame} objects.
+     * Retrieves a list of {@link PyThreadInfo} objects representing all threads managed by the given
+     * PyCharm debug session.
+     * <p>
+     * Internally, it casts the session's debug process to {@link PyDebugProcess} and invokes
+     * {@link PyDebugProcess#getThreads()} to obtain the underlying thread information. The resulting
+     * collection is then converted into a list for convenient use.
+     *
+     * @param debugSession the active debug session from which to extract thread information
+     * @return a new {@link ArrayList} containing the thread info for each thread in the session
+     */
+    public static List<PyThreadInfo> getThreads(@NotNull XDebugSession debugSession) {
+        PyDebugProcess debugProcess = (PyDebugProcess) debugSession.getDebugProcess();
+        Collection<PyThreadInfo> threadInfos = debugProcess.getThreads();
+        return new ArrayList<>(threadInfos);
+    }
+
+    /**
+     * Retrieves stack frames for each thread separately.
+     * Returns a map where each key is a {@link PyThreadInfo} and the value is the list of {@link PyStackFrame}
+     * belonging to that thread.
      *
      * @param debugSession the current debugging session
-     * @return a list of all stack frames across all threads
+     * @return a map of thread info objects to their respective lists of stack frames
      */
-    public static List<PyStackFrame> getAllStackFrames(XDebugSession debugSession) {
-        // Get the debug process associated with the current session
+    public static Map<PyThreadInfo, List<PyStackFrame>> getStackFramesPerThread(XDebugSession debugSession) {
         PyDebugProcess debugProcess = (PyDebugProcess) debugSession.getDebugProcess();
-
-        // Retrieve all thread information from the debug process
         Collection<PyThreadInfo> threadInfos = debugProcess.getThreads();
 
-        // List to store all stack frames
-        List<PyStackFrame> allStackFrames = new CopyOnWriteArrayList<>();
+        Map<PyThreadInfo, List<PyStackFrame>> perThreadFrames = new HashMap<>();
 
-        // Iterate through each thread to extract stack frames
+        // Iterate through each thread, extract its frames, and store them in the map
         for (PyThreadInfo threadInfo : threadInfos) {
-            PyExecutionStack executionStack = new PyExecutionStack(debugProcess, threadInfo);
-            List<PyStackFrame> stackFrames = extractStackFrames(executionStack);
-            allStackFrames.addAll(stackFrames);
+            // Prüfen, ob der Thread suspended ist
+            if (threadInfo.getState() == PyThreadInfo.State.SUSPENDED) {
+                PyExecutionStack executionStack = new PyExecutionStack(debugProcess, threadInfo);
+                List<PyStackFrame> stackFrames = extractStackFrames(executionStack);
+                perThreadFrames.put(threadInfo, stackFrames);
+            } else if (threadInfo.getState() == PyThreadInfo.State.RUNNING) {
+                LOGGER.debug("Still running thread: " + threadInfo.getName()
+                        + " (state=" + threadInfo.getState() + ")");
+            } else {
+                LOGGER.debug("Skipping stack frames for thread: " + threadInfo.getName()
+                        + " (state=" + threadInfo.getState() + ")");
+            }
         }
 
-        return allStackFrames;
+        return perThreadFrames;
     }
 
     /**

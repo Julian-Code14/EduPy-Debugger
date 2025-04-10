@@ -36,14 +36,14 @@ dependencies {
 
     // Plant UML
     // https://mvnrepository.com/artifact/net.sourceforge.plantuml/plantuml
-    implementation("net.sourceforge.plantuml:plantuml:1.2024.7")
+    implementation("net.sourceforge.plantuml:plantuml:1.2025.2")
 
 
     // Testing Setup
     //testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
     //testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.0")
-    testImplementation("org.mockito:mockito-core:5.14.2")
-    testImplementation("net.bytebuddy:byte-buddy:1.15.7") // for compatibility with Java 21
+    testImplementation("org.mockito:mockito-core:5.17.0")
+    testImplementation("net.bytebuddy:byte-buddy:1.17.5") // for compatibility with Java 21
     //testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.1")
     //testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.1")
     testImplementation("junit:junit:4.13.2")

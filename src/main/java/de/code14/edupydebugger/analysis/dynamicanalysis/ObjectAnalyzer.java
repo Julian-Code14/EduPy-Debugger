@@ -166,7 +166,19 @@ public class ObjectAnalyzer {
      * @return an array of attribute names
      */
     private String[] parseAttributeNames(String attributesListStr) {
-        attributesListStr = attributesListStr.substring(1, attributesListStr.length() - 1); // Remove brackets
+        // Check if the string is null or too short
+        if (attributesListStr == null || attributesListStr.length() < 2) {
+            return new String[0];
+        }
+        // If the string starts with '[' and ends with ']', remove these brackets
+        if (attributesListStr.charAt(0) == '[' && attributesListStr.charAt(attributesListStr.length() - 1) == ']') {
+            attributesListStr = attributesListStr.substring(1, attributesListStr.length() - 1);
+        }
+        // If the content after removing the brackets contains only whitespace, return an empty array
+        if (attributesListStr.trim().isEmpty()) {
+            return new String[0];
+        }
+        // Split the string by ", " into individual attribute names
         return attributesListStr.split(", ");
     }
 
@@ -285,7 +297,7 @@ public class ObjectAnalyzer {
         try {
             return value.getFrameAccessor().evaluate(expression, false, true);
         } catch (PyDebuggerException e) {
-            LOGGER.error("Error evaluating expression: " + expression, e);
+            LOGGER.warn("Error evaluating expression: " + expression, e);
             return null;
         }
     }
@@ -301,7 +313,7 @@ public class ObjectAnalyzer {
         try {
             return value.getFrameAccessor().evaluate(expression, false, true).getValue();
         } catch (PyDebuggerException e) {
-            LOGGER.error("Error evaluating expression: " + expression, e);
+            LOGGER.warn("Error evaluating expression: " + expression, e);
             return "";
         }
     }

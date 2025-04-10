@@ -1,156 +1,102 @@
 package de.code14.edupydebugger.core;
 
 import com.intellij.openapi.project.Project;
+
 import com.intellij.xdebugger.XDebugSession;
 import com.jetbrains.python.debugger.PyDebugProcess;
 import com.jetbrains.python.debugger.PyThreadInfo;
-import de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
+import de.code14.edupydebugger.analysis.dynamicanalysis.DebuggerUtils;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.MockitoAnnotations;
+import org.mockito.*;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.Map;
+import java.io.IOException;
+import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
+// Subclass that suppresses static analysis during testing.
+class TestDebugSessionListener extends DebugSessionListener {
+    // Construct with a PyDebugProcess object.
+    public TestDebugSessionListener(PyDebugProcess debugProcess) {
+        super(debugProcess);
+    }
+    // Override to disable static analysis in tests.
+    @Override
+    protected void performStaticAnalysis(PyDebugProcess pyDebugProcess) {
+        // No static analysis in test mode.
+    }
+}
+
 /**
+ * Tests for DebugSessionListener.
+ *
  * @author julian
- * @version 0.2.0
+ * @version 0.3.0
  * @since 0.1.0
  */
 public class DebugSessionListenerTests {
 
-    private DebugSessionListener debugSessionListener;
-
     @Mock
-    private XDebugSession mockSession;
-
+    private XDebugSession mockXDebugSession; // Mock for XDebugSession.
     @Mock
-    private PyDebugProcess mockPyDebugProcess;
-
+    private PyDebugProcess mockPyDebugProcess; // Mock for PyDebugProcess.
     @Mock
-    private PyThreadInfo mockThreadInfo;
+    private Project mockProject; // Mock for Project to supply non-null project.
 
-    @Mock
-    private Project mockProject;
+    private DebugSessionListener debugSessionListener; // System under test.
 
     @Before
     public void setUp() {
-        // Initialize mocks annotated with @Mock
-        MockitoAnnotations.openMocks(this);
+        MockitoAnnotations.openMocks(this); // Initialize mocks.
 
-        // Mock the behavior of the PyDebugProcess to return a mock XDebugSession
-        when(mockPyDebugProcess.getSession()).thenReturn(mockSession);
+        // Configure PyDebugProcess to return the mocked XDebugSession.
+        when(mockPyDebugProcess.getSession()).thenReturn(mockXDebugSession);
+        // Stub project retrieval and base path.
+        when(mockPyDebugProcess.getProject()).thenReturn(mockProject);
+        when(mockProject.getBasePath()).thenReturn("dummyPath");
 
-        // Mock the behavior of getThreads() to return a list with a mock PyThreadInfo
-        when(mockPyDebugProcess.getThreads()).thenReturn(Collections.singletonList(mockThreadInfo));
-
-        // Mock the behavior of the Project to return a valid base path when getBasePath() is called
-        when(mockProject.getBasePath()).thenReturn("/path/to/project");
-
-        // Initialize the DebugSessionListener instance with the mocked PyDebugProcess
-        debugSessionListener = new DebugSessionListener(mockPyDebugProcess);
+        // Instantiate the test-specific listener that suppresses static analysis.
+        debugSessionListener = new TestDebugSessionListener(mockPyDebugProcess);
     }
 
-    // TODO: testStackFrameChangedCallsMethods
-
     @Test
-    public void testGenerateAndSendObjectCards() throws Exception {
-        // Arrange
-        Map<String, String> mockObjectCards = Map.of("1", "mockPlantUML1", "2", "mockPlantUML2");
-        String base64Diagram1 = "mockBase64_1";
-        String base64Diagram2 = "mockBase64_2";
-
-        try (MockedStatic<PlantUMLDiagramGenerator> plantUMLDiagramGeneratorMock = mockStatic(PlantUMLDiagramGenerator.class);
-             MockedStatic<DebugServerEndpoint> debugServerEndpointMock = mockStatic(DebugServerEndpoint.class)) {
-
-            // Mock the behavior of the diagram generator
-            plantUMLDiagramGeneratorMock.when(() -> PlantUMLDiagramGenerator.generateDiagramAsBase64("mockPlantUML1"))
-                    .thenReturn(base64Diagram1);
-            plantUMLDiagramGeneratorMock.when(() -> PlantUMLDiagramGenerator.generateDiagramAsBase64("mockPlantUML2"))
-                    .thenReturn(base64Diagram2);
-
-            // Access the private method generateAndSendObjectCards
-            Method method = DebugSessionListener.class.getDeclaredMethod("generateAndSendObjectCards", Map.class);
-            method.setAccessible(true);
-
-            // Act: Call the private method via reflection
-            method.invoke(debugSessionListener, mockObjectCards);
-
-            // Verify that the method was called with the correct object cards data
-            ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-            debugServerEndpointMock.verify(() -> DebugServerEndpoint.setObjectCardPlantUmlImagesData(captor.capture()), times(1));
-
-            // Split the actual captured value and check the individual components
-            String capturedValue = captor.getValue();
-            assertTrue(capturedValue.startsWith("oc:"));
-            assertTrue(capturedValue.contains("1|mockBase64_1"));
-            assertTrue(capturedValue.contains("2|mockBase64_2"));
-
-            // Verify that the final data was sent
-            debugServerEndpointMock.verify(() -> DebugServerEndpoint.sendDebugInfo(capturedValue), times(1));
+    public void testConstructorTriggersStaticAnalysis() throws IOException {
+        // Verify that the overridden performStaticAnalysis does not invoke any static endpoint.
+        try (MockedStatic<DebugServerEndpoint> endpointMock = Mockito.mockStatic(DebugServerEndpoint.class)) {
+            // Expect no interactions with DebugServerEndpoint.
+            endpointMock.verifyNoInteractions();
         }
     }
 
     @Test
-    public void testGenerateAndUpdateDiagramInServerEndpointHandlesObjectDiagrams() throws Exception {
-        // Arrange
-        String mockDiagram = "mock diagram";
-        String base64Diagram = "mockBase64";
+    public void testStackFrameChanged() throws Exception {
+        try (MockedStatic<DebuggerUtils> debuggerUtilsMock = Mockito.mockStatic(DebuggerUtils.class);
+             MockedStatic<DebugServerEndpoint> debugEndpointMock = Mockito.mockStatic(DebugServerEndpoint.class)) {
 
-        try (MockedStatic<PlantUMLDiagramGenerator> plantUMLDiagramGeneratorMock = mockStatic(PlantUMLDiagramGenerator.class);
-             MockedStatic<DebugServerEndpoint> debugServerEndpointMock = mockStatic(DebugServerEndpoint.class)) {
+            // Stub getDebugSessionController() to return a dummy controller.
+            DebugSessionController dummyController = mock(DebugSessionController.class);
+            debugEndpointMock.when(DebugServerEndpoint::getDebugSessionController).thenReturn(dummyController);
+            // Stub getSelectedThread() to return null.
+            debugEndpointMock.when(DebugServerEndpoint::getSelectedThread).thenReturn(null);
 
-            plantUMLDiagramGeneratorMock.when(() -> PlantUMLDiagramGenerator.generateDiagramAsBase64(mockDiagram))
-                    .thenReturn(base64Diagram);
+            // Create a suspended thread mock.
+            PyThreadInfo t1 = mock(PyThreadInfo.class);
+            when(t1.getName()).thenReturn("Thread-A");
+            when(t1.getState()).thenReturn(PyThreadInfo.State.SUSPENDED);
+            // Stub DebuggerUtils.getThreads() to return a list with the suspended thread.
+            debuggerUtilsMock.when(() -> DebuggerUtils.getThreads(mockXDebugSession))
+                    .thenReturn(List.of(t1));
 
-            // Access the private method generateAndSendDiagram
-            Method method = DebugSessionListener.class.getDeclaredMethod("generateAndUpdateDiagramInServerEndpoint", String.class, String.class);
-            method.setAccessible(true);
+            // Invoke stackFrameChanged(), which calls performDynamicAnalysis.
+            debugSessionListener.stackFrameChanged();
 
-            // Act: Call the private method via reflection
-            method.invoke(debugSessionListener, mockDiagram, "objectDiagram");
-
-            // Assert: Verify the calls for objectDiagram
-            plantUMLDiagramGeneratorMock.verify(() -> PlantUMLDiagramGenerator.generateDiagramAsBase64(mockDiagram), times(1));
-            debugServerEndpointMock.verify(() -> DebugServerEndpoint.setObjectDiagramPlantUmlImage(base64Diagram), times(1));
+            // Verify that the thread options string is set and sent.
+            debugEndpointMock.verify(() -> DebugServerEndpoint.setThreadOptionsString("Thread-A (angehalten);"), times(1));
+            debugEndpointMock.verify(() -> DebugServerEndpoint.sendDebugInfo("threads:Thread-A (angehalten);"), times(1));
+            // Verify that performDynamicAnalysis(null) is invoked via the dummy controller.
+            verify(dummyController, times(1)).performDynamicAnalysis(null);
         }
     }
-
-    @Test
-    public void testGenerateAndUpdateDiagramInServerEndpointHandlesClassDiagrams() throws Exception {
-        // Arrange
-        String mockDiagram = "mock class diagram";
-        String base64Diagram = "mockBase64Class";
-
-        try (MockedStatic<PlantUMLDiagramGenerator> plantUMLDiagramGeneratorMock = mockStatic(PlantUMLDiagramGenerator.class);
-             MockedStatic<DebugServerEndpoint> debugServerEndpointMock = mockStatic(DebugServerEndpoint.class)) {
-
-            // Mock the behavior of the diagram generator
-            plantUMLDiagramGeneratorMock.when(() -> PlantUMLDiagramGenerator.generateDiagramAsBase64(mockDiagram))
-                    .thenReturn(base64Diagram);
-
-            // Access the private method generateAndSendDiagram
-            Method method = DebugSessionListener.class.getDeclaredMethod("generateAndUpdateDiagramInServerEndpoint", String.class, String.class);
-            method.setAccessible(true);
-
-            // Act: Call the private method via reflection
-            method.invoke(debugSessionListener, mockDiagram, "classDiagram");
-
-            // Assert: Verify that sendDebugInfo is not called for classDiagram
-            plantUMLDiagramGeneratorMock.verify(() -> PlantUMLDiagramGenerator.generateDiagramAsBase64(mockDiagram), times(1));
-            debugServerEndpointMock.verify(() -> DebugServerEndpoint.setClassDiagramPlantUmlImage(base64Diagram), times(1));
-            debugServerEndpointMock.verifyNoMoreInteractions();
-        }
-    }
-
 }

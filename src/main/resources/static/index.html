@@ -1,6 +1,6 @@
 <!--
 @author julian
-@version 0.2.0
+@version 0.3.0
 @since 0.1.0
 -->
 
@@ -25,6 +25,36 @@
 	<button class="control-btn" id="step-out-btn"><img src="icons/stepOut.svg" alt="Step Out"></button>
 </div>
 <div id="sections">
+	<section id="threads-section">
+		<div class="threads-toggle">
+			<label class="switch">
+				<input type="checkbox" id="threads-checkbox">
+				<span class="checkbox-slider"></span>
+			</label>
+			<span class="switch-text">Threads</span>
+		</div>
+		<div id="threads-content">
+			<h2>Threads</h2>
+			<div class="threads-dropdown">
+				<label for="threads">Wähle einen Thread:</label>
+				<select id="threads" name="threads">
+					<!-- Dynamische Inhalte hier einfügen -->
+				</select>
+			</div>
+			<div class="threads-container">
+				<table>
+					<thead>
+					<tr>
+						<th>Aufrufstack</th>
+					</tr>
+					</thead>
+					<tbody>
+					<!-- Dynamische Inhalte hier einfügen -->
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</section>
 	<section>
 		<h2>Variablen</h2>
 		<div class="variables-container">
@@ -71,6 +101,7 @@
 <div class="bottom-buttons">
 	<button id="to-class-diagram-btn" class="large-btn" onclick="goToClassDiagram()">Klassendiagramm</button>
 	<button id="to-object-diagram-btn" class="large-btn" onclick="goToObjectDiagram()">Objektdiagramm</button>
+	<button id="to-threads-btn" class="large-btn" onclick="goToThreadsWindow()">Threads</button>
 </div>
 <div class="footer-separator"></div>
 <footer class="footer">

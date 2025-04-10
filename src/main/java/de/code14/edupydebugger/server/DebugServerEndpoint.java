@@ -6,6 +6,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.jetbrains.python.debugger.PyDebugProcess;
 import de.code14.edupydebugger.core.ConsoleController;
 import de.code14.edupydebugger.core.DebugProcessController;
+import de.code14.edupydebugger.core.DebugSessionController;
 import de.code14.edupydebugger.ui.DebuggerToolWindowFactory;
 import jakarta.servlet.annotation.WebListener;
 import jakarta.websocket.OnClose;
@@ -29,7 +30,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * </p>
  *
  * @author julian
- * @version 0.2.0
+ * @version 0.3.0
  * @since 0.1.0
  */
 @WebListener
@@ -42,6 +43,7 @@ public class DebugServerEndpoint {
     private static final BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>();
     private static final DebugProcessController debugProcessController = new DebugProcessController();
     private static final ConsoleController consoleController = new ConsoleController();
+    private static final DebugSessionController debugSessionController = new DebugSessionController();
 
     private static volatile boolean isConnected = false;
 
@@ -50,6 +52,10 @@ public class DebugServerEndpoint {
     private static String variablesString;
     private static String objectCardPlantUmlImagesData;
     private static String objectDiagramPlantUmlImage;
+    private static String threadOptionsString;
+    private static String callStackString;
+
+    private static String selectedThread;
 
     private static final Map<String, Runnable> actionMap = new HashMap<>();
     static {
@@ -157,6 +163,22 @@ public class DebugServerEndpoint {
             } catch (IOException e) {
                 LOGGER.error("Error sending input to the process: " + consoleInput, e);
             }
+        } else if (action.startsWith("thread-selected:")) {
+            // Extract the selected thread
+            selectedThread = action.substring("thread-selected:".length());
+
+            // Empty selectedThread if not thread is selected
+            if (selectedThread.isEmpty()) {
+                selectedThread = null;
+            }
+
+            // Forward the selected thread to the session listener
+            try {
+                debugSessionController.performDynamicAnalysis(selectedThread);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
         } else {
             Runnable command = actionMap.get(action);
             if (command != null) {
@@ -187,6 +209,9 @@ public class DebugServerEndpoint {
             case "variables":
                 sendDebugInfo("variables:" + variablesString);
                 break;
+            case "callstack":
+                sendDebugInfo("callstack:" + callStackString);
+                break;
             default:
                 LOGGER.warn("Unknown get request received: " + request);
                 break;
@@ -209,6 +234,7 @@ public class DebugServerEndpoint {
      */
     public static void setDebugProcess(PyDebugProcess debugProcess) {
         debugProcessController.setDebugProcess(debugProcess);
+        debugSessionController.setDebugProcess(debugProcess);
     }
 
     /**
@@ -239,6 +265,15 @@ public class DebugServerEndpoint {
     }
 
     /**
+     * Sets the string representation of threads.
+     *
+     * @param threadsString the string representing the threads
+     */
+    public static void setThreadOptionsString(String threadsString) {
+        DebugServerEndpoint.threadOptionsString = threadsString;
+    }
+
+    /**
      * Sets the PlantUML image for the object cards diagram.
      *
      * @param base64PlantUmlData the Base64 encoded PlantUML image
@@ -254,6 +289,18 @@ public class DebugServerEndpoint {
      */
     public static void setObjectDiagramPlantUmlImage(String base64PlantUml) {
         objectDiagramPlantUmlImage = base64PlantUml;
+    }
+
+    public static DebugSessionController getDebugSessionController() {
+        return debugSessionController;
+    }
+
+    public static String getSelectedThread() {
+        return selectedThread;
+    }
+
+    public static void setCallStackString(String callStackString) {
+        DebugServerEndpoint.callStackString = callStackString;
     }
 
 }
