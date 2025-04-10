@@ -91,12 +91,14 @@ public class DebugSessionController {
             }
         }
 
-        StackFrameAnalyzer stackFrameAnalyzer = new StackFrameAnalyzer(stackFrames);
-        stackFrameAnalyzer.analyzeFrames();
+        if (stackFrames != null) {
+            StackFrameAnalyzer stackFrameAnalyzer = new StackFrameAnalyzer(stackFrames);
+            stackFrameAnalyzer.analyzeFrames();
 
-        // Handle variables and objects extracted from the stack frames
-        Map<String, ObjectInfo> objects = handleObjects(stackFrameAnalyzer);
-        handleVariables(stackFrameAnalyzer, objects);
+            // Handle variables and objects extracted from the stack frames
+            Map<String, ObjectInfo> objects = handleObjects(stackFrameAnalyzer);
+            handleVariables(stackFrameAnalyzer, objects);
+        }
     }
 
     /**

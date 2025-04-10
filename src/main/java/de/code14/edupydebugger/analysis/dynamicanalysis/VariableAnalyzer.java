@@ -150,7 +150,7 @@ public class VariableAnalyzer {
         try {
             return value.getFrameAccessor().evaluate(expression, false, true).getValue();
         } catch (PyDebuggerException e) {
-            LOGGER.error("Error evaluating expression: " + expression, e);
+            LOGGER.warn("Error evaluating expression: " + expression, e);
             return "";
         }
     }

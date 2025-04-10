@@ -78,9 +78,9 @@ public class DebugSessionControllerTests {
             debugSessionController.performDynamicAnalysis(null);
 
             // Verify that DebugServerEndpoint.setVariablesString() is called with an empty string.
-            debugEndpointMock.verify(() -> DebugServerEndpoint.setVariablesString(""), times(1));
+            debugEndpointMock.verify(() -> DebugServerEndpoint.setVariablesString(""), times(0));
             // Verify that DebugServerEndpoint.sendDebugInfo() is called with "variables:".
-            debugEndpointMock.verify(() -> DebugServerEndpoint.sendDebugInfo("variables:"), times(1));
+            debugEndpointMock.verify(() -> DebugServerEndpoint.sendDebugInfo("variables:"), times(0));
 
             // debugEndpointMock.verify(() -> DebugServerEndpoint.setCallStackString(""), times(1));
             // debugEndpointMock.verify(() -> DebugServerEndpoint.sendDebugInfo("callstack:"), times(1));
