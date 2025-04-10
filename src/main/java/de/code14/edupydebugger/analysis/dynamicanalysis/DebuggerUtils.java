@@ -7,10 +7,7 @@ import com.intellij.xdebugger.frame.XStackFrame;
 import com.jetbrains.python.debugger.*;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -27,6 +24,23 @@ public class DebuggerUtils {
 
 
     private static final int INITIAL_FRAME_INDEX = 1;
+
+    /**
+     * Retrieves a list of {@link PyThreadInfo} objects representing all threads managed by the given
+     * PyCharm debug session.
+     * <p>
+     * Internally, it casts the session's debug process to {@link PyDebugProcess} and invokes
+     * {@link PyDebugProcess#getThreads()} to obtain the underlying thread information. The resulting
+     * collection is then converted into a list for convenient use.
+     *
+     * @param debugSession the active debug session from which to extract thread information
+     * @return a new {@link ArrayList} containing the thread info for each thread in the session
+     */
+    public static List<PyThreadInfo> getThreads(@NotNull XDebugSession debugSession) {
+        PyDebugProcess debugProcess = (PyDebugProcess) debugSession.getDebugProcess();
+        Collection<PyThreadInfo> threadInfos = debugProcess.getThreads();
+        return new ArrayList<>(threadInfos);
+    }
 
     /**
      * Retrieves stack frames for each thread separately.
