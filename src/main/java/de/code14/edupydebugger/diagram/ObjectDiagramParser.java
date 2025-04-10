@@ -53,7 +53,12 @@ public class ObjectDiagramParser {
                             .append(attribute.value().replace("refid:", ""))
                             .append("]]]");
                 } else {
-                    plantUML.append(attribute.value());
+                    // Check if the attribute value is too long to show it
+                    if (attribute.value().length() > 20) {
+                        plantUML.append(attribute.value(), 0, 20).append(" [...]");
+                    } else {
+                        plantUML.append(attribute.value());
+                    }
                 }
 
                 plantUML.append("\n");

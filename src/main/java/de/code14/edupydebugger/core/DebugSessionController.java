@@ -153,7 +153,13 @@ public class DebugSessionController {
                             .append(",");
 
                     for (AttributeInfo attributeInfo : currentAttributeInfos) {
-                        variablesString.append(attributeInfo.name()).append("|").append(attributeInfo.value()).append("###");
+                        variablesString.append(attributeInfo.name()).append("|");
+                        if (attributeInfo.value().length() > 20) {
+                            variablesString.append(attributeInfo.value(), 0, 20).append(" [...]");
+                        } else {
+                            variablesString.append(attributeInfo.value());
+                        }
+                        variablesString.append("###");
                     }
 
                     variablesString.append(",").append(entry.getValue().get(3)).append(";");
