@@ -11,7 +11,7 @@ import java.util.Map;
  * The ObjectDiagramParser class is responsible for generating PlantUML diagrams representing objects and their associations.
  *
  * @author julian
- * @version 0.2.0
+ * @version 0.3.0
  * @since 0.1.0
  */
 public class ObjectDiagramParser {
@@ -53,7 +53,12 @@ public class ObjectDiagramParser {
                             .append(attribute.value().replace("refid:", ""))
                             .append("]]]");
                 } else {
-                    plantUML.append(attribute.value());
+                    // Check if the attribute value is too long to show it
+                    if (attribute.value().length() > 20) {
+                        plantUML.append(attribute.value(), 0, 20).append(" [...]");
+                    } else {
+                        plantUML.append(attribute.value());
+                    }
                 }
 
                 plantUML.append("\n");

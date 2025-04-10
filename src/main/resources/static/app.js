@@ -1,6 +1,6 @@
 /*
 * @author julian
-* @version 0.2.0
+* @version 0.3.0
 * @since 0.1.0
 * */
 
@@ -23,6 +23,50 @@ function splitStringAtFirstColon(input) {
     const secondPart = input.slice(index + 1);   // nach dem Doppelpunkt
 
     return [firstPart, secondPart];
+}
+
+function updateThreadOptions(dataString) {
+    // Referenz auf das <select>-Element
+    const selectElement = document.getElementById('threads');
+
+    // Bisher ausgewählten Wert merken
+    const previousSelection = selectElement.value.split(" ").at(0);
+
+    // In Array umwandeln und leere Einträge rausfiltern
+    const threads = dataString.split(';').filter(entry => entry !== '');
+
+    // Vorherige Optionen entfernen
+    selectElement.innerHTML = '';
+
+    // Neue Optionen anhand der Threads hinzufügen
+    threads.forEach(thread => {
+        const option = document.createElement('option');
+        option.value = thread;
+        option.textContent = thread;
+
+        // Wenn der Thread dem alten Wert entspricht, Option ausgewählt markieren
+        if (thread === previousSelection) {
+            option.selected = true;
+        }
+
+        selectElement.appendChild(option);
+    });
+}
+
+function updateCallStackTable(dataString) {
+    const tableBody = document.querySelector('.threads-container tbody');
+    tableBody.innerHTML = ''; // Clear existing rows
+
+    const rows = dataString.split(';');
+    rows.forEach(row => {
+        if (row.trim() === '') return;
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.innerHTML = row;
+        tr.appendChild(td);
+
+        tableBody.appendChild(tr);
+    });
 }
 
 let activeRow = null; // Variable to keep track of the currently active row
@@ -84,7 +128,7 @@ function extractNameList(dataString) {
 }
 
 function extractComplexValue(dataString) {
-    return dataString.replaceAll("|", ": ").replaceAll("###", "\n").replaceAll("~", ",<br>");
+    return dataString.replaceAll("|", ": ").replaceAll("###", "<br>").replaceAll("~", ",<br>");
 }
 
 let currentIndex = 0;
@@ -177,6 +221,12 @@ function connectWebSocket() {
         const eventData = splitStringAtFirstColon(event.data);
 
         switch (eventData.at(0)) {
+            case "threads:":
+                updateThreadOptions(eventData.at(1));
+                break;
+            case "callstack:":
+                updateCallStackTable(eventData.at(1));
+                break;
             case "variables:":
                 updateVariablesTable(eventData.at(1));
                 break;
@@ -274,7 +324,42 @@ document.getElementById('step-out-btn').addEventListener('click', function() {
     }
 });
 
-// TODO: get:od und get:oc wurden früher durch Drücken des Switches angefordert - wird das noch benötigt?
+// Threads Toggle
+const threadsToggle = document.getElementById("threads-checkbox");
+
+// Füge den "change"-EventListener hinzu:
+threadsToggle.addEventListener("change", function() {
+    if (threadsToggle.checked) {
+        threadsActivated();
+    } else {
+        threadsDeactivated();
+    }
+});
+
+const threadsContent = document.getElementById("threads-content");
+
+function threadsActivated() {
+    threadsContent.style.display = "block";
+    socket.send("action:thread-selected:" + selectElement.value.split(" ").at(0));
+}
+
+function threadsDeactivated() {
+    threadsContent.style.display = "none";
+    socket.send("action:thread-selected:");
+}
+
+const selectElement = document.getElementById("threads");
+
+selectElement.addEventListener("change", function() {
+    // Ausgewählten Wert ermitteln
+    const selectedValue = selectElement.value.split(" ").at(0);
+
+    // Value direkt an den Server schicken
+    if (socket.readyState === WebSocket.OPEN) {
+        socket.send("action:thread-selected:" + selectedValue);
+        console.log('Thread-Request sent for: ' + selectedValue);
+    }
+});
 
 // Console
 document.getElementById("console-input").addEventListener("keydown", function(event) {
