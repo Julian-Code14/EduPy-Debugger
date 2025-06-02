@@ -36,7 +36,7 @@ dependencies {
 
     // Plant UML
     // https://mvnrepository.com/artifact/net.sourceforge.plantuml/plantuml
-    implementation("net.sourceforge.plantuml:plantuml:1.2025.2")
+    implementation("net.sourceforge.plantuml:plantuml:1.2025.3")
 
 
     // Testing Setup
