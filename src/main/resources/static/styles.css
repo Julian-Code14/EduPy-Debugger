@@ -201,11 +201,23 @@ th, td {
 
 .object-inspector-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: left;
     align-items: center;
 }
 
-#object-inspector-container {
+/* Toggle-Button */
+.collapse-btn{
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: transform .2s ease;
+}
+
+#object-inspector-container{
+    max-height: 500px;          /* ursprüngliche Höhe */
+    overflow: hidden;
+    transition: max-height .25s ease;
     margin-top: 10px;
     min-height: 200px;
     background-color: #fff;
@@ -213,6 +225,17 @@ th, td {
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+#object-inspector-container.collapsed{
+    max-height: 0;
+    min-height: 0;              /* ← überschreibt 200 px */
+    padding: 0;
+    border: 0;                  /* optional: Rahmen weg */
+}
+
+#oi-toggle.rotated{
+    transform: rotate(-90deg);  /* ▼ → ◀  */
 }
 
 .slider {
@@ -263,7 +286,7 @@ th, td {
 
 #console {
     position: relative;
-    height: 100px;  /* Feste Höhe für das Konsolenfenster */
+    height: 300px;  /* Feste Höhe für das Konsolenfenster */
     background-color: #282828;
     border: 1px solid #333;
     padding: 10px;
@@ -278,6 +301,7 @@ th, td {
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
+    resize: vertical;
 }
 
 #output-container {

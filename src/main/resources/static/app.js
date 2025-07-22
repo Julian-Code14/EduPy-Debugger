@@ -361,6 +361,15 @@ selectElement.addEventListener("change", function() {
     }
 });
 
+// Object-Inspector Toggle
+const oiToggleBtn   = document.getElementById('oi-toggle');
+const oiContainer   = document.getElementById('object-inspector-container');
+
+oiToggleBtn.addEventListener('click', () => {
+    oiContainer.classList.toggle('collapsed');   // Höhe umschalten
+    oiToggleBtn.classList.toggle('rotated');     // Pfeil drehen
+});
+
 // Console
 document.getElementById("console-input").addEventListener("keydown", function(event) {
     const inputField = document.getElementById("console-input");
