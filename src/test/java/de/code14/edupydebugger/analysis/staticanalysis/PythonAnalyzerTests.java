@@ -38,30 +38,7 @@ import static org.mockito.Mockito.when;
 public class PythonAnalyzerTests extends LightPlatformTestCase {
 
     // TODO: write the tests for PythonAnalyzerTests class
-    @Test
-    public void testDummy() {
-        assertEmpty("");
-    }
-    /*private PythonAnalyzer analyzer;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        analyzer = new PythonAnalyzer();
-    }
-
-    @Test
-    public void testAnalyzePythonFile() throws Exception {
-        VirtualFile vFile = myFixture.copyFileToProject("contact_address.py");
-        myFixture.configureFromExistingVirtualFile(vFile);
-
-        analyzer.analyzePythonFiles(getProject());
-
-        Map<String, ClassInfo> classDetails = analyzer.getClassDetails();
-        assertNotNull(classDetails);
-        assertTrue(classDetails.containsKey("Address"));
-        assertTrue(classDetails.containsKey("Person"));
-    }*/
 }
 
 
