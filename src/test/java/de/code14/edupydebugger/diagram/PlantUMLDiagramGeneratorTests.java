@@ -1,79 +1,34 @@
 package de.code14.edupydebugger.diagram;
 
-import net.sourceforge.plantuml.FileFormatOption;
-import net.sourceforge.plantuml.SourceStringReader;
-import org.junit.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
+import org.junit.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 /**
  * @author julian
- * @version 0.2.0
+ * @version 0.4.0
  * @since 0.1.0
  */
 public class PlantUMLDiagramGeneratorTests {
 
     @Test
-    public void testGenerateDiagramAsBase64_ValidSource() throws IOException {
-        // Arrange
-        String plantUmlSource = "@startuml\nAlice -> Bob: Hello\n@enduml";
-        String expectedBase64Prefix = "PHN2Zy";  // The expected prefix for an SVG file encoded in Base64
+    public void testGenerateDiagramAsBase64ProducesValidSvg() throws Exception {
+        String src = """
+                @startuml
+                class Foo
+                @enduml
+                """;
 
-        // Act
-        String base64String = PlantUMLDiagramGenerator.generateDiagramAsBase64(plantUmlSource);
+        String base64 = PlantUMLDiagramGenerator.generateDiagramAsBase64(src);
+        assertNotNull(base64);
 
-        // Assert
-        assertNotNull(base64String);
-        assertTrue(base64String.startsWith(expectedBase64Prefix));  // Ensure the string looks like a valid SVG file
+        byte[] decoded = Base64.getDecoder().decode(base64);
+        String svg     = new String(decoded, StandardCharsets.UTF_8);
+
+        assertTrue("SVG muss <svg …> enthalten", svg.contains("<svg"));
+        assertTrue(svg.contains("Foo"));
     }
-
-    // TODO: Make the tests work for invalidBase64 and when throwing an IOException
-    /*@Test
-    public void testGenerateDiagramAsBase64_InvalidBase64() throws IOException {
-        // Arrange
-        String plantUmlSource = "@startuml\nAlice -> Bob: Hello\n@enduml";
-
-        try (MockedStatic<Base64> base64Mock = Mockito.mockStatic(Base64.class);
-             ByteArrayOutputStream baos = mock(ByteArrayOutputStream.class)) {
-
-            // Stub für den Base64-Encoder, der einen ungültigen Base64-String zurückgibt
-            base64Mock.when(() -> Base64.getEncoder().encodeToString(any(byte[].class)))
-                    .thenReturn("InvalidBase64String!");
-
-            // Simuliere die Generierung eines Bildes als Byte-Array
-            when(baos.toByteArray()).thenReturn(new byte[]{});
-
-            // Act & Assert
-            assertThrows(IOException.class, () -> {
-                PlantUMLDiagramGenerator.generateDiagramAsBase64(plantUmlSource);
-            });
-        }
-    }
-
-    @Test
-    public void testGenerateDiagramAsBase64_IOExceptionOnGeneration() throws IOException {
-        // Arrange
-        String plantUmlSource = "@startuml\nAlice -> Bob: Hello\n@enduml";
-
-        try (MockedStatic<SourceStringReader> readerMock = mockStatic(SourceStringReader.class)) {
-
-            SourceStringReader mockReader = mock(SourceStringReader.class);
-            readerMock.when(() -> new SourceStringReader(plantUmlSource)).thenReturn(mockReader);
-
-            // Verwende doThrow, um eine IOException zu simulieren
-            doThrow(new IOException("IO error")).when(mockReader).outputImage(any(ByteArrayOutputStream.class));
-
-            // Act & Assert
-            assertThrows(IOException.class, () -> PlantUMLDiagramGenerator.generateDiagramAsBase64(plantUmlSource));
-        }
-    }*/
-
 }
