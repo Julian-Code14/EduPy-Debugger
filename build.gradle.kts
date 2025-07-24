@@ -139,12 +139,18 @@ tasks {
     }
 
     /* ------------------------ IDE-abhängige Unit-Tests --------------- */
+    // JUnit-basierte Unit- / Light-Tests
+    test {
+        useJUnit()
+        jvmArgs("--add-exports", "java.base/jdk.internal.vm=ALL-UNNAMED")
+        systemProperty("java.awt.headless", "true") // optional
+    }
+
+    // Integration-Tests in einer echten IDE-Instanz (bleibt unverändert)
     val testIde by intellijPlatformTesting.testIde.registering {
         task {
             useJUnit()
-            jvmArgs(
-                "--add-exports", "java.base/jdk.internal.vm=ALL-UNNAMED",
-            )
+            jvmArgs("--add-exports", "java.base/jdk.internal.vm=ALL-UNNAMED")
         }
     }
 
@@ -168,11 +174,8 @@ tasks {
         enabled = false
     }
 
-    /* ------------------------ Standard-JUnit deaktivieren ------------ */
-    test { enabled = false }
-
     /* ------------------------ Build-Lifecycle ------------------------ */
-    check { dependsOn(testIde) }          // sorgt dafür, dass testIde im build-Task läuft
+    check { dependsOn(test, testIde) }          // sorgt dafür, dass testIde im build-Task läuft
 
     /* ------------------------ IDE-Run-Task --------------------------- */
     runIde {
