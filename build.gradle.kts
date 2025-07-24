@@ -86,6 +86,13 @@ intellijPlatform {
         name.set(properties("pluginName"))          // früher intellij.pluginName
     }
     // since/untilBuild werden wie gehabt von patchPluginXml gepflegt
+    // IDE-Liste für den Plugin-Verifier
+    pluginVerification {
+        ides {
+            // nimmt immer die aktuell empfohlenen Builds aller IDEs
+            recommended()
+        }
+    }
 }
 
 /* ------------------------------------------------------------------- */
