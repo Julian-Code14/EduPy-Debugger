@@ -5,10 +5,6 @@ import java.util.List;
 /**
  * The ObjectInfo record encapsulates information about an object in a Python debugging session.
  * It contains references to other objects and a list of attributes associated with the object.
- *
- * @author julian
- * @version 0.1.0
- * @since 0.1.0
  */
 public record ObjectInfo(List<String> references, List<AttributeInfo> attributes) {
 

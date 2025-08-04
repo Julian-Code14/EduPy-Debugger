@@ -13,10 +13,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * Utility class for working with the debugger and extracting stack frames.
  * Provides methods to retrieve all stack frames from a given debugging session.
- *
- * @author julian
- * @version 0.3.0
- * @since 0.1.0
  */
 public class DebuggerUtils {
 

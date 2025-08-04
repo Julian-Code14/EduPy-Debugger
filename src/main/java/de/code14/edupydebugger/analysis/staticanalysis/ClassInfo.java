@@ -10,10 +10,6 @@ import java.util.List;
  * @param methods       List of method signatures of the class.
  * @param references    List of reference types used by the class.
  * @param superClasses  List of superclasses of the class.
- *
- * @author julian
- * @version 0.1.0
- * @since 0.1.0
  */
 public record ClassInfo(List<String> attributes, List<String> methods, List<String> references, List<String> superClasses) {
 

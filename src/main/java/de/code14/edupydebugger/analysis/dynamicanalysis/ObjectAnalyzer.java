@@ -19,10 +19,6 @@ import java.util.concurrent.CountDownLatch;
  * The ObjectAnalyzer class is responsible for analyzing objects within Python stack frames.
  * It collects information about objects, such as their attributes and references to other objects,
  * and stores this information in a map for further use.
- *
- * @author julian
- * @version 0.1.0
- * @since 0.1.0
  */
 public class ObjectAnalyzer {
 

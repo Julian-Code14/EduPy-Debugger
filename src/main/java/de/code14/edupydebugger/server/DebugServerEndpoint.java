@@ -28,10 +28,6 @@ import java.util.concurrent.LinkedBlockingQueue;
  * The server also queues messages if no client is currently connected, ensuring that messages are not lost.
  * It also provides control over the debugging process through the WebSocket interface.
  * </p>
- *
- * @author julian
- * @version 0.3.0
- * @since 0.1.0
  */
 @WebListener
 @ServerEndpoint(value = "/debug")

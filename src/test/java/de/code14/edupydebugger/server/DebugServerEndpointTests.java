@@ -21,15 +21,7 @@ import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-/**
- * Tests for DebugServerEndpoint.
- * This class covers various behaviors including session management,
- * sending messages, and handling of action messages.
- *
- * @author julian
- * @version 0.3.0
- * @since 0.1.0
- */
+
 public class DebugServerEndpointTests {
 
     @Mock

@@ -17,10 +17,6 @@ import org.glassfish.grizzly.http.server.NetworkListener;
  * <p>
  * The server is managed using static methods for starting, stopping, and checking the running status.
  * </p>
- *
- * @author julian
- * @version 0.1.0
- * @since 0.1.0
  */
 public class DebugWebServer {
 

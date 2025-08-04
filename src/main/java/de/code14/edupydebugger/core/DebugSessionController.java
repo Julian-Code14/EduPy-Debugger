@@ -20,9 +20,43 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @author julian
- * @version 0.3.0
- * @since 0.3.0
+ * Central controller that performs <em>on-the-fly</em> runtime analysis whenever an EduPy debug
+ * session is suspended in PyCharm/IntelliJ.
+ *
+ * <h2>Key responsibilities</h2>
+ * <ul>
+ *   <li><strong>Thread &amp; frame selection</strong> — chooses the first suspended thread (or a
+ *       user-selected thread) and collects its {@link com.jetbrains.python.debugger.PyStackFrame}s.</li>
+ *   <li><strong>Frame analysis</strong> — delegates deep inspection of stack frames, variables and
+ *       heap objects to {@link de.code14.edupydebugger.analysis.dynamicanalysis.StackFrameAnalyzer}.</li>
+ *   <li><strong>Data serialisation</strong> — converts the analysis result into compact strings and
+ *       publishes them over the WebSocket via {@link de.code14.edupydebugger.server.DebugServerEndpoint}.
+ *       Four message prefixes are used:
+ *       <dl>
+ *         <dt>{@code "variables:"}</dt><dd>semicolon-separated list of local &amp; global variables</dd>
+ *         <dt>{@code "callstack:"}</dt><dd>current call-stack trace</dd>
+ *         <dt>{@code "oc:"}</dt><dd>Base64-encoded PlantUML object <em>cards</em></dd>
+ *         <dt>{@code "od:"}</dt><dd>Base64-encoded PlantUML object <em>diagram</em> (relationships)</dd>
+ *       </dl></li>
+ *   <li><strong>Diagram generation</strong> — turns {@link de.code14.edupydebugger.analysis.dynamicanalysis.ObjectInfo}
+ *       graphs into PlantUML markup using {@link de.code14.edupydebugger.diagram.ObjectDiagramParser} and renders
+ *       them as images through {@link de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator}.</li>
+ * </ul>
+ *
+ * <h2>Workflow</h2>
+ * <ol>
+ *   <li>{@link #performDynamicAnalysis(String)} is invoked (typically by {@code DebugSessionListener}).</li>
+ *   <li>The method picks the relevant thread &amp; frames and calls {@code StackFrameAnalyzer#analyzeFrames()}.</li>
+ *   <li>Variables are categorised into <em>primitive</em> vs. <em>object references</em> using
+ *       {@link #defaultTypes}. Complex objects are further inspected for attributes.</li>
+ *   <li>A textual snapshot is sent to connected browser clients so they can render interactive
+ *       call-stack and variable views alongside UML diagrams.</li>
+ * </ol>
+ *
+ * <h2>Extensibility</h2>
+ * For unit tests one can inject a mocked {@link com.jetbrains.python.debugger.PyDebugProcess} via
+ * {@link #setDebugProcess(PyDebugProcess)} and verify outbound messages captured from
+ * {@code DebugServerEndpoint}.
  */
 public class DebugSessionController {
 

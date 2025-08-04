@@ -4,11 +4,7 @@ import org.junit.Test;
 import java.util.List;
 import static org.junit.Assert.assertEquals;
 
-/**
- * @author julian
- * @version 0.1.0
- * @since 0.1.0
- */
+
 public class ClassInfoTests {
 
     @Test

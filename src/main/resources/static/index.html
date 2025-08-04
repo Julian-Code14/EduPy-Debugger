@@ -1,9 +1,3 @@
-<!--
-@author julian
-@version 0.3.0
-@since 0.1.0
--->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -76,9 +70,12 @@
 	</section>
 	<section>
 		<div class="object-inspector-header">
+			<button id="oi-toggle" class="collapse-btn rotated" aria-label="Objektinspektor ein-/ausklappen">
+				&#9660;
+			</button>
 			<h2>Objektinspektor</h2>
 		</div>
-		<div id="object-inspector-container">
+		<div id="object-inspector-container" class="collapsed">
 			<div id="object-slider" class="slider">
 				<div class="slides" id="object-slides">
 					<!-- Dynamische Inhalte hier einfügen -->
@@ -101,7 +98,6 @@
 <div class="bottom-buttons">
 	<button id="to-class-diagram-btn" class="large-btn" onclick="goToClassDiagram()">Klassendiagramm</button>
 	<button id="to-object-diagram-btn" class="large-btn" onclick="goToObjectDiagram()">Objektdiagramm</button>
-	<button id="to-threads-btn" class="large-btn" onclick="goToThreadsWindow()">Threads</button>
 </div>
 <div class="footer-separator"></div>
 <footer class="footer">

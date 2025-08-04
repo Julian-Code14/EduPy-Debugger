@@ -1,10 +1,8 @@
 package de.code14.edupydebugger.core;
 
-import com.intellij.execution.process.ProcessAdapter;
 import com.intellij.execution.process.ProcessEvent;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessListener;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Key;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
 import org.junit.Before;
@@ -12,14 +10,9 @@ import org.junit.Test;
 import org.mockito.*;
 
 import static org.junit.Assert.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-/**
- * @author julian
- * @version 0.2.0
- * @since 0.2.0
- */
+
 public class ConsoleOutputListenerTests {
 
     @Mock private ProcessHandler processHandler;  // Mocked ProcessHandler

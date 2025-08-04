@@ -8,11 +8,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
-/**
- * @author julian
- * @version 0.1.0
- * @since 0.1.0
- */
+
 public class DebugWebServerTests {
 
     private DebugWebServer webServer;

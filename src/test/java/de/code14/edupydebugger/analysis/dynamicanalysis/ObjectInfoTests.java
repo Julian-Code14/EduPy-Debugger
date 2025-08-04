@@ -5,11 +5,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-/**
- * @author julian
- * @version 0.1.0
- * @since 0.1.0
- */
+
 public class ObjectInfoTests {
 
     @Test
