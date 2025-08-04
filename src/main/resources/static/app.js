@@ -1,9 +1,3 @@
-/*
-* @author julian
-* @version 0.3.0
-* @since 0.1.0
-* */
-
 // Websocket
 const websocketUrl = 'ws://localhost:8025/websockets/debug'
 let socket;
@@ -359,6 +353,15 @@ selectElement.addEventListener("change", function() {
         socket.send("action:thread-selected:" + selectedValue);
         console.log('Thread-Request sent for: ' + selectedValue);
     }
+});
+
+// Object-Inspector Toggle
+const oiToggleBtn   = document.getElementById('oi-toggle');
+const oiContainer   = document.getElementById('object-inspector-container');
+
+oiToggleBtn.addEventListener('click', () => {
+    oiContainer.classList.toggle('collapsed');   // Höhe umschalten
+    oiToggleBtn.classList.toggle('rotated');     // Pfeil drehen
 });
 
 // Console

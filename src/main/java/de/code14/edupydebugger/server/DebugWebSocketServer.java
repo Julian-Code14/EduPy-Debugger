@@ -12,10 +12,6 @@ import org.glassfish.tyrus.server.Server;
  * The server is built using the Tyrus framework and listens on a specific port (default: 8025).
  * It hosts WebSocket endpoints defined within the application, specifically the {@link DebugServerEndpoint}.
  * </p>
- *
- * @author julian
- * @version 0.1.0
- * @since 0.1.0
  */
 public class DebugWebSocketServer {
 

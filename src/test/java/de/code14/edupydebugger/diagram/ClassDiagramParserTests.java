@@ -16,11 +16,7 @@ import java.util.Map;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
-/**
- * @author julian
- * @version 0.1.0
- * @since 0.1.0
- */
+
 public class ClassDiagramParserTests {
 
     @Mock

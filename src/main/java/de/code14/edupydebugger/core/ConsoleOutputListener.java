@@ -17,10 +17,6 @@ import org.jetbrains.annotations.NotNull;
  * as well as send the captured output to another system, such as a WebSocket endpoint.
  * This can be useful for monitoring, debugging, or providing feedback to users in real-time.
  * </p>
- *
- * @author julian
- * @version 0.2.0
- * @since 0.2.0
  */
 public class ConsoleOutputListener {
 

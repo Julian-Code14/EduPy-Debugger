@@ -18,14 +18,7 @@ import java.util.*;
 
 import static org.mockito.Mockito.*;
 
-/**
- * Tests for the DebugSessionController class,
- * which performs dynamic analysis (variables, objects, etc.).
- *
- * @author julian
- * @version 0.3.0
- * @since 0.3.0
- */
+
 public class DebugSessionControllerTests {
 
     @Mock

@@ -18,10 +18,6 @@ import java.util.*;
  * from Python files and stores them for further processing.
  * <p>
  * The analysis includes both static code analysis and gathering type information using the PyCharm API.
- *
- * @author julian
- * @version 0.1.0
- * @since 0.1.0
  */
 public class PythonAnalyzer {
 

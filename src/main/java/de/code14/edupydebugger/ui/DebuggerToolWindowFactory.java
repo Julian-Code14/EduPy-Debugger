@@ -20,10 +20,6 @@ import java.awt.*;
  * <p>
  * The tool window is used to display a browser window within the IDE that loads the debugging interface.
  * It leverages the JBCefBrowser to render web content, such as the debug UI hosted locally or on the web.
- *
- * @author julian
- * @version 0.1.0
- * @since 0.1.0
  */
 public class DebuggerToolWindowFactory implements ToolWindowFactory {
 

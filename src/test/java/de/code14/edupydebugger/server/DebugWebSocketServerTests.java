@@ -7,11 +7,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-/**
- * @author julian
- * @version 0.1.0
- * @since 0.1.0
- */
+
 public class DebugWebSocketServerTests {
 
     private DebugWebSocketServer webSocketServer;

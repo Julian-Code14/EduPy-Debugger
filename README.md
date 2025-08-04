@@ -1,44 +1,183 @@
 # EduPy-Debugger
 
+<!-- Plugin description -->
+EduPy-Debugger bietet ein visuelles, webbasiertes Debugging-Erlebnis
+für Python in PyCharm (Community & Professional) – speziell für den
+Einsatz im Unterricht.  
+Es visualisiert Objekte als PlantUML-Diagramme, gruppiert Variablen
+und liefert eine interaktive Konsole, alles in einem schlanken
+Tool-Fenster.
+<!-- Plugin description end -->
+
+<!--
 ![Build](https://github.com/Julian-Code14/EduPy-Debugger/workflows/Build/badge.svg)
 [![Version](https://img.shields.io/jetbrains/plugin/v/PLUGIN_ID.svg)](https://plugins.jetbrains.com/plugin/PLUGIN_ID)
 [![Downloads](https://img.shields.io/jetbrains/plugin/d/PLUGIN_ID.svg)](https://plugins.jetbrains.com/plugin/PLUGIN_ID)
+-->
 
-## Template ToDo list
-- [x] Create a new [IntelliJ Platform Plugin Template][template] project.
-- [ ] Get familiar with the [template documentation][template].
-- [ ] Adjust the [pluginGroup](./gradle.properties), [plugin ID](./src/main/resources/META-INF/plugin.xml) and [sources package](./src/main/kotlin).
-- [ ] Adjust the plugin description in `README` (see [Tips][docs:plugin-description])
-- [ ] Review the [Legal Agreements](https://plugins.jetbrains.com/docs/marketplace/legal-agreements.html?from=IJPluginTemplate).
-- [ ] [Publish a plugin manually](https://plugins.jetbrains.com/docs/intellij/publishing-plugin.html?from=IJPluginTemplate) for the first time.
-- [ ] Set the `PLUGIN_ID` in the above README badges.
-- [ ] Set the [Plugin Signing](https://plugins.jetbrains.com/docs/intellij/plugin-signing.html?from=IJPluginTemplate) related [secrets](https://github.com/JetBrains/intellij-platform-plugin-template#environment-variables).
-- [ ] Set the [Deployment Token](https://plugins.jetbrains.com/docs/marketplace/plugin-upload.html?from=IJPluginTemplate).
-- [ ] Click the <kbd>Watch</kbd> button on the top of the [IntelliJ Platform Plugin Template][template] to be notified about releases containing new features and fixes.
+## Inhaltsverzeichnis
+1. Hauptfunktionen
+2. Warum EduPy-Debugger?
+3. Screenshots
+4. Voraussetzungen
+5. Installation
+6. Schnellstart
+7. Verwendung im Detail
+8. Fehlerbehebung & FAQ
+9. Mitwirken
+10. Fahrplan
+11. Lizenz
 
-<!-- Plugin description -->
-This Fancy IntelliJ Platform Plugin is going to be your implementation of the brilliant ideas that you have.
+---
 
-This specific section is a source for the [plugin.xml](/src/main/resources/META-INF/plugin.xml) file which will be extracted by the [Gradle](/build.gradle.kts) during the build process.
+## Hauptfunktionen
 
-To keep everything working, do not remove `<!-- ... -->` sections. 
-<!-- Plugin description end -->
+| Kategorie                            | Dein Nutzen |
+|--------------------------------------|-------------|
+| Visuelle Objekt-Inspektion           | Live-Objektkarten & Beziehungen als PlantUML-Diagramme – Schluss mit mühsamem Suchen in „Watches“. |
+| Klassen- & Objekt-Diagramme          | Ein Klick öffnet eine UML-ähnliche Übersicht aller Klassen und Laufzeit-Objekte. |
+| Interaktive Konsole-I/O              | Eingaben via `input()` werden direkt an den Prozess weitergeleitet, Ausgaben in Echtzeit zurückgestreamt. |
+| Navigation mit einem Klick           | Springe von einer Variablen zu ihrer Objektkarte oder folge Referenzen per Mausklick. |
+| Browser-basierte UI                  | Dank JBCef plattformübergreifend identisch und auf einen zweiten Monitor abdockbar. |
+| Vertraute Debug-Steuerung            | Fortsetzen, Anhalten, Step-Over/Into/Out – über Standard-Shortcuts & Toolbar-Buttons. |
+| Thread-Unterstützung (experimentell) | Schalte einfach zwischen Threads, um Call-Stacks & Variablen jeder angehaltenen Ausführung zu untersuchen. |
+
+---
+
+## Warum EduPy-Debugger?
+
+Der Standard-Debugger von PyCharm ist mächtig, seine Oberfläche wirkt für Einsteiger jedoch schnell überfordernd – besonders im Unterricht.  
+EduPy-Debugger ergänzt daher links ein eigenes Tool-Fenster, das auf Klarheit setzt: Variablen sind gruppiert, Objekte visualisiert und die Konsole stets griffbereit. Im Hintergrund läuft ein schlanker HTTP- und WebSocket-Server, der automatisch mit dem Klick auf ▶ Debug startet.
+
+Die Anwendung folgt u.a. drei, von JetBrains empfohlenen UX-Prinzipien:
+
+- **Vorhersehbarkeit** – alle Aktionen entsprechen bekannten Debug-Funktionen, nichts ist „magisch“ versteckt.
+- **Minimalismus** – es wird nur gezeigt, was im Moment relevant ist; erweiterte Bereiche bleiben eingeklappt, bis man sie braucht.
+- **Progressive Offenlegung** – komplexere Details (Threads, tiefe Objekt-Graphen) sind optional, damit Neulinge nicht abgeschreckt werden.
+
+---
+
+## Screenshots
+
+Demnächst verfügbar – gerne ein Issue eröffnen und eigene Screenshots teilen!
+
+---
+
+## Voraussetzungen
+
+- PyCharm 2022.3.3 oder neuer (Community **oder** Professional)
+- JBCef-Unterstützung (in der IDE gebündelt)
+- Ein in PyCharm eingerichteter Python-Interpreter
+- Betriebssystem: Windows, macOS oder Linux (jede Architektur, die PyCharm unterstützt)
+
+---
 
 ## Installation
 
-- Using the IDE built-in plugin system:
-  
-  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>Marketplace</kbd> > <kbd>Search for "EduPy-Debugger"</kbd> >
-  <kbd>Install</kbd>
-  
-- Manually:
+### JetBrains‑Marketplace (empfohlen)
 
-  Download the [latest release](https://github.com/Julian-Code14/EduPy-Debugger/releases/latest) and install it manually using
-  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>⚙️</kbd> > <kbd>Install plugin from disk...</kbd>
+1. **Einstellungen / Preferences → Plugins** öffnen.
+2. Nach „**EduPy-Debugger**“ suchen.
+3. **Installieren** und IDE neu starten.
 
+### Manuelle Installation
+
+```bash
+# 1. Klonen
+git clone https://github.com/Julian-Code14/EduPy-Debugger.git
+cd EduPy-Debugger
+
+# 2. Plugin-ZIP bauen
+./gradlew buildPlugin
+
+# 3. Installieren
+# Settings → Plugins → ⚙ → „Plugin from disk …“ wählen und ZIP-Datei auswählen
+```
 
 ---
-Plugin based on the [IntelliJ Platform Plugin Template][template].
 
-[template]: https://github.com/JetBrains/intellij-platform-plugin-template
-[docs:plugin-description]: https://plugins.jetbrains.com/docs/intellij/plugin-user-experience.html#plugin-description-and-presentation
+## Schnellstart
+
+| Schritt | Aktion                                                                            |
+|---------|-----------------------------------------------------------------------------------|
+| 1 | Öffne oder erstelle ein Python-Projekt.                                           |
+| 2 | Setze einen Breakpoint und klicke **Debug**.                                      |
+| 3 | Beobachte, wie das EduPy-Debugger-Fenster links einblendet.                       |
+| 4 | Steuere die Ausführung mit den grünen ▶, blauen ⏸ und gelben ↷ Buttons.           |
+| 5 | Klicke unten auf **Klassendiagramm** oder **Objektdiagramm** für eine Übersicht.  |
+| 6 | Aktiviere den **Threads-Schalter**, falls du andere Threads untersuchen möchtest. |
+
+---
+
+## Verwendung im Detail
+
+### Aufbau des Tool-Fensters
+
+- **Kontrollleiste** – fixierte Toolbar mit Resume/Pause/Step-Aktionen.
+- **Threads-Panel** – standardmäßig verborgen; zeigt Dropdown aller Python-Threads samt Call‑Stack (experimentell).
+- **Variablen-Tabelle** – Name, Typ, Wert, Scope und interne `id()`; Klick öffnet die Objektkarte.
+- **Objekt-Inspektor** – Karussell aus PlantUML-Karten; mit ◂ ▸ (Pfeiltasten) navigieren.
+- **Konsole** – interaktives stdin/stdout; mit ↵ Eingaben senden.
+- **Unterer Bereich** – Buttons zu vollformatigen Klassen- bzw. Objekt-Diagrammen.
+
+---
+
+## Konfiguration
+
+Derzeit keine eigene Einstellungsseite – einfach installieren und loslegen.  
+Fortgeschrittene können die Ports (`8025` / `8026`) in `DebugWebSocketServer` & `DebugWebServer` vor dem Build anpassen.
+
+---
+
+## Fehlerbehebung & FAQ
+
+<details>
+<summary><strong>WebSocket-Verbindung fehlgeschlagen</strong></summary>
+
+- Firewall prüfen: Ports **8025** und **8026** müssen frei sein.
+- Sicherstellen, dass das EduPy-Debugger-Fenster offen ist; die Server starten erst bei Debug-Beginn.
+</details>
+
+<details>
+<summary><strong>Fenster leer / Browser lädt nicht</strong></summary>
+
+- In ressourcenarmen Umgebungen könnte JBCef deaktiviert sein – prüfen unter *Registry → ide.browser.jcef.enabled*.
+</details>
+
+<details>
+<summary><strong>Diagramme leer oder fehlerhaft</strong></summary>
+
+- Vergewissere dich, dass die PlantUML‑JAR (`plantuml-1.2025.x.jar`) im Verzeichnis **plugins/** liegt.
+</details>
+
+Für weitere Hilfe: Issue eröffnen oder @Julian-Code14 anpingen.
+
+---
+
+## Mitwirken
+
+Pull‑Requests, Feature‑Ideen und Bug‑Reports sind herzlich willkommen!  
+Bei größeren Vorhaben bitte vorab ein Issue eröffnen, um Doppelarbeit zu vermeiden.
+
+### Build & Tests
+
+```bash
+./gradlew clean build test
+```
+
+Das Plugin in einer isolierten PyCharm‑Instanz starten:
+
+```bash
+./gradlew runIde
+```
+
+Unit‑Tests befinden sich in `src/test/java` (Mockito).  
+Integrationstests nutzen das IntelliJ‑Platform‑Testing‑Framework.
+
+---
+
+## Lizenz
+
+EduPy‑Debugger steht unter der **MIT-Lizenz**.  
+Den vollständigen Text findest du in der Datei **LICENSE**.
+

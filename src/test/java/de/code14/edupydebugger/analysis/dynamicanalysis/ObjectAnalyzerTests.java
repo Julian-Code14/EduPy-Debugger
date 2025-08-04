@@ -1,151 +1,73 @@
 package de.code14.edupydebugger.analysis.dynamicanalysis;
 
-import com.intellij.xdebugger.frame.XCompositeNode;
-import com.intellij.xdebugger.frame.XValueChildrenList;
-import com.jetbrains.python.debugger.PyDebugValue;
-import com.jetbrains.python.debugger.PyDebuggerException;
-import com.jetbrains.python.debugger.PyFrameAccessor;
-import com.jetbrains.python.debugger.PyStackFrame;
-import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import com.intellij.xdebugger.frame.*;
+import com.jetbrains.python.debugger.*;
+import org.junit.*;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 
-import static com.intellij.testFramework.UsefulTestCase.assertEmpty;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-/**
- * @author julian
- * @version 0.1.0
- * @since 0.1.0
- */
+
 public class ObjectAnalyzerTests {
 
-    // TODO: write the tests for ObjectAnalyzerTests class
     @Test
-    public void testDummy() {
-        assertEmpty("");
-    }
-    /*@Mock
-    private PyStackFrame mockFrame;
-    @Mock
-    private PyDebugValue mockValue;
-    @Mock
-    private PyFrameAccessor mockFrameAccessor;
+    public void testAnalyzeObjectsCollectsUserDefinedInstances() throws PyDebuggerException {
+        // ---------- 1) PyDebugValue "foo" mit Deep-Stub ----------------
+        PyDebugValue fooValue = mock(PyDebugValue.class, RETURNS_DEEP_STUBS);
+        when(fooValue.getName()).thenReturn("foo");
+        when(fooValue.getType()).thenReturn("Foo");
+        when(fooValue.getValue()).thenReturn("Foo object");
 
-    private ObjectAnalyzer objectAnalyzer;
+        // id(foo)   -> "42"
+        when(fooValue.getFrameAccessor()
+                .evaluate(eq("id(foo)"), anyBoolean(), anyBoolean())
+                .getValue()).thenReturn("42");
+        // dir(foo)  -> "['x', '__str__']"
+        when(fooValue.getFrameAccessor()
+                .evaluate(eq("dir(foo)"), anyBoolean(), anyBoolean())
+                .getValue()).thenReturn("['x', '__str__']");
+        when(fooValue.getFrameAccessor()
+                .evaluate(eq("isinstance(foo, object) and not isinstance(foo, (int, float, str, bool, list, dict, tuple, set))"),
+                        anyBoolean(), anyBoolean())
+                .getValue()).thenReturn("True");
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        objectAnalyzer = new ObjectAnalyzer(Arrays.asList(mockFrame)); // Ein Stackframe für den Test
+        // foo.x     -> int-Wert 7
+        PyDebugValue attrVal = mock(PyDebugValue.class);
+        when(attrVal.getType()).thenReturn("int");
+        when(attrVal.getValue()).thenReturn("7");
+        when(fooValue.getFrameAccessor()
+                .evaluate(eq("foo.x"), anyBoolean(), anyBoolean()))
+                .thenReturn(attrVal);
 
-        // Mock the FrameAccessor to return a valid frame accessor
-        when(mockValue.getFrameAccessor()).thenReturn(mockFrameAccessor);
-    }
+        // ---------- 2) Children-Liste ---------------------------------
+        XValueChildrenList children = new XValueChildrenList();
+        children.add(fooValue);
 
-    @Test
-    void testAnalyzeObjects_CallsCollectObjects() {
-        // Arrange
-        PyStackFrame mockFrame1 = mock(PyStackFrame.class);
-        XCompositeNode mockNode = mock(XCompositeNode.class);
-        XValueChildrenList mockChildren = mock(XValueChildrenList.class);
-        PyDebugValue mockValue = mock(PyDebugValue.class);
-        PyFrameAccessor mockFrameAccessor = mock(PyFrameAccessor.class);
-
-        // Konfiguriere Mock für PyDebugValue und FrameAccessor
-        when(mockValue.getFrameAccessor()).thenReturn(mockFrameAccessor);
-        when(mockChildren.size()).thenReturn(1);
-        when(mockChildren.getValue(0)).thenReturn(mockValue);
-
-        // Simuliere computeChildren-Aufruf
-        doAnswer(invocation -> {
-            XCompositeNode node = invocation.getArgument(0);
-            node.addChildren(mockChildren, true);
+        // ---------- 3) Mock-Stack-Frame liefert obige Children --------
+        PyStackFrame pyFrame = mock(PyStackFrame.class);
+        doAnswer(inv -> {                     // computeChildren(node)
+            XCompositeNode node = inv.getArgument(0);
+            node.addChildren(children, true);
             return null;
-        }).when(mockFrame1).computeChildren(any());
+        }).when(pyFrame).computeChildren(any());
 
-        objectAnalyzer = new ObjectAnalyzer(Collections.singletonList(mockFrame1));
+        // ---------- Ausführen -----------------------------------------
+        ObjectAnalyzer analyzer = new ObjectAnalyzer(List.of(pyFrame));
+        analyzer.analyzeObjects();
 
-        // Act
-        objectAnalyzer.analyzeObjects();
+        Map<String, ObjectInfo> objs = analyzer.getObjects();
+        assertEquals(1, objs.size());
 
-        // Assert
-        verify(mockFrame1, times(1)).computeChildren(any());
+        ObjectInfo info = objs.values().iterator().next();
+        assertEquals(List.of("foo:Foo"), info.references());
+
+        AttributeInfo attr = info.attributes().get(0);
+        assertEquals("x",   attr.name());
+        assertEquals("int", attr.type());
+        assertEquals("7",   attr.value());
     }
-
-    @Test
-    void testCollectObjects_GathersUserDefinedInstances() throws PyDebuggerException {
-        // Arrange
-        when(mockValue.getName()).thenReturn("testObject");
-        when(mockValue.getType()).thenReturn("customType");
-        when(mockValue.getFrameAccessor().evaluate(anyString(), anyBoolean(), anyBoolean())).thenReturn(mockValue);
-
-        CountDownLatch latch = new CountDownLatch(1);
-
-        // Act
-        objectAnalyzer.collectObjects(mockFrame, latch);
-
-        // Assert
-        assertEquals(1, latch.getCount());  // Überprüfen, dass Latch richtig funktioniert
-    }
-
-    @Test
-    void testGatherAttributeInformation_StoresAttributesCorrectly() throws PyDebuggerException {
-        // Arrange
-        String mockObjId = "123";
-        PyDebugValue mockValue = mock(PyDebugValue.class);
-        PyFrameAccessor mockFrameAccessor = mock(PyFrameAccessor.class);
-
-        // Setze den Mock für FrameAccessor und Attribute
-        when(mockValue.getName()).thenReturn("testAttr");
-        when(mockValue.getType()).thenReturn("str");
-        when(mockValue.getFrameAccessor()).thenReturn(mockFrameAccessor);
-
-        // Setze den Rückgabewert für evaluate
-        PyDebugValue mockEvaluatedValue = mock(PyDebugValue.class);
-        when(mockEvaluatedValue.getValue()).thenReturn("testValue");
-        when(mockFrameAccessor.evaluate(anyString(), anyBoolean(), anyBoolean())).thenReturn(mockEvaluatedValue);
-
-        // Act
-        objectAnalyzer.gatherAttributeInformation(mockValue, mockObjId);
-
-        // Assert
-        Map<String, ObjectInfo> objects = objectAnalyzer.getObjects();
-        assertTrue(objects.containsKey(mockObjId));
-        assertEquals(1, objects.get(mockObjId).attributes().size());
-    }
-
-    @Test
-    void testIsUserDefinedInstance_ReturnsTrueForCustomTypes() throws PyDebuggerException {
-        // Arrange
-        when(mockValue.getName()).thenReturn("customInstance");
-        when(mockFrameAccessor.evaluate(anyString(), anyBoolean(), anyBoolean())).thenReturn(mockValue);
-        doReturn("True").when(mockValue).getValue();
-
-        // Act
-        boolean result = objectAnalyzer.isUserDefinedInstance(mockValue);
-
-        // Assert
-        assertEquals(true, result);
-    }
-
-    @Test
-    void testDetermineVisibility_ReturnsPrivateForPrivateMembers() {
-        // Arrange
-        when(mockValue.getName()).thenReturn("__privateAttribute");
-
-        // Act
-        String visibility = objectAnalyzer.determineVisibility(mockValue, "__privateAttribute");
-
-        // Assert
-        assertEquals("private", visibility);
-    }*/
-
 }

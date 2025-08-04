@@ -8,10 +8,6 @@ import java.util.*;
 /**
  * The StackFrameAnalyzer class coordinates the analysis of stack frames during a debugging session.
  * It delegates the task of analyzing variables and objects to separate analyzers.
- *
- * @author julian
- * @version 0.1.0
- * @since 0.1.0
  */
 public class StackFrameAnalyzer {
 

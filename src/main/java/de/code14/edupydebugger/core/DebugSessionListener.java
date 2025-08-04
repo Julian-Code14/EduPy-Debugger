@@ -23,10 +23,6 @@ import java.util.List;
  * It interacts with a custom WebSocket server to provide real-time updates to a web-based debugging interface.
  * <p>
  * The class diagram and object diagram generated during the analysis are encoded as PlantUML diagrams.
- *
- * @author julian
- * @version 0.3.0
- * @since 0.1.0
  */
 public class DebugSessionListener implements XDebugSessionListener {
 
