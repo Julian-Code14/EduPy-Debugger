@@ -3,7 +3,7 @@
     <id>de.code14.edupydebugger</id>
     <name>EduPy-Debugger</name>
     <!-- x-release-please-start-version -->
-    <version>0.4.1-SNAPSHOT</version>
+    <version>0.4.0-beta.0</version>
     <!-- x-release-please-end -->
     <vendor>Julian Flach</vendor>
 

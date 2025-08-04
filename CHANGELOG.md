@@ -2,6 +2,13 @@
 
 # EduPy-Debugger Changelog
 
+## [0.4.0-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/edupy-debugger-v0.4.0...edupy-debugger-v0.4.0-beta.0) (2025-08-04)
+
+
+### Miscellaneous Chores
+
+* first beta ([5da65e3](https://github.com/Julian-Code14/EduPy-Debugger/commit/5da65e3ff2c5c46d342c0d1bdb68a8f99519b6e9))
+
 ## [Unreleased]
 ### Added
 - Initial scaffold created from [IntelliJ Platform Plugin Template](https://github.com/JetBrains/intellij-platform-plugin-template)
