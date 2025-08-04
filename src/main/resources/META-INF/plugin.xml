@@ -3,7 +3,7 @@
     <id>de.code14.edupydebugger</id>
     <name>EduPy-Debugger</name>
     <!-- x-release-please-start-version -->
-    <version>0.4.0</version>
+    <version>0.4.1-SNAPSHOT</version>
     <!-- x-release-please-end -->
     <vendor>Julian Flach</vendor>
 
@@ -12,12 +12,12 @@
     <!--<resource-bundle>messages.MyBundle</resource-bundle>-->
 
     <projectListeners>
-        <listener class="de.code14.edupydebugger.core.DebugProcessListener" topic="com.intellij.xdebugger.XDebuggerManagerListener" />
-        <listener class="de.code14.edupydebugger.core.EduPyProjectManagerListener" topic="com.intellij.openapi.project.ProjectManagerListener" />
+        <listener class="de.code14.edupydebugger.core.DebugProcessListener" topic="com.intellij.xdebugger.XDebuggerManagerListener"/>
+        <listener class="de.code14.edupydebugger.core.EduPyProjectManagerListener" topic="com.intellij.openapi.project.ProjectManagerListener"/>
     </projectListeners>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="de.code14.edupydebugger.ui.DebuggerToolWindowFactory" id="DebuggerToolWindow" anchor="left" doNotActivateOnStart="true" />
+        <toolWindow factoryClass="de.code14.edupydebugger.ui.DebuggerToolWindowFactory" id="DebuggerToolWindow" anchor="left" doNotActivateOnStart="true"/>
     </extensions>
 
     <applicationListeners>
