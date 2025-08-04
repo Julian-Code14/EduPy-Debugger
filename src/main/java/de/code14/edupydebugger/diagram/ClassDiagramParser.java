@@ -12,10 +12,6 @@ import java.util.Map;
  * The ClassDiagramParser class is responsible for generating class diagrams in PlantUML format
  * based on the analysis of Python files within a project. It utilizes the PythonAnalyzer
  * to gather the necessary class details such as attributes, methods, references, and superclasses.
- *
- * @author julian
- * @version 0.1.0
- * @since 0.1.0
  */
 public class ClassDiagramParser {
 

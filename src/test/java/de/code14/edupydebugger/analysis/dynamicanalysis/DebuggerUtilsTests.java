@@ -12,11 +12,7 @@ import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-/**
- * @author julian
- * @version 0.4.0
- * @since 0.1.0
- */
+
 public class DebuggerUtilsTests {
 
     private PyDebugProcess mockProcess;

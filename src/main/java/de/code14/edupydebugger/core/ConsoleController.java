@@ -15,10 +15,6 @@ import java.util.Objects;
  * This class uses an {@link ProcessHandler} to interface with the running process and send data to
  * its input stream.
  * </p>
- *
- * @author julian
- * @version 0.2.0
- * @since 0.2.0
  */
 public class ConsoleController {
 

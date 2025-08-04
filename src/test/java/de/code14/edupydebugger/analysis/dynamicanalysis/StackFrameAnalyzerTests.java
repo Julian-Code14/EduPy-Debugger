@@ -11,11 +11,7 @@ import java.util.Map;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
 
-/**
- * @author julian
- * @version 0.1.0
- * @since 0.1.0
- */
+
 public class StackFrameAnalyzerTests {
 
     private StackFrameAnalyzer stackFrameAnalyzer;

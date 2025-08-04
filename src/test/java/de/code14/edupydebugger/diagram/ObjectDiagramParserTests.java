@@ -12,11 +12,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/**
- * @author julian
- * @version 0.2.0
- * @since 0.1.0
- */
+
 public class ObjectDiagramParserTests {
 
     @Test

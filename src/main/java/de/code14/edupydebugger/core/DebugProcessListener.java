@@ -19,9 +19,31 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 
 /**
- * @author julian
- * @version 0.2.0
- * @since 0.1.0
+ * Listener that integrates EduPy's custom debugging experience with IntelliJ IDEA's
+ * XDebug framework.
+ *
+ * <p>When a debugging session starts, this class performs the following actions:</p>
+ * <ul>
+ *   <li>Starts (or reuses) a {@link de.code14.edupydebugger.server.DebugWebSocketServer} so the
+ *       running <em>PyDevd</em> process can be streamed to the browser‑based front‑end.</li>
+ *   <li>Starts (or reuses) a lightweight {@link de.code14.edupydebugger.server.DebugWebServer}
+ *       that serves static assets for the EduPy debug UI.</li>
+ *   <li>Binds the active {@link com.jetbrains.python.debugger.PyDebugProcess} and its
+ *       {@link com.intellij.execution.process.ProcessHandler} to the reusable
+ *       {@link de.code14.edupydebugger.server.DebugServerEndpoint}, allowing WebSocket
+ *       consumers to inspect and control the live debug state.</li>
+ *   <li>Installs a {@link ConsoleOutputListener} so that stdout and stderr from the debugged
+ *       process are forwarded to connected WebSocket clients.</li>
+ *   <li>Suppresses IntelliJ IDEA’s default Debug tool window and opens the custom EduPy
+ *       debugger window via {@link de.code14.edupydebugger.ui.DebuggerToolWindowFactory}.</li>
+ *   <li>Registers a {@link DebugSessionListener} to observe stack‑frame changes in real time.</li>
+ * </ul>
+ *
+ * <p>When the session ends, the listener refreshes the EduPy debugger UI to clear stale state.</p>
+ *
+ * <p>The listener must be registered as an application‑level {@code XDebuggerManagerListener}
+ * (see {@code plugin.xml}) so that IntelliJ invokes {@link #processStarted} and
+ * {@link #processStopped} automatically for every debug session.</p>
  */
 public class DebugProcessListener implements XDebuggerManagerListener {
 

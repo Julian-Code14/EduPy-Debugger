@@ -21,10 +21,6 @@ import java.util.Base64;
  * <p>
  * The diagrams are encoded in UTF-8 format before being converted into Base64 strings.
  * </p>
- *
- * @author julian
- * @version 0.2.0
- * @since 0.1.0
  */
 public class PlantUMLDiagramGenerator {
 

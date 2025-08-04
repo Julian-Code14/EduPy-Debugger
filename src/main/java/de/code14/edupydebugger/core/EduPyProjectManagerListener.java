@@ -14,10 +14,6 @@ import javax.swing.*;
  * Listener class that responds to events related to the lifecycle of a project.
  * This class handles the initialization and cleanup of the debug web server and the debug tool window.
  * Specifically, it ensures that the web server and web socket server are stopped when the project is closed.
- *
- * @author julian
- * @version 0.1.0
- * @since 0.1.0
  */
 public class EduPyProjectManagerListener implements ProjectManagerListener {
 

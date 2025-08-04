@@ -7,11 +7,7 @@ import java.util.Base64;
 
 import static org.junit.Assert.*;
 
-/**
- * @author julian
- * @version 0.4.0
- * @since 0.1.0
- */
+
 public class PlantUMLDiagramGeneratorTests {
 
     @Test

@@ -14,11 +14,7 @@ import javax.swing.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-/**
- * @author julian
- * @version 0.1.0
- * @since 0.1.0
- */
+
 public class EduPyProjectManagerListenerTests {
 
     private EduPyProjectManagerListener listener;

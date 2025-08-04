@@ -23,10 +23,6 @@ import java.util.Set;
  *     <li>Determining the visibility of a Python class attribute or method based on its name.</li>
  *     <li>Constructing method signatures that include parameters and return types.</li>
  * </ul>
- *
- * @author julian
- * @version 0.2.0
- * @since 0.1.0
  */
 public class PythonAnalysisHelper {
 

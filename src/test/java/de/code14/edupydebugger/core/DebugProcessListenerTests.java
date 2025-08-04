@@ -18,11 +18,7 @@ import static org.junit.Assert.assertFalse;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-/**
- * @author julian
- * @version 0.3.0
- * @since 0.1.0
- */
+
 public class DebugProcessListenerTests {
 
     @Mock private Project project;

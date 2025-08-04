@@ -17,10 +17,6 @@ import java.util.concurrent.CountDownLatch;
 
 /**
  * The VariableAnalyzer class is responsible for analyzing variables within Python stack frames.
- *
- * @author julian
- * @version 0.2.0
- * @since 0.1.0
  */
 public class VariableAnalyzer {
 

@@ -7,10 +7,6 @@ import com.jetbrains.python.debugger.PyDebugProcess;
  * The DebugProcessController class provides control over the Python debugging process.
  * It allows the user to resume, pause, step over, step into, and step out of the debugging process.
  * This class interacts with the PyDebugProcess to perform these actions.
- *
- * @author julian
- * @version 0.1.0
- * @since 0.1.0
  */
 public class DebugProcessController {
 

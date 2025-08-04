@@ -12,11 +12,7 @@ import java.io.OutputStream;
 import static org.mockito.Mockito.*;
 import static org.junit.Assert.*;
 
-/**
- * @author julian
- * @version 0.2.0
- * @since 0.2.0
- */
+
 public class ConsoleControllerTests {
 
     @Mock
