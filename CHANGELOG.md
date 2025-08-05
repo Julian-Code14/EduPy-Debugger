@@ -15,6 +15,7 @@
 
 * first beta ([5da65e3](https://github.com/Julian-Code14/EduPy-Debugger/commit/5da65e3ff2c5c46d342c0d1bdb68a8f99519b6e9))
 * force beta release ([68d79f4](https://github.com/Julian-Code14/EduPy-Debugger/commit/68d79f433975a4eee9263cbf5f8a240e6c751183))
+* release 0.4.2-beta.0 ([0a323fa](https://github.com/Julian-Code14/EduPy-Debugger/commit/0a323fa916fedc5874c25cb63245ebd3cc5634e3))
 * trigger release ([09b554b](https://github.com/Julian-Code14/EduPy-Debugger/commit/09b554b71d8eef7504b345e2c7758d3f0ce3d37b))
 
 ## [0.4.1-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/edupy-debugger-v0.4.0-beta.0...edupy-debugger-v0.4.1-beta.0) (2025-08-05)
