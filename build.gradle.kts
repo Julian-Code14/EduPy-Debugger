@@ -125,8 +125,8 @@ tasks {
 
     /* ------------------------ Plugin-XML ----------------------------- */
     patchPluginXml {
-        version     = properties("pluginVersion")
-        sinceBuild  = properties("pluginSinceBuild")
+        version     = properties("pluginVersion").get()
+        sinceBuild  = properties("pluginSinceBuild").get()
 
         pluginDescription = providers
             .fileContents(layout.projectDirectory.file("README.md"))
