@@ -93,6 +93,17 @@ intellijPlatform {
             recommended()
         }
     }
+
+    signing {
+        certificateChainFile.set(layout.projectDirectory.file("certs/chain.crt"))
+        privateKeyFile.set(layout.projectDirectory.file("certs/private.pem"))
+        password.set(providers.gradleProperty("CERT_PASSWORD"))
+    }
+
+    publishing {
+        // für späteres Uploaden
+        token.set(providers.environmentVariable("PUBLISH_TOKEN"))
+    }
 }
 
 /* ------------------------------------------------------------------- */
@@ -116,7 +127,6 @@ tasks {
     patchPluginXml {
         version     = properties("pluginVersion")
         sinceBuild  = properties("pluginSinceBuild")
-        untilBuild  = properties("pluginUntilBuild")
 
         pluginDescription = providers
             .fileContents(layout.projectDirectory.file("README.md"))
@@ -187,20 +197,5 @@ tasks {
     /* ------------------------ IDE-Run-Task --------------------------- */
     runIde {
         jvmArgs = listOf("--add-exports", "java.base/jdk.internal.vm=ALL-UNNAMED")
-    }
-
-    /* ------------------------ Sign & Publish ------------------------- */
-    signPlugin {
-        certificateChain = environment("CERTIFICATE_CHAIN")
-        privateKey       = environment("PRIVATE_KEY")
-        password         = environment("PRIVATE_KEY_PASSWORD")
-    }
-
-    publishPlugin {
-        dependsOn("patchChangelog")
-        token    = environment("PUBLISH_TOKEN")
-        channels = properties("pluginVersion").map {
-            listOf(it.substringAfter('-', "").substringBefore('.').ifEmpty { "default" })
-        }
     }
 }
