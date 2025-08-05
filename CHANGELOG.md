@@ -2,6 +2,19 @@
 
 # EduPy-Debugger Changelog
 
+## [0.4.2-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/edupy-debugger-v0.4.1-beta.0...edupy-debugger-v0.4.2-beta.0) (2025-08-05)
+
+
+### Bug Fixes
+
+* **build:** fixed build script for version injection ([2b5f081](https://github.com/Julian-Code14/EduPy-Debugger/commit/2b5f081abc044ce7baf65b177f44b5a528009ae1))
+* **build:** fixed build script for version injection ([e97f9e4](https://github.com/Julian-Code14/EduPy-Debugger/commit/e97f9e48d8a02c63f5735e3a70c76b48bce9ac6a))
+
+
+### Miscellaneous Chores
+
+* force beta release ([68d79f4](https://github.com/Julian-Code14/EduPy-Debugger/commit/68d79f433975a4eee9263cbf5f8a240e6c751183))
+
 ## [0.4.1-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/edupy-debugger-v0.4.0-beta.0...edupy-debugger-v0.4.1-beta.0) (2025-08-05)
 
 
