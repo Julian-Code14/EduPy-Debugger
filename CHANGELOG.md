@@ -2,6 +2,14 @@
 
 # EduPy-Debugger Changelog
 
+## [0.4.4-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/edupy-debugger-v0.4.3-beta.0...edupy-debugger-v0.4.4-beta.0) (2025-08-14)
+
+
+### Bug Fixes
+
+* removed unstable or experimental api usages ([b1a63b8](https://github.com/Julian-Code14/EduPy-Debugger/commit/b1a63b850fa3820b128cf331dd1181eddb1d5950))
+* removed unstable or experimental api usages ([9692fe8](https://github.com/Julian-Code14/EduPy-Debugger/commit/9692fe8c5a079ec19c5ed6ce1d827424dbc0c5b4))
+
 ## [0.4.3-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/edupy-debugger-v0.4.2-beta.0...edupy-debugger-v0.4.3-beta.0) (2025-08-05)
 
 
