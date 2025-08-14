@@ -8,7 +8,6 @@ import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.ui.jcef.JBCefBrowser;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -27,17 +26,6 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
 
     private static JBCefBrowser jbCefBrowser;
 
-
-    /**
-     * Determines if the tool window is applicable to the given project.
-     *
-     * @param project the project to check
-     * @return true if the tool window should be created, false otherwise
-     */
-    @Override
-    public boolean isApplicable(@NotNull Project project) {
-        return ToolWindowFactory.super.isApplicable(project);
-    }
 
     /**
      * Creates the content of the Debugger Tool Window.
@@ -76,39 +64,6 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
     @Override
     public boolean shouldBeAvailable(@NotNull Project project) {
         return ToolWindowFactory.super.shouldBeAvailable(project);
-    }
-
-    /**
-     * Determines if the tool window should not be activated on startup.
-     *
-     * @return true if the tool window should not be activated, false otherwise
-     */
-    @SuppressWarnings("removal")
-    @Override
-    public boolean isDoNotActivateOnStart() {
-        return ToolWindowFactory.super.isDoNotActivateOnStart();
-    }
-
-    /**
-     * Gets the anchor for the tool window, determining where it is docked.
-     *
-     * @return the anchor position of the tool window, or null if not set
-     */
-    @SuppressWarnings("UnstableApiUsage")
-    @Override
-    public @Nullable ToolWindowAnchor getAnchor() {
-        return ToolWindowFactory.super.getAnchor();
-    }
-
-    /**
-     * Gets the icon for the tool window.
-     *
-     * @return the icon of the tool window, or null if not set
-     */
-    @SuppressWarnings("UnstableApiUsage")
-    @Override
-    public @Nullable Icon getIcon() {
-        return ToolWindowFactory.super.getIcon();
     }
 
     /**

@@ -5,6 +5,7 @@
     <vendor>Julian Flach</vendor>
 
     <depends>com.intellij.modules.python</depends>
+    <depends>PythonCore</depends>
 
     <!--<resource-bundle>messages.MyBundle</resource-bundle>-->
 
