@@ -7,7 +7,7 @@
   "packages": {
     ".": {
       "package-name": "edupy-debugger",
-
+      "include-component-in-tag": false,
       "extra-files": [
         {
           "type": "generic",
