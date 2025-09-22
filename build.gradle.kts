@@ -63,8 +63,8 @@ dependencies {
     implementation("org.glassfish.tyrus:tyrus-container-grizzly-server:2.2.0")
     implementation("net.sourceforge.plantuml:plantuml:1.2025.4")
 
-    testImplementation("org.mockito:mockito-core:4.11.0")
-    testImplementation("org.mockito:mockito-inline:4.11.0")
+    testImplementation("org.mockito:mockito-core:5.20.0")
+    testImplementation("org.mockito:mockito-inline:5.20.0")
     testImplementation("junit:junit:4.13.2")
 
     // Klassen aus dem Plugin-Quellset dem Test-Classpath hinzufügen
