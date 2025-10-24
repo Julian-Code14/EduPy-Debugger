@@ -2,90 +2,33 @@
 
 # EduPy-Debugger Changelog
 
-## [0.4.5-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/v0.4.4-beta.0...v0.4.5-beta.0) (2025-08-14)
-
-
-### Bug Fixes
-
-* **build:** fixed build script for version injection ([2b5f081](https://github.com/Julian-Code14/EduPy-Debugger/commit/2b5f081abc044ce7baf65b177f44b5a528009ae1))
-* **build:** fixed build script for version injection ([e97f9e4](https://github.com/Julian-Code14/EduPy-Debugger/commit/e97f9e48d8a02c63f5735e3a70c76b48bce9ac6a))
-* removed unstable or experimental api usages ([b1a63b8](https://github.com/Julian-Code14/EduPy-Debugger/commit/b1a63b850fa3820b128cf331dd1181eddb1d5950))
-* removed unstable or experimental api usages ([9692fe8](https://github.com/Julian-Code14/EduPy-Debugger/commit/9692fe8c5a079ec19c5ed6ce1d827424dbc0c5b4))
-
-
-### Miscellaneous Chores
-
-* first beta ([5da65e3](https://github.com/Julian-Code14/EduPy-Debugger/commit/5da65e3ff2c5c46d342c0d1bdb68a8f99519b6e9))
-* force beta release ([68d79f4](https://github.com/Julian-Code14/EduPy-Debugger/commit/68d79f433975a4eee9263cbf5f8a240e6c751183))
-* release 0.4.2-beta.0 ([0a323fa](https://github.com/Julian-Code14/EduPy-Debugger/commit/0a323fa916fedc5874c25cb63245ebd3cc5634e3))
-* release 0.4.5-beta.0 ([61d7cc7](https://github.com/Julian-Code14/EduPy-Debugger/commit/61d7cc7b1bcc35928ca5c6c7f49fbc3501331c11))
-* release 0.4.5-beta.0 ([7dbfcfb](https://github.com/Julian-Code14/EduPy-Debugger/commit/7dbfcfbb94fca6ab076849ab4691cf7d4b23cece))
-* release 0.4.5-beta.0 ([dfaedc4](https://github.com/Julian-Code14/EduPy-Debugger/commit/dfaedc40105dc08413ba61e6a47435c418710219))
-* trigger 0.4.3 beta release ([443f5ab](https://github.com/Julian-Code14/EduPy-Debugger/commit/443f5ab70298fbbca4db3189a5475e9e711d4b7e))
-* trigger release ([09b554b](https://github.com/Julian-Code14/EduPy-Debugger/commit/09b554b71d8eef7504b345e2c7758d3f0ce3d37b))
-
-## [0.4.4-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/edupy-debugger-v0.4.3-beta.0...edupy-debugger-v0.4.4-beta.0) (2025-08-14)
-
-
-### Bug Fixes
-
-* removed unstable or experimental api usages ([b1a63b8](https://github.com/Julian-Code14/EduPy-Debugger/commit/b1a63b850fa3820b128cf331dd1181eddb1d5950))
-* removed unstable or experimental api usages ([9692fe8](https://github.com/Julian-Code14/EduPy-Debugger/commit/9692fe8c5a079ec19c5ed6ce1d827424dbc0c5b4))
-
-## [0.4.3-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/edupy-debugger-v0.4.2-beta.0...edupy-debugger-v0.4.3-beta.0) (2025-08-05)
-
-
-### Bug Fixes
-
-* **build:** fixed build script for version injection ([2b5f081](https://github.com/Julian-Code14/EduPy-Debugger/commit/2b5f081abc044ce7baf65b177f44b5a528009ae1))
-* **build:** fixed build script for version injection ([e97f9e4](https://github.com/Julian-Code14/EduPy-Debugger/commit/e97f9e48d8a02c63f5735e3a70c76b48bce9ac6a))
-
-
-### Miscellaneous Chores
-
-* first beta ([5da65e3](https://github.com/Julian-Code14/EduPy-Debugger/commit/5da65e3ff2c5c46d342c0d1bdb68a8f99519b6e9))
-* force beta release ([68d79f4](https://github.com/Julian-Code14/EduPy-Debugger/commit/68d79f433975a4eee9263cbf5f8a240e6c751183))
-* release 0.4.2-beta.0 ([0a323fa](https://github.com/Julian-Code14/EduPy-Debugger/commit/0a323fa916fedc5874c25cb63245ebd3cc5634e3))
-* trigger 0.4.3 beta release ([443f5ab](https://github.com/Julian-Code14/EduPy-Debugger/commit/443f5ab70298fbbca4db3189a5475e9e711d4b7e))
-* trigger release ([09b554b](https://github.com/Julian-Code14/EduPy-Debugger/commit/09b554b71d8eef7504b345e2c7758d3f0ce3d37b))
-
-## [0.4.2-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/edupy-debugger-v0.4.1-beta.0...edupy-debugger-v0.4.2-beta.0) (2025-08-05)
-
-
-### Bug Fixes
-
-* **build:** fixed build script for version injection ([2b5f081](https://github.com/Julian-Code14/EduPy-Debugger/commit/2b5f081abc044ce7baf65b177f44b5a528009ae1))
-* **build:** fixed build script for version injection ([e97f9e4](https://github.com/Julian-Code14/EduPy-Debugger/commit/e97f9e48d8a02c63f5735e3a70c76b48bce9ac6a))
-
-
-### Miscellaneous Chores
-
-* first beta ([5da65e3](https://github.com/Julian-Code14/EduPy-Debugger/commit/5da65e3ff2c5c46d342c0d1bdb68a8f99519b6e9))
-* force beta release ([68d79f4](https://github.com/Julian-Code14/EduPy-Debugger/commit/68d79f433975a4eee9263cbf5f8a240e6c751183))
-* release 0.4.2-beta.0 ([0a323fa](https://github.com/Julian-Code14/EduPy-Debugger/commit/0a323fa916fedc5874c25cb63245ebd3cc5634e3))
-* trigger release ([09b554b](https://github.com/Julian-Code14/EduPy-Debugger/commit/09b554b71d8eef7504b345e2c7758d3f0ce3d37b))
-
-## [0.4.1-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/edupy-debugger-v0.4.0-beta.0...edupy-debugger-v0.4.1-beta.0) (2025-08-05)
-
-
-### Miscellaneous Chores
-
-* trigger release ([09b554b](https://github.com/Julian-Code14/EduPy-Debugger/commit/09b554b71d8eef7504b345e2c7758d3f0ce3d37b))
-
-## [0.4.0-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/edupy-debugger-v0.4.0...edupy-debugger-v0.4.0-beta.0) (2025-08-04)
-
-
-### Miscellaneous Chores
-
-* first beta ([5da65e3](https://github.com/Julian-Code14/EduPy-Debugger/commit/5da65e3ff2c5c46d342c0d1bdb68a8f99519b6e9))
+All notable changes to this project will be documented in this file.
+This format follows Keep a Changelog, and versions follow Semantic Versioning (including beta suffixes).
 
 ## [Unreleased]
+
+## [0.4.5-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/v0.4.4-beta.0...v0.4.5-beta.0) — 2025-08-14
+### Bug Fixes
+- Removed usage of unstable/experimental IntelliJ APIs to improve compatibility.  
+  ([b1a63b8](https://github.com/Julian-Code14/EduPy-Debugger/commit/b1a63b850fa3820b128cf331dd1181eddb1d5950), [9692fe8](https://github.com/Julian-Code14/EduPy-Debugger/commit/9692fe8c5a079ec19c5ed6ce1d827424dbc0c5b4))
+
+## [0.4.4-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/edupy-debugger-v0.4.3-beta.0...edupy-debugger-v0.4.4-beta.0) — 2025-08-14
+> Maintenance release (no user-facing changes; release process only).
+
+## [0.4.3-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/edupy-debugger-v0.4.2-beta.0...edupy-debugger-v0.4.3-beta.0) — 2025-08-05
+### Bug Fixes
+- **build:** Fixed build script for version injection (more robust version resolution in plugin build).  
+  ([2b5f081](https://github.com/Julian-Code14/EduPy-Debugger/commit/2b5f081abc044ce7baf65b177f44b5a528009ae1), [e97f9e4](https://github.com/Julian-Code14/EduPy-Debugger/commit/e97f9e48d8a02c63f5735e3a70c76b48bce9ac6a))
+
+## [0.4.2-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/edupy-debugger-v0.4.1-beta.0...edupy-debugger-v0.4.2-beta.0) — 2025-08-05
+> Internal maintenance release (no additional changes; release process only).
+
+## [0.4.0-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/edupy-debugger-v0.4.0...edupy-debugger-v0.4.0-beta.0) — 2025-08-04
 ### Added
-- Initial scaffold created from [IntelliJ Platform Plugin Template](https://github.com/JetBrains/intellij-platform-plugin-template)
-- Visuelle Objekt-Inspektion 
-- Klassen- & Objekt-Diagramme
-- Interaktive Konsole-I/O
-- Navigation mit einem Klick
-- Browser-basierte UI
-- Vertraute Debug-Steuerung
-- Thread-Unterstützung (experimentell)
+- First public **beta** of the EduPy Debugger.
+- (Highlights of the beta:)
+    - Visual object inspection
+    - Class & object diagrams
+    - Interactive console I/O
+    - Debug controls & thread support (experimental)
+    - Browser-based UI, one-click navigation
