@@ -74,8 +74,12 @@ dependencies {
 /* ------------------------------------------------------------------- */
 /*  JVM-Einstellungen                                                  */
 /* ------------------------------------------------------------------- */
-kotlin {
-    jvmToolchain(17)
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+        // Optional: Vendor & Implementierung einschränken, meist nicht nötig
+        // vendor.set(JvmVendorSpec.ADOPTIUM)
+    }
 }
 
 /* ------------------------------------------------------------------- */
