@@ -51,7 +51,7 @@ public class DebugWebServer {
 
     /**
      * Starts the HTTP server to serve static content.
-     * The server listens on localhost at port 8026.
+     * The server listens on localhost (127.0.0.1) at port 8026.
      * <p>
      * If the server is successfully started, a log message is generated.
      * </p>
@@ -65,7 +65,7 @@ public class DebugWebServer {
         if (httpServer == null) {
             // If no server has been injected, create a default HttpServer
             httpServer = new HttpServer();
-            NetworkListener networkListener = new NetworkListener("view", "localhost", 8026);
+            NetworkListener networkListener = new NetworkListener("view", "127.0.0.1", 8026);
             httpServer.addListener(networkListener);
 
             httpServer.getServerConfiguration().addHttpHandler(new CLStaticHttpHandler(

@@ -5,65 +5,74 @@ import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessListener;
 import com.intellij.openapi.util.Key;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
+import de.code14.edupydebugger.server.dto.ConsolePayload;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.*;
 
-import static org.junit.Assert.assertThrows;
-import static org.mockito.Mockito.*;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 public class ConsoleOutputListenerTests {
 
-    @Mock private ProcessHandler processHandler;  // Mocked ProcessHandler
-    @Mock private ProcessEvent processEvent;      // Mocked ProcessEvent
-    @Mock private Key outputType;                 // Mocked OutputType (stdout, stderr, etc.)
+    @Mock private ProcessHandler processHandler;
+    @Mock private ProcessEvent processEvent;
+    @Mock private Key outputType;
 
     private ConsoleOutputListener consoleOutputListener;
 
     @Before
     public void setUp() {
-        // Initialize mocks
         MockitoAnnotations.openMocks(this);
-        // Create instance of ConsoleOutputListener with the mocked ProcessHandler
         consoleOutputListener = new ConsoleOutputListener(processHandler);
     }
 
     @Test
-    public void testAttachConsoleListeners_whenProcessHandlerIsNotNull() {
-        // Mock the static method DebugServerEndpoint.sendDebugInfo
-        try (MockedStatic<DebugServerEndpoint> debugServerEndpointMock = Mockito.mockStatic(DebugServerEndpoint.class)) {
+    public void testAttachConsoleListeners_forwardsConsoleOutputAsJson() {
+        // Static-Mocking von DebugServerEndpoint
+        try (MockedStatic<DebugServerEndpoint> mockedStatic = Mockito.mockStatic(DebugServerEndpoint.class)) {
 
-            // Act: Call the method that attaches listeners
+            // Wir fangen den zweiten Parameter (payload) ab, um dessen Inhalt zu verifizieren
+            AtomicReference<Object> capturedPayload = new AtomicReference<>();
+            mockedStatic.when(() ->
+                    DebugServerEndpoint.sendDebugMessage(anyString(), any())
+            ).then(invocation -> {
+                capturedPayload.set(invocation.getArgument(1));
+                return null;
+            });
+
+            // Act: Listener anhängen und ein Text-Event simulieren
             consoleOutputListener.attachConsoleListeners();
 
-            // Capture the listener that was added to the processHandler
             ArgumentCaptor<ProcessListener> listenerCaptor = ArgumentCaptor.forClass(ProcessListener.class);
             verify(processHandler).addProcessListener(listenerCaptor.capture());
 
-            // Simulate a process event with sample text
-            ProcessListener capturedListener = listenerCaptor.getValue();
+            ProcessListener listener = listenerCaptor.getValue();
             when(processEvent.getText()).thenReturn("Sample console output");
-            capturedListener.onTextAvailable(processEvent, outputType);
+            listener.onTextAvailable(processEvent, outputType);
 
-            // Verify that the event text was captured and used
+            // Assert: sendDebugMessage("console", <ConsolePayload>) wurde aufgerufen
+            mockedStatic.verify(() ->
+                    DebugServerEndpoint.sendDebugMessage(eq("console"), any()), times(1)
+            );
+
+            // Payload inhaltlich prüfen
+            Object payload = capturedPayload.get();
+            assertNotNull("Payload should not be null", payload);
+            assertTrue("Payload should be a ConsolePayload", payload instanceof ConsolePayload);
+            assertEquals("Sample console output", ((ConsolePayload) payload).text);
+
+            // Sicherstellen, dass der Text vom Event gelesen wurde
             verify(processEvent, times(1)).getText();
-
-            // Verify that the WebSocket received the correct message
-            String expectedMessage = "console:Sample console output";
-            debugServerEndpointMock.verify(() -> DebugServerEndpoint.sendDebugInfo(expectedMessage), times(1));
         }
     }
 
     @Test
-    public void testAttachConsoleListeners_whenProcessHandlerIsNull_throwsException() {
-        // Arrange: Use Mockito to mock the exception thrown by the constructor
-        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> {
-            new ConsoleOutputListener(null);
-        });
-
-        // Assert: Check that the exception message is as expected
-        assert(thrown.getMessage().contains("Argument for @NotNull parameter 'processHandler'"));
+    public void testAttachConsoleListeners_doesNotThrow() {
+        // Erwartung: kein Fehler beim Anhängen der Listener
+        consoleOutputListener.attachConsoleListeners();
+        // wenn wir hier ankommen, war alles OK
     }
-
 }

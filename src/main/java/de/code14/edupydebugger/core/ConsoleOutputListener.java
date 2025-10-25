@@ -6,59 +6,51 @@ import com.intellij.execution.process.ProcessListener;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Key;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
+import de.code14.edupydebugger.server.dto.ConsolePayload;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The {@code ConsoleOutputListener} class is responsible for listening to the console output
- * (both stdout and stderr) from a process being debugged and forwarding that output for further
- * processing, such as sending it to a WebSocket.
+ * Listens to the standard output and error streams of the debugged Python process
+ * and forwards all console output to the frontend via a JSON-based WebSocket message.
  * <p>
- * This class is primarily used to capture output from a process being debugged and log it,
- * as well as send the captured output to another system, such as a WebSocket endpoint.
- * This can be useful for monitoring, debugging, or providing feedback to users in real-time.
- * </p>
+ * Each line of text emitted by the {@link ProcessHandler} is wrapped in a
+ * {@link ConsolePayload} object and sent to the connected WebSocket clients through
+ * the {@link DebugServerEndpoint} using the message type {@code "console"}.
+ * <p>
+ * This allows the IDE-integrated debugger to mirror the live console output
+ * in the custom EduPy Debugger UI.
  */
 public class ConsoleOutputListener {
 
     private static final Logger LOGGER = Logger.getInstance(ConsoleOutputListener.class);
-
-    private static final String CONSOLE_PREFIX = "console:";
-
     private final ProcessHandler processHandler;
 
+    /**
+     * Constructs a new listener bound to the given {@link ProcessHandler}.
+     *
+     * @param processHandler the process handler whose console output should be observed
+     */
     public ConsoleOutputListener(@NotNull ProcessHandler processHandler) {
         this.processHandler = processHandler;
     }
 
     /**
-     * Attaches listeners to the {@link ProcessHandler} to capture stdout and stderr from the debugged process.
+     * Attaches a {@link ProcessListener} to the process handler to observe text output events.
      * <p>
-     * The captured output is forwarded to the WebSocket for further processing.
-     * </p>
-     *
-     * @throws IllegalStateException if the {@code processHandler} is {@code null}
+     * Whenever new text becomes available, this listener logs the output locally
+     * and sends it to all connected WebSocket clients as a JSON message of type
+     * {@code "console"}.
      */
     public void attachConsoleListeners() {
-
         processHandler.addProcessListener(new ProcessListener() {
             @Override
             public void onTextAvailable(@NotNull ProcessEvent event, @NotNull Key outputType) {
                 String text = event.getText();
                 LOGGER.info("Console Output: " + text);
-
-                sendToWebSocket(text);
+                ConsolePayload payload = new ConsolePayload();
+                payload.text = text;
+                DebugServerEndpoint.sendDebugMessage("console", payload);
             }
         });
     }
-
-    /**
-     * Simulates sending the console output to a WebSocket or another component.
-     *
-     * @param text the console output to be sent
-     */
-    private void sendToWebSocket(String text) {
-        // Example logic to send console output to WebSocket or another system
-        DebugServerEndpoint.sendDebugInfo(CONSOLE_PREFIX + text);
-    }
-
 }

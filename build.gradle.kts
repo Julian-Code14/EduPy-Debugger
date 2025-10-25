@@ -62,6 +62,7 @@ dependencies {
     implementation("org.glassfish.tyrus:tyrus-server:2.2.0")
     implementation("org.glassfish.tyrus:tyrus-container-grizzly-server:2.2.0")
     implementation("net.sourceforge.plantuml:plantuml:1.2025.4")
+    implementation("com.google.code.gson:gson:2.11.0")
 
     testImplementation("org.mockito:mockito-core:4.11.0")
     testImplementation("org.mockito:mockito-inline:4.11.0")
@@ -74,8 +75,12 @@ dependencies {
 /* ------------------------------------------------------------------- */
 /*  JVM-Einstellungen                                                  */
 /* ------------------------------------------------------------------- */
-kotlin {
-    jvmToolchain(17)
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+        // Optional: Vendor & Implementierung einschränken, meist nicht nötig
+        // vendor.set(JvmVendorSpec.ADOPTIUM)
+    }
 }
 
 /* ------------------------------------------------------------------- */
@@ -90,7 +95,15 @@ intellijPlatform {
     pluginVerification {
         ides {
             // nimmt immer die aktuell empfohlenen Builds aller IDEs
-            recommended()
+            //recommended()
+            // or: Pin only released PyCharm Community builds to avoid missing EAP/trunk artifacts
+            ide("PC", "2025.2.4")
+            ide("PC", "2025.1.5")
+            ide("PC", "2024.3.6")
+            ide("PC", "2024.2.6")
+            ide("PC", "2024.1.7")
+            ide("PC", "2023.3.7")
+            ide("PC", "2022.3.3")
         }
     }
 
