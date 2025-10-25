@@ -95,7 +95,15 @@ intellijPlatform {
     pluginVerification {
         ides {
             // nimmt immer die aktuell empfohlenen Builds aller IDEs
-            recommended()
+            //recommended()
+            // or: Pin only released PyCharm Community builds to avoid missing EAP/trunk artifacts
+            ide("PC", "2025.2.4")
+            ide("PC", "2025.1.5")
+            ide("PC", "2024.3.6")
+            ide("PC", "2024.2.6")
+            ide("PC", "2024.1.7")
+            ide("PC", "2023.3.7")
+            ide("PC", "2022.3.3")
         }
     }
 
