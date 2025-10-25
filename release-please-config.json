@@ -13,7 +13,7 @@
       "include-component-in-tag": false,
       "extra-files": [
         {
-          "type": "gradle-properties",
+          "type": "jproperties",
           "path": "gradle.properties",
           "property": "pluginVersion"
         }
