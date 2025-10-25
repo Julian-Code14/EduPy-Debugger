@@ -4,13 +4,24 @@ import org.gradle.process.CommandLineArgumentProvider
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.TestIdePerformanceTask
 
-fun properties(key: String)      = providers.gradleProperty(key)
-fun environment(key: String)     = providers.environmentVariable(key)
+// für DSL-Helfer im Tasks-Block
+import org.gradle.kotlin.dsl.registering
+import org.gradle.kotlin.dsl.named
+import org.gradle.kotlin.dsl.withType
 
+/* ------------------------------------------------------------------- */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------- */
+fun properties(key: String)  = providers.gradleProperty(key)
+fun environment(key: String) = providers.environmentVariable(key)
+
+/* ------------------------------------------------------------------- */
+/*  Plugins                                                            */
+/* ------------------------------------------------------------------- */
 plugins {
     id("java")
     alias(libs.plugins.kotlin)
-    alias(libs.plugins.gradleIntelliJPlugin)   // jetzt das neue 2.x-Plugin
+    alias(libs.plugins.gradleIntelliJPlugin)   // IntelliJ Platform Gradle Plugin 2.x
     alias(libs.plugins.changelog)
     alias(libs.plugins.qodana)
     alias(libs.plugins.kover)
@@ -20,43 +31,36 @@ group   = properties("pluginGroup").get()
 version = properties("pluginVersion").get()
 
 /* ------------------------------------------------------------------- */
-/*  REPOSITORIES                                                       */
+/*  Repositories                                                       */
 /* ------------------------------------------------------------------- */
 repositories {
     mavenCentral()
-    intellijPlatform {                       // neue Helper-API
+    intellijPlatform {
         defaultRepositories()
     }
 }
 
 /* ------------------------------------------------------------------- */
-/*  DEPENDENCIES                                                       */
+/*  Dependencies                                                       */
 /* ------------------------------------------------------------------- */
 dependencies {
-    /* IntelliJ-Basis (ersetzt das frühere intellij{}-Block-Konzept) */
+    // IntelliJ-Basis (ersetzt früheren intellij{}-Block)
     intellijPlatform {
-        // Ziel-IDE (PC = PyCharm Community) bleibt wie gehabt
-        val type    = properties("platformType").get()        // "PC"
-        val version = properties("platformVersion").get()     // "2022.3.3"
+        // Ziel-IDE (PyCharm Community)
+        val type    = properties("platformType").get()    // z. B. "PC"
+        val version = properties("platformVersion").get() // z. B. "2022.3.3"
         create(type, version)
 
-        /* -------------------------------------------------- */
-        /*  Bundled Plugins                                   */
-        /* -------------------------------------------------- */
+        // Bundled Plugins (aus gradle.properties)
         bundledPlugins(
             providers.gradleProperty("platformBundledPlugins")
                 .map { it.split(',').map(String::trim).filter(String::isNotEmpty) }
         )
 
-        // Falls irgendwann auf PY umgestellt werden sollte:
-        // if (type == "PY") {
-        //     bundledPlugins("PythonCore", "Pythonid")
-        // }
-
         testFramework(TestFrameworkType.Platform)
     }
 
-    // --- Deine bisherigen Bibliotheken ---
+    // --- Weitere Bibliotheken ---
     implementation("jakarta.websocket:jakarta.websocket-api:2.2.0")
     implementation("jakarta.servlet:jakarta.servlet-api:6.1.0")
     implementation("org.glassfish.tyrus:tyrus-server:2.2.0")
@@ -73,30 +77,51 @@ dependencies {
 }
 
 /* ------------------------------------------------------------------- */
-/*  JVM-Einstellungen                                                  */
+/*  JVM                                                                */
 /* ------------------------------------------------------------------- */
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(17))
-        // Optional: Vendor & Implementierung einschränken, meist nicht nötig
-        // vendor.set(JvmVendorSpec.ADOPTIUM)
     }
 }
 
 /* ------------------------------------------------------------------- */
-/*  IntelliJ-Platform-Extension (ersetzt intellij{}-Block)             */
+/*  Signing (ENV → Dateien)                                            */
+/* ------------------------------------------------------------------- */
+val certChainEnv  = providers.environmentVariable("CERTIFICATE_CHAIN")
+val privateKeyEnv = providers.environmentVariable("PRIVATE_KEY")
+val privateKeyPwd = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
+
+val signingCertFile = layout.buildDirectory.file("signing/chain.crt")
+val signingKeyFile  = layout.buildDirectory.file("signing/private.pem")
+
+val writeSigningFiles by tasks.registering {
+    // nur ausführen, wenn Secrets gesetzt sind
+    onlyIf { certChainEnv.orNull != null && privateKeyEnv.orNull != null }
+    outputs.files(signingCertFile, signingKeyFile)
+    doLast {
+        signingCertFile.get().asFile.apply {
+            parentFile.mkdirs()
+            writeText(certChainEnv.get())
+        }
+        signingKeyFile.get().asFile.apply {
+            parentFile.mkdirs()
+            writeText(privateKeyEnv.get())
+        }
+    }
+}
+
+/* ------------------------------------------------------------------- */
+/*  IntelliJ Platform 2.x Extension                                    */
 /* ------------------------------------------------------------------- */
 intellijPlatform {
     pluginConfiguration {
-        name.set(properties("pluginName"))          // früher intellij.pluginName
+        name.set(properties("pluginName"))
     }
-    // since/untilBuild werden wie gehabt von patchPluginXml gepflegt
-    // IDE-Liste für den Plugin-Verifier
+
+    // IDE-Liste für Plugin-Verifier (keine EAP/Snapshots, nur stabile PC-Builds)
     pluginVerification {
         ides {
-            // nimmt immer die aktuell empfohlenen Builds aller IDEs
-            //recommended()
-            // or: Pin only released PyCharm Community builds to avoid missing EAP/trunk artifacts
             ide("PC", "2025.2.4")
             ide("PC", "2025.1.5")
             ide("PC", "2024.3.6")
@@ -108,19 +133,31 @@ intellijPlatform {
     }
 
     signing {
-        certificateChainFile.set(layout.projectDirectory.file("certs/chain.crt"))
-        privateKeyFile.set(layout.projectDirectory.file("certs/private.pem"))
-        password.set(providers.gradleProperty("CERT_PASSWORD"))
+        if (certChainEnv.orNull != null && privateKeyEnv.orNull != null) {
+            // Variante: Secrets enthalten PEM-Inhalte → in Dateien schreiben
+            certificateChainFile.set(signingCertFile)
+            privateKeyFile.set(signingKeyFile)
+            password.set(privateKeyPwd)
+
+            // sicherstellen, dass Dateien existieren
+            tasks.named("publishPlugin").configure { dependsOn(writeSigningFiles) }
+            tasks.matching { it.name.contains("buildPlugin") }.configureEach { dependsOn(writeSigningFiles) }
+        } else {
+            // Fallback: Dateien aus dem Repo (lokale Builds)
+            certificateChainFile.set(layout.projectDirectory.file("certs/chain.crt"))
+            privateKeyFile.set(layout.projectDirectory.file("certs/private.pem"))
+            password.set(providers.gradleProperty("CERT_PASSWORD").orNull)
+        }
     }
 
     publishing {
-        // für späteres Uploaden
+        // JetBrains Marketplace Token aus ENV
         token.set(providers.environmentVariable("PUBLISH_TOKEN"))
     }
 }
 
 /* ------------------------------------------------------------------- */
-/*  CHANGELOG, COVERAGE, WRAPPER …                                    */
+/*  Changelog / Coverage                                               */
 /* ------------------------------------------------------------------- */
 changelog {
     groups.empty()
@@ -129,6 +166,9 @@ changelog {
 
 kover { /* unverändert */ }
 
+/* ------------------------------------------------------------------- */
+/*  Tasks                                                              */
+/* ------------------------------------------------------------------- */
 tasks {
 
     /* ------------------------ Wrapper -------------------------------- */
@@ -138,8 +178,8 @@ tasks {
 
     /* ------------------------ Plugin-XML ----------------------------- */
     patchPluginXml {
-        version     = properties("pluginVersion").get()
-        sinceBuild  = properties("pluginSinceBuild").get()
+        version    = properties("pluginVersion").get()
+        sinceBuild = properties("pluginSinceBuild").get()
 
         pluginDescription = providers
             .fileContents(layout.projectDirectory.file("README.md"))
@@ -168,15 +208,14 @@ tasks {
         }
     }
 
-    /* ------------------------ IDE-abhängige Unit-Tests --------------- */
-    // JUnit-basierte Unit- / Light-Tests
+    /* ------------------------ Unit-Tests ----------------------------- */
     test {
         useJUnit()
         jvmArgs("--add-exports", "java.base/jdk.internal.vm=ALL-UNNAMED")
-        systemProperty("java.awt.headless", "true") // optional
+        systemProperty("java.awt.headless", "true")
     }
 
-    // Integration-Tests in einer echten IDE-Instanz (bleibt unverändert)
+    /* ------------------------ Integration-Tests (echte IDE) ---------- */
     val testIde by intellijPlatformTesting.testIde.registering {
         task {
             useJUnit()
@@ -205,7 +244,7 @@ tasks {
     }
 
     /* ------------------------ Build-Lifecycle ------------------------ */
-    check { dependsOn(test, testIde) }          // sorgt dafür, dass testIde im build-Task läuft
+    check { dependsOn(test, testIde) }
 
     /* ------------------------ IDE-Run-Task --------------------------- */
     runIde {
