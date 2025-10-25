@@ -72,10 +72,10 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
      */
     private void initializeBrowser() {
         if (jbCefBrowser == null && JBCefApp.isSupported()) {
-            jbCefBrowser = new JBCefBrowser("http://localhost:8026/index.html");
+            jbCefBrowser = new JBCefBrowser("http://127.0.0.1:8026/index.html");
             LOGGER.info("Loading JBCef browser...");
         } else if (jbCefBrowser != null) {
-            jbCefBrowser.loadURL("http://localhost:8026/index.html");
+            jbCefBrowser.loadURL("http://127.0.0.1:8026/index.html");
             LOGGER.info("Reloaded JBCef browser");
         } else {
             LOGGER.error("JBCefApp is not supported");
@@ -131,6 +131,6 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
      * This method is typically used to refresh the content displayed in the tool window.
      */
     public static void reloadEduPyDebugger() {
-        jbCefBrowser.loadURL("http://localhost:8026/index.html");
+        jbCefBrowser.loadURL("http://127.0.0.1:8026/index.html");
     }
 }

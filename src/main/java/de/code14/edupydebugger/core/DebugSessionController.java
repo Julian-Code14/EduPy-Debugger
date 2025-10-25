@@ -11,267 +11,190 @@ import de.code14.edupydebugger.analysis.dynamicanalysis.StackFrameAnalyzer;
 import de.code14.edupydebugger.diagram.ObjectDiagramParser;
 import de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
+import de.code14.edupydebugger.server.dto.*;
+
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
- * Central controller that performs <em>on-the-fly</em> runtime analysis whenever an EduPy debug
- * session is suspended in PyCharm/IntelliJ.
- *
- * <h2>Key responsibilities</h2>
+ * Coordinates the dynamic analysis of a suspended Python debugging session and
+ * publishes the extracted data as JSON messages through the {@link DebugServerEndpoint}.
+ * <p>
+ * The {@code DebugSessionController} acts as the bridge between the PyCharm
+ * {@link PyDebugProcess} and the EduPy Debugger’s visualization layer.
+ * It collects stack frame, variable, and object information from the live
+ * debugging session, transforms these data structures into DTOs, and transmits
+ * them to the browser-based frontend.
+ * <p>
+ * Key responsibilities include:
  * <ul>
- *   <li><strong>Thread &amp; frame selection</strong> — chooses the first suspended thread (or a
- *       user-selected thread) and collects its {@link com.jetbrains.python.debugger.PyStackFrame}s.</li>
- *   <li><strong>Frame analysis</strong> — delegates deep inspection of stack frames, variables and
- *       heap objects to {@link de.code14.edupydebugger.analysis.dynamicanalysis.StackFrameAnalyzer}.</li>
- *   <li><strong>Data serialisation</strong> — converts the analysis result into compact strings and
- *       publishes them over the WebSocket via {@link de.code14.edupydebugger.server.DebugServerEndpoint}.
- *       Four message prefixes are used:
- *       <dl>
- *         <dt>{@code "variables:"}</dt><dd>semicolon-separated list of local &amp; global variables</dd>
- *         <dt>{@code "callstack:"}</dt><dd>current call-stack trace</dd>
- *         <dt>{@code "oc:"}</dt><dd>Base64-encoded PlantUML object <em>cards</em></dd>
- *         <dt>{@code "od:"}</dt><dd>Base64-encoded PlantUML object <em>diagram</em> (relationships)</dd>
- *       </dl></li>
- *   <li><strong>Diagram generation</strong> — turns {@link de.code14.edupydebugger.analysis.dynamicanalysis.ObjectInfo}
- *       graphs into PlantUML markup using {@link de.code14.edupydebugger.diagram.ObjectDiagramParser} and renders
- *       them as images through {@link de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator}.</li>
+ *   <li>Analyzing stack frames per suspended thread</li>
+ *   <li>Publishing call stack, variable table, and object representations as JSON</li>
+ *   <li>Generating class/object diagrams via PlantUML and encoding them as Base64 SVG</li>
  * </ul>
- *
- * <h2>Workflow</h2>
- * <ol>
- *   <li>{@link #performDynamicAnalysis(String)} is invoked (typically by {@code DebugSessionListener}).</li>
- *   <li>The method picks the relevant thread &amp; frames and calls {@code StackFrameAnalyzer#analyzeFrames()}.</li>
- *   <li>Variables are categorised into <em>primitive</em> vs. <em>object references</em> using
- *       {@link #defaultTypes}. Complex objects are further inspected for attributes.</li>
- *   <li>A textual snapshot is sent to connected browser clients so they can render interactive
- *       call-stack and variable views alongside UML diagrams.</li>
- * </ol>
- *
- * <h2>Extensibility</h2>
- * For unit tests one can inject a mocked {@link com.jetbrains.python.debugger.PyDebugProcess} via
- * {@link #setDebugProcess(PyDebugProcess)} and verify outbound messages captured from
- * {@code DebugServerEndpoint}.
  */
 public class DebugSessionController {
-
-    private final static Logger LOGGER = Logger.getInstance(DebugSessionController.class);
-
-    private static final String VARIABLES_PREFIX = "variables:";
-    private static final String CALLSTACK_PREFIX = "callstack:";
-    private static final String OBJECT_CARDS_PREFIX = "oc:";
-    private static final String OBJECT_DIAGRAM_PREFIX = "od:";
+    private static final Logger LOGGER = Logger.getInstance(DebugSessionController.class);
 
     private PyDebugProcess debugProcess;
 
-    // Set of default Python types that are not considered as references
+    /**
+     * A set of built-in Python types that are treated as primitive values when rendering variable data.
+     */
     public static final Set<String> defaultTypes = new HashSet<>() {{
-        add("int");
-        add("float");
-        add("str");
-        add("bool");
-        add("list");
-        add("dict");
-        add("tuple");
-        add("set");
+        add("int"); add("float"); add("str"); add("bool"); add("list");
+        add("dict"); add("tuple"); add("set");
     }};
 
     /**
-     * Performs a dynamic analysis of the currently suspended PyCharm debug session by analyzing the stack frames,
-     * determining the call stack, and extracting variable information.
+     * Performs a dynamic analysis of the current debugging session.
+     * <p>
+     * The method inspects all threads and their corresponding stack frames to identify
+     * suspended states. It analyzes the most relevant thread (either the selected one
+     * or the first suspended thread) and publishes the resulting call stack, variables,
+     * and object diagrams to the frontend.
      *
-     * <p>If a specific thread name is provided via <code>selectedThread</code>, only the stack frames of that thread
-     * will be used, provided that the thread is suspended. Otherwise, empty values for variables and call stack
-     * are sent to the {@link DebugServerEndpoint}. If <code>selectedThread</code> is <code>null</code>, the first
-     * suspended thread (if any) will be used for the analysis.</p>
-     *
-     * <p>Afterwards, the {@link StackFrameAnalyzer} is used to analyze the selected stack frames, and the resulting
-     * variable and object information is processed and sent to the WebSocket server.</p>
-     *
-     * @param selectedThread the name of the selected thread; may be <code>null</code> to pick the first suspended thread
-     * @throws IOException if an error occurs while generating or sending the debug information
-     *
-     * @see StackFrameAnalyzer
-     * @see DebuggerUtils
+     * @param selectedThread the name of the thread to analyze; if {@code null},
+     *                       the first suspended thread will be used instead
+     * @throws IOException if an error occurs during diagram generation or file processing
      */
     public void performDynamicAnalysis(@Nullable String selectedThread) throws IOException {
-        Map<PyThreadInfo, List<PyStackFrame>> perThreadFrames = DebuggerUtils.getStackFramesPerThread(this.debugProcess.getSession());
+        Map<PyThreadInfo, List<PyStackFrame>> perThreadFrames =
+                DebuggerUtils.getStackFramesPerThread(this.debugProcess.getSession());
 
         List<PyStackFrame> stackFrames = null;
 
         for (Map.Entry<PyThreadInfo, List<PyStackFrame>> entry : perThreadFrames.entrySet()) {
             PyThreadInfo threadInfo = entry.getKey();
-
             if (selectedThread != null) {
                 if (threadInfo.getName().equals(selectedThread) && threadInfo.getState() == PyThreadInfo.State.SUSPENDED) {
                     stackFrames = entry.getValue();
-                    generateCallStackString(stackFrames);
-                } else {
-                    DebugServerEndpoint.setVariablesString("");
-                    DebugServerEndpoint.sendDebugInfo(VARIABLES_PREFIX);
-
-                    DebugServerEndpoint.setCallStackString("");
-                    DebugServerEndpoint.sendDebugInfo(CALLSTACK_PREFIX);
+                    publishCallstack(entry.getValue());
                 }
-            } else {
-                if (stackFrames == null && threadInfo.getState() == PyThreadInfo.State.SUSPENDED) {
-                    stackFrames = entry.getValue();
-                }
+            } else if (stackFrames == null && threadInfo.getState() == PyThreadInfo.State.SUSPENDED) {
+                stackFrames = entry.getValue();
             }
         }
 
         if (stackFrames != null) {
-            StackFrameAnalyzer stackFrameAnalyzer = new StackFrameAnalyzer(stackFrames);
-            stackFrameAnalyzer.analyzeFrames();
+            StackFrameAnalyzer analyzer = new StackFrameAnalyzer(stackFrames);
+            analyzer.analyzeFrames();
 
-            // Handle variables and objects extracted from the stack frames
-            Map<String, ObjectInfo> objects = handleObjects(stackFrameAnalyzer);
-            handleVariables(stackFrameAnalyzer, objects);
+            Map<String, ObjectInfo> objects = handleObjects(analyzer);
+            handleVariables(analyzer, objects);
         }
     }
 
     /**
-     * Constructs a semicolon-separated string of stack frame names from the given list of {@link PyStackFrame}
-     * objects and sends it to the {@link DebugServerEndpoint} as call stack information.
+     * Publishes the call stack for the currently analyzed thread.
+     *
+     * @param frames a list of stack frames belonging to the selected or first suspended thread
+     */
+    private void publishCallstack(List<PyStackFrame> frames) {
+        CallstackPayload payload = new CallstackPayload();
+        payload.frames = new ArrayList<>();
+        for (PyStackFrame f : frames) payload.frames.add(f.getName());
+        DebugServerEndpoint.publishCallstack(payload);
+    }
+
+    /**
+     * Builds and publishes the list of variables visible in the current stack frame scope.
      * <p>
-     * For each frame in the provided list, its name is appended to a {@link StringBuilder} separated by semicolons.
-     * The resulting string is then:
-     * <ul>
-     *   <li>Stored in the debug server endpoint via {@link DebugServerEndpoint#setCallStackString(String)}.</li>
-     *   <li>Sent to the WebSocket client with the <em>CALLSTACK_PREFIX</em> prepended.</li>
-     * </ul>
+     * Primitive variables are rendered as plain strings, while complex objects
+     * are summarized using their attributes for a compact table representation.
      *
-     * @param stackFrames the list of {@link PyStackFrame} instances to be converted into a call stack string
-     * @see DebugServerEndpoint
-     * @see PyStackFrame
+     * @param analyzer the active {@link StackFrameAnalyzer} used to extract variable data
+     * @param objects  a mapping of object IDs to {@link ObjectInfo} instances used for lookups
      */
-    private void generateCallStackString(List<PyStackFrame> stackFrames) {
-        StringBuilder callStackString = new StringBuilder();
-        for (PyStackFrame frame : stackFrames) {
-            callStackString.append(frame.getName()).append(";");
-        }
+    private void handleVariables(StackFrameAnalyzer analyzer, Map<String, ObjectInfo> objects) {
+        Map<String, List<String>> varsRaw = analyzer.getVariables();
+        List<VariableDTO> variables = new ArrayList<>();
 
-        DebugServerEndpoint.setCallStackString(callStackString.toString());
-        DebugServerEndpoint.sendDebugInfo(CALLSTACK_PREFIX + callStackString);
-    }
+        for (Map.Entry<String, List<String>> e : varsRaw.entrySet()) {
+            List<String> v = e.getValue();
+            if (v.size() < 4) continue;
 
-    /**
-     * Handles the collection and sending of variable information.
-     * Converts the variable data to a string format and sends it to the WebSocket server.
-     *
-     * @param stackFrameAnalyzer the analyzer responsible for processing stack frames
-     */
-    private void handleVariables(StackFrameAnalyzer stackFrameAnalyzer, Map<String, ObjectInfo> objects) {
-        Map<String, List<String>> variables = stackFrameAnalyzer.getVariables();
-        StringBuilder variablesString = new StringBuilder();
+            String id     = e.getKey();
+            String names  = v.get(0);
+            String type   = v.get(1);
+            String value  = v.get(2);
+            String scope  = v.get(3);
 
-        // Construct the variables string in the format "key=value;"
-        for (Map.Entry<String, List<String>> entry : variables.entrySet()) {
-            if (entry.getValue().size() > 2) {
-                String variableType = entry.getValue().get(1); // Take the type in the list
-                if (!defaultTypes.contains(variableType)) { // If it is a complex type further infos needed (attributes)
-                    ObjectInfo currentObject = objects.get(entry.getKey()); // Extract the ObjectInfo
-                    List<AttributeInfo> currentAttributeInfos = currentObject.attributes();
+            VariableDTO dto = new VariableDTO();
+            dto.id = id;
+            dto.names = Arrays.asList(names.split("###"));
+            dto.pyType = type;
+            dto.scope = scope;
 
-                    // Form of the variable string -> id=name,type,attr1|val1###attr2|val2###...,scope;
-                    variablesString.append(entry.getKey())
-                            .append("=")
-                            .append(entry.getValue().get(0))
-                            .append(",")
-                            .append(variableType)
-                            .append(",");
-
-                    for (AttributeInfo attributeInfo : currentAttributeInfos) {
-                        variablesString.append(attributeInfo.name()).append("|");
-                        if (attributeInfo.value().length() > 20) {
-                            variablesString.append(attributeInfo.value(), 0, 20).append(" [...]");
-                        } else {
-                            variablesString.append(attributeInfo.value());
-                        }
-                        variablesString.append("###");
+            ValueDTO val = new ValueDTO();
+            if (defaultTypes.contains(type)) {
+                val.kind = "primitive";
+                val.repr = value.replace("~", ", ");
+            } else {
+                val.kind = "composite";
+                // Kompakte Attribut-Repräsentation für die Tabelle (Detailanzeige via Objektkarten)
+                ObjectInfo info = objects.get(id);
+                StringBuilder repr = new StringBuilder();
+                if (info != null) {
+                    for (AttributeInfo a : info.attributes()) {
+                        String shown = a.value();
+                        if (shown.length() > 20) shown = shown.substring(0, 20) + " [...]";
+                        repr.append(a.name()).append(": ").append(shown).append("\n");
                     }
-
-                    variablesString.append(",").append(entry.getValue().get(3)).append(";");
-                } else { // For default Python types string style -> id=name,type,value,scope;
-                    String values = String.join(",", entry.getValue());
-                    variablesString.append(entry.getKey()).append("=").append(values).append(";");
                 }
+                val.repr = repr.toString().trim();
             }
+            dto.value = val;
+
+            variables.add(dto);
         }
 
-        LOGGER.info(variablesString.toString());
-        DebugServerEndpoint.setVariablesString(variablesString.toString());
-        DebugServerEndpoint.sendDebugInfo(VARIABLES_PREFIX + variablesString);
+        DebugServerEndpoint.publishVariables(new VariablesPayload(variables));
     }
 
     /**
-     * Handles the collection and sending of object information.
-     * Converts the object data into PlantUML diagrams and sends the diagrams to the WebSocket server.
+     * Analyzes the current stack frame’s object references and generates visual representations.
+     * <p>
+     * Each object is converted into an individual “object card” diagram (Base64-encoded SVG),
+     * and a complete object diagram is generated to show inter-object relationships.
      *
-     * @param stackFrameAnalyzer the analyzer responsible for processing stack frames
+     * @param analyzer the {@link StackFrameAnalyzer} that extracted object metadata
+     * @return a mapping from object ID to its corresponding {@link ObjectInfo}
+     * @throws IOException if PlantUML diagram generation fails
      */
-    private Map<String, ObjectInfo> handleObjects(StackFrameAnalyzer stackFrameAnalyzer) throws IOException {
-        Map<String, ObjectInfo> objects = stackFrameAnalyzer.getObjects();
+    private Map<String, ObjectInfo> handleObjects(StackFrameAnalyzer analyzer) throws IOException {
+        Map<String, ObjectInfo> objects = analyzer.getObjects();
 
-        // Generate the object cards diagram in PlantUML format and send it
-        Map<String, String> objectCardPlantUmlStrings = ObjectDiagramParser.generateObjectCards(objects);
-        generateAndSendObjectCards(objectCardPlantUmlStrings);
+        // Objektkarten -> Base64 SVG je Objekt
+        Map<String, String> cardsPuml = ObjectDiagramParser.generateObjectCards(objects);
+        ObjectCardPayload ocPayload = new ObjectCardPayload();
+        ocPayload.cards = new ArrayList<>();
+        for (Map.Entry<String, String> entry : cardsPuml.entrySet()) {
+            String base64 = PlantUMLDiagramGenerator.generateDiagramAsBase64(entry.getValue());
+            CardDTO c = new CardDTO();
+            c.id = entry.getKey();
+            c.svgBase64 = base64;
+            ocPayload.cards.add(c);
+        }
+        DebugServerEndpoint.publishObjectCards(ocPayload);
 
-        // Generate the object relationships diagram in PlantUML format
-        String objectDiagramPlantUmlString = ObjectDiagramParser.generateObjectDiagram(objects);
-        generateAndUpdateObjectDiagramInServerEndpoint(objectDiagramPlantUmlString);
+        // Objektdiagramm
+        String odPuml = ObjectDiagramParser.generateObjectDiagram(objects);
+        String odBase64 = PlantUMLDiagramGenerator.generateDiagramAsBase64(odPuml);
+        DebugServerEndpoint.publishObjectDiagram(odBase64);
 
         return objects;
     }
 
     /**
-     * Generates a PlantUML object diagram and updates it in the debug server endpoint for get requests.
+     * Assigns the current {@link PyDebugProcess} to this controller.
+     * This reference is used to retrieve the active debugging session and its stack frames.
      *
-     * @param objectDiagramPlantUmlString the PlantUML string to generate the object diagram from
+     * @param debugProcess the active PyCharm debug process
      */
-    private void generateAndUpdateObjectDiagramInServerEndpoint(String objectDiagramPlantUmlString) throws IOException {
-        String base64Diagram = PlantUMLDiagramGenerator.generateDiagramAsBase64(objectDiagramPlantUmlString);
-        DebugServerEndpoint.setObjectDiagramPlantUmlImage(base64Diagram);
-    }
-
-    /**
-     * Generates PlantUML diagrams for object cards from the given map of PlantUML strings,
-     * and sends these diagrams to the WebSocket server.
-     * <p>
-     * The diagrams are encoded as Base64 strings and formatted as follows:
-     * Each entry consists of the key and the corresponding Base64 diagram, separated by "|".
-     * Multiple entries are concatenated with "###" as the delimiter.
-     * The complete string is prefixed with {@link #OBJECT_CARDS_PREFIX}.
-     * <p>
-     * The resulting string is then sent to the WebSocket server for visualization.
-     *
-     * @param objectCardPlantUmlStrings a map where the key is the object identifier and the value is the PlantUML string representing the object card
-     */
-    private void generateAndSendObjectCards(Map<String, String> objectCardPlantUmlStrings) {
-        StringBuilder objectCardPlantUmlImagesData = new StringBuilder();
-        objectCardPlantUmlImagesData.append(OBJECT_CARDS_PREFIX);
-
-        objectCardPlantUmlStrings.forEach((key, plantUmlString) -> {
-            try {
-                String base64Diagram = PlantUMLDiagramGenerator.generateDiagramAsBase64(plantUmlString);
-                objectCardPlantUmlImagesData.append(key).append("|").append(base64Diagram).append("###");
-            } catch (IOException e) {
-                LOGGER.error("Error generating object card (PlantUML)", e);
-                throw new RuntimeException(e);
-            }
-        });
-
-        DebugServerEndpoint.setObjectCardPlantUmlImagesData(objectCardPlantUmlImagesData.toString());
-        DebugServerEndpoint.sendDebugInfo(objectCardPlantUmlImagesData.toString());
-    }
-
     public void setDebugProcess(PyDebugProcess debugProcess) {
         this.debugProcess = debugProcess;
     }
-
 }

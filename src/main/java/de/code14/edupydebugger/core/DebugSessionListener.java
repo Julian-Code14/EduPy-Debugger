@@ -2,49 +2,52 @@ package de.code14.edupydebugger.core;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.xdebugger.XDebugProcess;
-import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebugSessionListener;
 import com.jetbrains.python.debugger.*;
 import de.code14.edupydebugger.analysis.dynamicanalysis.DebuggerUtils;
 import de.code14.edupydebugger.analysis.staticanalysis.PythonAnalyzer;
-import de.code14.edupydebugger.server.DebugServerEndpoint;
-import de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator;
 import de.code14.edupydebugger.diagram.ClassDiagramParser;
-import org.jetbrains.annotations.NotNull;
+import de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator;
+import de.code14.edupydebugger.server.DebugServerEndpoint;
+import de.code14.edupydebugger.server.dto.ThreadDTO;
+import de.code14.edupydebugger.server.dto.ThreadsPayload;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+
 /**
- * The DebugSessionListener class listens for changes in the debug session's stack frame.
- * It triggers both static and dynamic code analysis when the stack frame changes during a debugging session.
- * The results of these analyses are sent to the client via WebSocket for visualization.
+ * Listens to PyCharm/XDebugger session events and keeps the frontend in sync with the current
+ * debugging state by publishing diagrams and thread information via {@link DebugServerEndpoint}.
  * <p>
- * This listener is particularly focused on Python debugging sessions within IntelliJ-based IDEs.
- * It interacts with a custom WebSocket server to provide real-time updates to a web-based debugging interface.
+ * Responsibilities:
+ * <ul>
+ *   <li><b>Static analysis on session start:</b> Generates a class diagram (PlantUML → Base64 SVG)
+ *       using {@link ClassDiagramParser} and {@link PythonAnalyzer} and publishes it to the client.</li>
+ *   <li><b>Dynamic updates on frame changes:</b> On each {@link #stackFrameChanged()} event, publishes
+ *       the current set of threads and triggers a dynamic analysis run in
+ *       {@link de.code14.edupydebugger.core.DebugSessionController} for the selected thread.</li>
+ * </ul>
  * <p>
- * The class diagram and object diagram generated during the analysis are encoded as PlantUML diagrams.
+ * This listener is Python-focused and expects the {@link XDebugProcess} to be a {@link PyDebugProcess}.
  */
 public class DebugSessionListener implements XDebugSessionListener {
 
-    private final static Logger LOGGER = Logger.getInstance(DebugSessionListener.class);
+    private static final Logger LOGGER = Logger.getInstance(DebugSessionListener.class);
 
+    /** The active XDebugger process (expected to be a {@link PyDebugProcess}). */
     private final XDebugProcess debugProcess;
-    private final XDebugSession session;
 
+    /** Parses project sources to produce a PlantUML class diagram for the frontend. */
     private final ClassDiagramParser classDiagramParser;
 
-    private static final String THREADS_PREFIX = "threads:";
-
     /**
-     * Constructs a DebugSessionListener for the given debug process.
-     * Initializes the session and sets up the class diagram parser.
+     * Creates a new session listener and immediately performs a one-time static analysis pass.
      *
-     * @param debugProcess the XDebugProcess representing the current debug session
+     * @param debugProcess the current debugger process; must be an instance of {@link PyDebugProcess}
      */
-    public DebugSessionListener(@NotNull XDebugProcess debugProcess) {
+    public DebugSessionListener(XDebugProcess debugProcess) {
         this.debugProcess = debugProcess;
-        this.session = debugProcess.getSession();
-
         this.classDiagramParser = new ClassDiagramParser(new PythonAnalyzer());
 
         try {
@@ -55,23 +58,19 @@ public class DebugSessionListener implements XDebugSessionListener {
     }
 
     /**
-     * Invoked when the active stack frame in the debug session changes. Logs a message indicating that dynamic analysis
-     * is about to start, and then proceeds with dynamic analysis steps if the debug process is a
-     * Python debug process ({@link PyDebugProcess}).
+     * Invoked when the active stack frame changes (e.g., stepping, pause/resume).
      * <p>
-     * If no specific thread is currently selected in {@link DebugServerEndpoint}, it generates a list of available
-     * threads for the user to pick from. Afterwards, it calls the dynamic analysis method ({@link DebugSessionController#performDynamicAnalysis(String)}) using
-     * the selected thread name.
-     * <p>
-     * Any {@link IOException} encountered during the analysis is rethrown as a {@link RuntimeException}.
+     * Publishes the current thread list to the frontend and triggers a dynamic analysis run for the
+     * currently selected thread (if any), which in turn updates variables, call stack, and object
+     * diagrams through the {@link DebugServerEndpoint}.
      */
     @Override
     public void stackFrameChanged() {
-        LOGGER.info("Stack frame changed, initiating dynamic analysis.");
+        LOGGER.info("Stack frame changed -> dynamic analysis");
 
-        if (debugProcess instanceof PyDebugProcess pyDebugProcess) {
+        if (debugProcess instanceof PyDebugProcess py) {
             try {
-                generateThreadOptions();
+                publishThreads(py);
                 DebugServerEndpoint.getDebugSessionController().performDynamicAnalysis(DebugServerEndpoint.getSelectedThread());
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -80,62 +79,36 @@ public class DebugSessionListener implements XDebugSessionListener {
     }
 
     /**
-     * Generates a semicolon-separated list of all Python threads in the current debug session, including their names
-     * and states. For each thread, this method appends a state label such as <em>(läuft...)</em> or <em>(angehalten)</em>
-     * depending on whether the thread is running, suspended, or killed.
+     * Collects all debugger threads from the current session and publishes them as a JSON payload.
+     * <p>
+     * Each {@link ThreadDTO} includes the thread name and a normalized state string. If the underlying
+     * state is {@code null}, it defaults to {@code "WAITING"}.
      *
-     * <p>Once constructed, the thread options string is:
-     * <ul>
-     *   <li>Stored in the {@link DebugServerEndpoint} via {@link DebugServerEndpoint#setThreadOptionsString(String)}</li>
-     *   <li>Transmitted to the client with a <em>THREADS_PREFIX</em> so the client can populate a thread selection UI.</li>
-     * </ul>
+     * @param py the active Python debug process
      */
-    private void generateThreadOptions() {
-        List<PyThreadInfo> pyThreadInfos = DebuggerUtils.getThreads(session);
-        StringBuilder threadsString = new StringBuilder();
-        for (PyThreadInfo pyThreadInfo : pyThreadInfos) {
-            threadsString.append(pyThreadInfo.getName());
-            if (pyThreadInfo.getState() == null) {
-                threadsString.append(" (wartend...)");
-            } else {
-                switch (pyThreadInfo.getState()) {
-                    case RUNNING:
-                        threadsString.append(" (läuft...)");
-                        break;
-                    case SUSPENDED:
-                        threadsString.append(" (angehalten)");
-                        break;
-                    case KILLED:
-                        threadsString.append(" (beendet)");
-                        break;
-                }
-            }
-            threadsString.append(";");
+    private void publishThreads(PyDebugProcess py) {
+        List<PyThreadInfo> infos = DebuggerUtils.getThreads(py.getSession());
+        ThreadsPayload payload = new ThreadsPayload();
+        payload.threads = new ArrayList<>();
+        for (PyThreadInfo ti : infos) {
+            ThreadDTO t = new ThreadDTO();
+            t.name = ti.getName();
+            t.state = (ti.getState() == null) ? "WAITING" : ti.getState().name();
+            payload.threads.add(t);
         }
-
-        DebugServerEndpoint.setThreadOptionsString(threadsString.toString());
-        DebugServerEndpoint.sendDebugInfo(THREADS_PREFIX + threadsString);
+        DebugServerEndpoint.publishThreads(payload);
     }
 
     /**
-     * Performs static code analysis and updates the class diagram.
-     * This method generates a class diagram in PlantUML format and sends it to the WebSocket server.
+     * Performs a one-time static project analysis to generate the class diagram and publishes it
+     * as a Base64-encoded SVG via the {@link DebugServerEndpoint}.
      *
-     * @param pyDebugProcess the Python debug process
+     * @param py the active Python debug process (used to access the IntelliJ project)
+     * @throws IOException if PlantUML diagram generation or encoding fails
      */
-    protected void performStaticAnalysis(PyDebugProcess pyDebugProcess) throws IOException {
-        String classDiagramPlantUmlString = classDiagramParser.generateClassDiagram(pyDebugProcess.getProject());
-        generateAndUpdateClassDiagramInServerEndpoint(classDiagramPlantUmlString);
+    protected void performStaticAnalysis(PyDebugProcess py) throws IOException {
+        String plantUml = classDiagramParser.generateClassDiagram(py.getProject());
+        String base64 = PlantUMLDiagramGenerator.generateDiagramAsBase64(plantUml);
+        DebugServerEndpoint.publishClassDiagram(base64);
     }
-
-    /**
-     * Generates a PlantUML class diagram and updates it in the debug server endpoint for get requests.
-     *
-     * @param classDiagramPlantUmlString the PlantUML string to generate the class diagram from
-     */
-    private void generateAndUpdateClassDiagramInServerEndpoint(String classDiagramPlantUmlString) throws IOException {
-        String base64Diagram = PlantUMLDiagramGenerator.generateDiagramAsBase64(classDiagramPlantUmlString);
-        DebugServerEndpoint.setClassDiagramPlantUmlImage(base64Diagram);
-    }
-
 }

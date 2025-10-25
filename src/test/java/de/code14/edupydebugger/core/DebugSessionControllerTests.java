@@ -1,200 +1,226 @@
 package de.code14.edupydebugger.core;
 
 import com.intellij.xdebugger.XDebugSession;
-import com.jetbrains.python.debugger.*;
+import com.jetbrains.python.debugger.PyDebugProcess;
+import com.jetbrains.python.debugger.PyStackFrame;
+import com.jetbrains.python.debugger.PyThreadInfo;
 import de.code14.edupydebugger.analysis.dynamicanalysis.DebuggerUtils;
 import de.code14.edupydebugger.analysis.dynamicanalysis.StackFrameAnalyzer;
+import de.code14.edupydebugger.diagram.ObjectDiagramParser;
 import de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
+import de.code14.edupydebugger.server.dto.CallstackPayload;
+import de.code14.edupydebugger.server.dto.ObjectCardPayload;
+import de.code14.edupydebugger.server.dto.VariablesPayload;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 
-import java.lang.reflect.Method;
+import java.io.IOException;
 import java.util.*;
 
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-
 
 public class DebugSessionControllerTests {
 
-    @Mock
-    private PyDebugProcess mockPyDebugProcess; // Mock for PyDebugProcess
-    @Mock
-    private XDebugSession mockXDebugSession; // Mock for XDebugSession
+    @Mock private PyDebugProcess mockPyDebugProcess;
+    @Mock private XDebugSession mockXDebugSession;
 
-    private DebugSessionController debugSessionController; // System under test
+    private DebugSessionController sut;
 
     @Before
     public void setUp() {
-        MockitoAnnotations.openMocks(this); // Initialize mocks
-        // Stub PyDebugProcess to return the mocked XDebugSession.
+        MockitoAnnotations.openMocks(this);
+
         when(mockPyDebugProcess.getSession()).thenReturn(mockXDebugSession);
-        // Stub XDebugSession to return the same PyDebugProcess.
         when(mockXDebugSession.getDebugProcess()).thenReturn(mockPyDebugProcess);
-        // Instantiate DebugSessionController.
-        debugSessionController = new DebugSessionController();
-        // Set the debug process.
-        debugSessionController.setDebugProcess(mockPyDebugProcess);
+
+        sut = new DebugSessionController();
+        sut.setDebugProcess(mockPyDebugProcess);
     }
 
     @Test
-    public void testPerformDynamicAnalysis_NoThreadsSuspended() throws Exception {
-        // Create a mock thread in the RUNNING state.
-        PyThreadInfo runningThread = mock(PyThreadInfo.class);
-        when(runningThread.getName()).thenReturn("Thread-1");
-        when(runningThread.getState()).thenReturn(PyThreadInfo.State.RUNNING);
+    public void testPerformDynamicAnalysis_NoThreadsSuspended_doesNotPublishAnything() throws Exception {
+        // Thread RUNNING, keine Frames
+        PyThreadInfo running = mock(PyThreadInfo.class);
+        when(running.getName()).thenReturn("Thread-1");
+        when(running.getState()).thenReturn(PyThreadInfo.State.RUNNING);
 
-        // Create a map with the running thread mapping to an empty list of frames.
-        Map<PyThreadInfo, List<PyStackFrame>> mockFramesMap = new HashMap<>();
-        mockFramesMap.put(runningThread, Collections.emptyList());
+        Map<PyThreadInfo, List<PyStackFrame>> framesMap = new HashMap<>();
+        framesMap.put(running, Collections.emptyList());
 
-        // Mock static methods and construction of StackFrameAnalyzer to avoid side effects.
+        try (MockedStatic<DebuggerUtils> dbg = mockStatic(DebuggerUtils.class);
+             MockedStatic<DebugServerEndpoint> endpoint = mockStatic(DebugServerEndpoint.class);
+             MockedConstruction<StackFrameAnalyzer> analyzerCtor = mockConstruction(StackFrameAnalyzer.class)) {
+
+            dbg.when(() -> DebuggerUtils.getStackFramesPerThread(mockXDebugSession)).thenReturn(framesMap);
+
+            sut.performDynamicAnalysis(null);
+
+            // Keine Publikationen, weil kein SUSPENDED-Thread/keine Frames
+            endpoint.verifyNoInteractions();
+            assertEquals("Analyzer should not be constructed when no frames exist", 0, analyzerCtor.constructed().size());
+        }
+    }
+
+    @Test
+    public void testPerformDynamicAnalysis_SelectedThreadSuspended_publishesCallstackAndDiagramsAndVariables() throws Exception {
+        // RUNNING + SUSPENDED mit 2 Frames
+        PyThreadInfo running = mock(PyThreadInfo.class);
+        when(running.getName()).thenReturn("Thread-1");
+        when(running.getState()).thenReturn(PyThreadInfo.State.RUNNING);
+
+        PyThreadInfo suspended = mock(PyThreadInfo.class);
+        when(suspended.getName()).thenReturn("MeinThread");
+        when(suspended.getState()).thenReturn(PyThreadInfo.State.SUSPENDED);
+
+        PyStackFrame f1 = mock(PyStackFrame.class);
+        when(f1.getName()).thenReturn("frame1");
+        PyStackFrame f2 = mock(PyStackFrame.class);
+        when(f2.getName()).thenReturn("frame2");
+
+        Map<PyThreadInfo, List<PyStackFrame>> framesMap = new HashMap<>();
+        framesMap.put(running, Collections.emptyList());
+        framesMap.put(suspended, Arrays.asList(f1, f2));
+
+        // Fake-Rückgaben für Analyzer / Diagramm-Generatoren
+        Map<String, String> fakeCardsPuml = new LinkedHashMap<>();
+        fakeCardsPuml.put("Obj1", "puml1");
+        fakeCardsPuml.put("Obj2", "puml2");
+
+        String fakeObjectDiagramPuml = "objectDiagramPuml";
+
+        try (MockedStatic<DebuggerUtils> dbg = mockStatic(DebuggerUtils.class);
+             MockedStatic<ObjectDiagramParser> odp = mockStatic(ObjectDiagramParser.class);
+             MockedStatic<PlantUMLDiagramGenerator> plant = mockStatic(PlantUMLDiagramGenerator.class);
+             MockedStatic<DebugServerEndpoint> endpoint = mockStatic(DebugServerEndpoint.class);
+             MockedConstruction<StackFrameAnalyzer> analyzerCtor =
+                     mockConstruction(StackFrameAnalyzer.class, (mockAnalyzer, ctx) -> {
+                         doNothing().when(mockAnalyzer).analyzeFrames();
+                         // Leere Variablen, damit wir nur prüfen, dass publishVariables überhaupt aufgerufen wird
+                         when(mockAnalyzer.getVariables()).thenReturn(Collections.emptyMap());
+                         // Leere Objektmenge – die Karten/Diagramme kommen aus den statischen Parser-Mocks
+                         when(mockAnalyzer.getObjects()).thenReturn(Collections.emptyMap());
+                     })) {
+
+            dbg.when(() -> DebuggerUtils.getStackFramesPerThread(mockXDebugSession)).thenReturn(framesMap);
+
+            // Object cards + object diagram werden über die Parser-/Generator-Kette erzeugt
+            odp.when(() -> ObjectDiagramParser.generateObjectCards(anyMap())).thenReturn(fakeCardsPuml);
+            odp.when(() -> ObjectDiagramParser.generateObjectDiagram(anyMap())).thenReturn(fakeObjectDiagramPuml);
+
+            plant.when(() -> PlantUMLDiagramGenerator.generateDiagramAsBase64("puml1")).thenReturn("b64-1");
+            plant.when(() -> PlantUMLDiagramGenerator.generateDiagramAsBase64("puml2")).thenReturn("b64-2");
+            plant.when(() -> PlantUMLDiagramGenerator.generateDiagramAsBase64("objectDiagramPuml")).thenReturn("b64-od");
+
+            // Act
+            sut.performDynamicAnalysis("MeinThread");
+
+            // Assert: Callstack veröffentlicht
+            ArgumentCaptor<CallstackPayload> callstackCap = ArgumentCaptor.forClass(CallstackPayload.class);
+            endpoint.verify(() -> DebugServerEndpoint.publishCallstack(callstackCap.capture()), times(1));
+            assertEquals(Arrays.asList("frame1", "frame2"), callstackCap.getValue().frames);
+
+            // Object-Cards veröffentlicht (2 Karten)
+            ArgumentCaptor<ObjectCardPayload> cardsCap = ArgumentCaptor.forClass(ObjectCardPayload.class);
+            endpoint.verify(() -> DebugServerEndpoint.publishObjectCards(cardsCap.capture()), times(1));
+            assertNotNull(cardsCap.getValue());
+            assertNotNull(cardsCap.getValue().cards);
+            assertEquals(2, cardsCap.getValue().cards.size());
+            // Reihenfolge gemäß fakeCardsPuml:
+            assertEquals("Obj1", cardsCap.getValue().cards.get(0).id);
+            assertEquals("b64-1", cardsCap.getValue().cards.get(0).svgBase64);
+            assertEquals("Obj2", cardsCap.getValue().cards.get(1).id);
+            assertEquals("b64-2", cardsCap.getValue().cards.get(1).svgBase64);
+
+            // Objekt-Diagramm veröffentlicht
+            endpoint.verify(() -> DebugServerEndpoint.publishObjectDiagram("b64-od"), times(1));
+
+            // Variables veröffentlicht (leer in diesem Test)
+            ArgumentCaptor<VariablesPayload> varsCap = ArgumentCaptor.forClass(VariablesPayload.class);
+            endpoint.verify(() -> DebugServerEndpoint.publishVariables(varsCap.capture()), times(1));
+            assertNotNull(varsCap.getValue());
+            assertNotNull(varsCap.getValue().variables);
+            assertTrue(varsCap.getValue().variables.isEmpty());
+
+            // Analyzer wurde genau einmal konstruiert mit den beiden Frames
+            assertEquals(1, analyzerCtor.constructed().size());
+            // analyzeFrames() wurde aufgerufen (indirekt verifiziert durch Verwendung der Rückgaben)
+
+            // Keine weiteren unerwarteten Endpoint-Publikationen
+            endpoint.verifyNoMoreInteractions();
+        }
+    }
+
+    @Test
+    public void testPerformDynamicAnalysis_FirstSuspendedThreadSelectedImplicitly_whenSelectedThreadNull() throws Exception {
+        // Arrange: ein RUNNING- und ein SUSPENDED-Thread
+        PyThreadInfo running = mock(PyThreadInfo.class);
+        when(running.getName()).thenReturn("T-run");
+        when(running.getState()).thenReturn(PyThreadInfo.State.RUNNING);
+
+        PyThreadInfo suspended = mock(PyThreadInfo.class);
+        when(suspended.getName()).thenReturn("T-susp");
+        when(suspended.getState()).thenReturn(PyThreadInfo.State.SUSPENDED);
+
+        PyStackFrame f1 = mock(PyStackFrame.class);
+        when(f1.getName()).thenReturn("f1");
+        PyStackFrame f2 = mock(PyStackFrame.class);
+        when(f2.getName()).thenReturn("f2");
+
+        Map<PyThreadInfo, List<PyStackFrame>> framesPerThread = new LinkedHashMap<>();
+        framesPerThread.put(running, Collections.emptyList());
+        framesPerThread.put(suspended, Arrays.asList(f1, f2));
+
         try (MockedStatic<DebuggerUtils> debuggerUtilsMock = mockStatic(DebuggerUtils.class);
-             MockedStatic<DebugServerEndpoint> debugEndpointMock = mockStatic(DebugServerEndpoint.class);
-             MockedConstruction<StackFrameAnalyzer> analyzerConstruction =
-                     mockConstruction(StackFrameAnalyzer.class,
-                             (mockAnalyzer, context) -> {
-                                 // Stub analyzeFrames() to do nothing.
+             MockedStatic<de.code14.edupydebugger.diagram.ObjectDiagramParser> odpMock = mockStatic(de.code14.edupydebugger.diagram.ObjectDiagramParser.class);
+             MockedStatic<de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator> pumlMock = mockStatic(de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator.class);
+             MockedStatic<DebugServerEndpoint> endpoint = mockStatic(DebugServerEndpoint.class);
+             MockedConstruction<de.code14.edupydebugger.analysis.dynamicanalysis.StackFrameAnalyzer> analyzerCons =
+                     mockConstruction(de.code14.edupydebugger.analysis.dynamicanalysis.StackFrameAnalyzer.class,
+                             (mockAnalyzer, ctx) -> {
+                                 // Keine echte Analyse
                                  doNothing().when(mockAnalyzer).analyzeFrames();
-                             }
-                     )) {
 
-            // Stub DebuggerUtils.getStackFramesPerThread to return the mock frames map.
+                                 // Minimale Daten für handleVariables()
+                                 Map<String, List<String>> vars = new LinkedHashMap<>();
+                                 // id, names, type, value, scope
+                                 vars.put("1", Arrays.asList("x###y", "int", "42", "local"));
+                                 when(mockAnalyzer.getVariables()).thenReturn(vars);
+
+                                 // Minimale Daten für handleObjects()
+                                 when(mockAnalyzer.getObjects()).thenReturn(Collections.emptyMap());
+                             })) {
+
+            // Frames liefern
             debuggerUtilsMock.when(() -> DebuggerUtils.getStackFramesPerThread(mockXDebugSession))
-                    .thenReturn(mockFramesMap);
+                    .thenReturn(framesPerThread);
 
-            // Invoke performDynamicAnalysis with a null selected thread.
-            debugSessionController.performDynamicAnalysis(null);
+            // Objektkarten/Diagramm minimal stubben
+            odpMock.when(() -> de.code14.edupydebugger.diagram.ObjectDiagramParser.generateObjectCards(anyMap()))
+                    .thenReturn(Collections.singletonMap("1", "puml"));
+            odpMock.when(() -> de.code14.edupydebugger.diagram.ObjectDiagramParser.generateObjectDiagram(anyMap()))
+                    .thenReturn("puml");
+            pumlMock.when(() -> de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator.generateDiagramAsBase64(anyString()))
+                    .thenReturn("b64");
 
-            // Verify that DebugServerEndpoint.setVariablesString() is called with an empty string.
-            debugEndpointMock.verify(() -> DebugServerEndpoint.setVariablesString(""), times(0));
-            // Verify that DebugServerEndpoint.sendDebugInfo() is called with "variables:".
-            debugEndpointMock.verify(() -> DebugServerEndpoint.sendDebugInfo("variables:"), times(0));
+            // Act
+            sut.performDynamicAnalysis(null);
 
-            // debugEndpointMock.verify(() -> DebugServerEndpoint.setCallStackString(""), times(1));
-            // debugEndpointMock.verify(() -> DebugServerEndpoint.sendDebugInfo("callstack:"), times(1));
-        }
-    }
+            // Assert
+            // Wichtig: KEIN Callstack bei impliziter Auswahl!
+            endpoint.verify(() -> DebugServerEndpoint.publishCallstack(any()), times(0));
 
-    @Test
-    public void testPerformDynamicAnalysis_SelectedThreadSuspended() throws Exception {
-        // Create a mock running thread.
-        PyThreadInfo runningThread = mock(PyThreadInfo.class);
-        when(runningThread.getName()).thenReturn("Thread-1");
-        when(runningThread.getState()).thenReturn(PyThreadInfo.State.RUNNING);
-
-        // Create a mock suspended thread.
-        PyThreadInfo suspendedThread = mock(PyThreadInfo.class);
-        when(suspendedThread.getName()).thenReturn("MeinThread");
-        when(suspendedThread.getState()).thenReturn(PyThreadInfo.State.SUSPENDED);
-
-        // Create two mock stack frames.
-        PyStackFrame frame1 = mock(PyStackFrame.class);
-        when(frame1.getName()).thenReturn("frame1");
-        PyStackFrame frame2 = mock(PyStackFrame.class);
-        when(frame2.getName()).thenReturn("frame2");
-
-        // Create a map with the running thread mapping to an empty list and the suspended thread mapping to a list with two frames.
-        Map<PyThreadInfo, List<PyStackFrame>> mockFramesMap = new HashMap<>();
-        mockFramesMap.put(runningThread, Collections.emptyList());
-        mockFramesMap.put(suspendedThread, Arrays.asList(frame1, frame2));
-
-        // Mock static methods and construction of StackFrameAnalyzer.
-        try (MockedStatic<DebuggerUtils> debuggerUtilsMock = mockStatic(DebuggerUtils.class);
-             MockedStatic<DebugServerEndpoint> debugEndpointMock = mockStatic(DebugServerEndpoint.class);
-             MockedConstruction<StackFrameAnalyzer> analyzerConstruction =
-                     mockConstruction(StackFrameAnalyzer.class,
-                             (mockAnalyzer, context) -> {
-                                 // Stub analyzeFrames() to do nothing.
-                                 doNothing().when(mockAnalyzer).analyzeFrames();
-                             }
-                     )) {
-
-            // Stub DebuggerUtils.getStackFramesPerThread to return the mock map.
-            debuggerUtilsMock.when(() -> DebuggerUtils.getStackFramesPerThread(mockXDebugSession))
-                    .thenReturn(mockFramesMap);
-
-            // Invoke performDynamicAnalysis with the selected thread "MeinThread".
-            debugSessionController.performDynamicAnalysis("MeinThread");
-
-            // Verify that the call stack is set to "frame1;frame2;".
-            debugEndpointMock.verify(
-                    () -> DebugServerEndpoint.setCallStackString("frame1;frame2;"), times(1)
-            );
-            // Verify that the call stack info is sent.
-            debugEndpointMock.verify(
-                    () -> DebugServerEndpoint.sendDebugInfo("callstack:frame1;frame2;"), times(1)
-            );
-        }
-    }
-
-    /**
-     * Tests the private method generateCallStackString by reflection.
-     */
-    @Test
-    public void testGenerateCallStackStringReflected() throws Exception {
-        // Mock static method calls of DebugServerEndpoint.
-        try (MockedStatic<DebugServerEndpoint> debugEndpointMock = mockStatic(DebugServerEndpoint.class)) {
-
-            // Obtain a reference to the private generateCallStackString(List<PyStackFrame>) method.
-            Method generateCallStackMethod = DebugSessionController.class
-                    .getDeclaredMethod("generateCallStackString", List.class);
-            generateCallStackMethod.setAccessible(true);
-
-            // Create two mock stack frames.
-            PyStackFrame frameA = mock(PyStackFrame.class);
-            when(frameA.getName()).thenReturn("fA");
-            PyStackFrame frameB = mock(PyStackFrame.class);
-            when(frameB.getName()).thenReturn("fB");
-            List<PyStackFrame> frames = Arrays.asList(frameA, frameB);
-
-            // Invoke the private method.
-            generateCallStackMethod.invoke(debugSessionController, frames);
-
-            // Verify that DebugServerEndpoint.setCallStackString is called with "fA;fB;".
-            debugEndpointMock.verify(() -> DebugServerEndpoint.setCallStackString("fA;fB;"), times(1));
-            // Verify that DebugServerEndpoint.sendDebugInfo is called with "callstack:fA;fB;".
-            debugEndpointMock.verify(() -> DebugServerEndpoint.sendDebugInfo("callstack:fA;fB;"), times(1));
-        }
-    }
-
-    /**
-     * Tests the private method generateAndSendObjectCards via reflection.
-     */
-    @Test
-    public void testGenerateAndSendObjectCardsReflected() throws Exception {
-        // Obtain a reference to the private generateAndSendObjectCards(Map<String,String>) method.
-        Method method = DebugSessionController.class
-                .getDeclaredMethod("generateAndSendObjectCards", Map.class);
-        method.setAccessible(true);
-
-        // Create a mock map for object cards.
-        Map<String, String> mockObjectCards = new LinkedHashMap<>();
-        mockObjectCards.put("Obj1", "somePlantUML1");
-        mockObjectCards.put("Obj2", "somePlantUML2");
-
-        // Mock static methods for PlantUMLDiagramGenerator and DebugServerEndpoint.
-        try (MockedStatic<PlantUMLDiagramGenerator> plantUMLMock = mockStatic(PlantUMLDiagramGenerator.class);
-             MockedStatic<DebugServerEndpoint> debugEndpointMock = mockStatic(DebugServerEndpoint.class)) {
-
-            // Stub conversion from PlantUML to base64.
-            plantUMLMock.when(() -> PlantUMLDiagramGenerator.generateDiagramAsBase64("somePlantUML1"))
-                    .thenReturn("base64encodedA");
-            plantUMLMock.when(() -> PlantUMLDiagramGenerator.generateDiagramAsBase64("somePlantUML2"))
-                    .thenReturn("base64encodedB");
-
-            // Invoke the private method.
-            method.invoke(debugSessionController, mockObjectCards);
-
-            // Expected result for object cards.
-            String expected = "oc:Obj1|base64encodedA###Obj2|base64encodedB###";
-            // Verify that the expected static methods are called.
-            debugEndpointMock.verify(() -> DebugServerEndpoint.setObjectCardPlantUmlImagesData(expected), times(1));
-            debugEndpointMock.verify(() -> DebugServerEndpoint.sendDebugInfo(expected), times(1));
+            // Variablen + Objektkarten + Objektdiagramm werden publiziert
+            endpoint.verify(() -> DebugServerEndpoint.publishVariables(any(VariablesPayload.class)), times(1));
+            endpoint.verify(() -> DebugServerEndpoint.publishObjectCards(any(ObjectCardPayload.class)), times(1));
+            endpoint.verify(() -> DebugServerEndpoint.publishObjectDiagram(eq("b64")), times(1));
         }
     }
 }

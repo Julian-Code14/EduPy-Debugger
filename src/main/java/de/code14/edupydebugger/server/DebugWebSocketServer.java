@@ -45,7 +45,7 @@ public class DebugWebSocketServer {
     }
 
     /**
-     * Starts the WebSocket server on localhost at port 8025.
+     * Starts the WebSocket server on localhost (127.0.0.1) at port 8025.
      * <p>
      * The server is initialized with the {@link DebugServerEndpoint} class, which handles incoming WebSocket connections.
      * The context classloader is temporarily switched to ensure that the server starts correctly within the IntelliJ platform.
@@ -53,7 +53,7 @@ public class DebugWebSocketServer {
      */
     public synchronized void startWebSocketServer() {
         if (server == null) {
-            this.server = new Server("localhost", 8025, "/websockets", null, DebugServerEndpoint.class);
+            this.server = new Server("127.0.0.1", 8025, "/websockets", null, DebugServerEndpoint.class);
         }
 
         if (running) {
