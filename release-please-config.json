@@ -14,7 +14,7 @@
         {
           "type": "generic",
           "path": "gradle.properties",
-          "regex": true,
+          "updater": "regex",
           "search": "^\\s*pluginVersion\\s*=\\s*.*$",
           "replace": "pluginVersion=${version}"
         }
