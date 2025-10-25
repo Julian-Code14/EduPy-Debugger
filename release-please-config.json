@@ -4,17 +4,19 @@
   "prerelease": true,
   "prerelease-type": "beta",
 
+  "bump-minor-pre-major": true,
+  "bump-patch-for-minor-pre-major": false,
+
   "packages": {
     ".": {
       "package-name": "edupy-debugger",
       "include-component-in-tag": false,
 
-      "bump-minor-pre-major": true,
-
       "extra-files": [
         {
-          "type": "generic",
-          "path": "gradle.properties"
+          "type": "gradle-properties",
+          "path": "gradle.properties",
+          "property": "pluginVersion"
         }
       ]
     }
