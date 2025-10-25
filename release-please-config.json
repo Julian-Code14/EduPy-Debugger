@@ -12,11 +12,12 @@
       "include-component-in-tag": false,
       "extra-files": [
         {
-          "type": "generic",
+          "type": "regex",
           "path": "gradle.properties",
-          "updater": "regex",
-          "search": "^\\s*pluginVersion\\s*=\\s*.*$",
-          "replace": "pluginVersion=${version}"
+          "regex": {
+            "pattern": "pluginVersion\\s*=\\s*[^\\r\\n]*",
+            "replace": "pluginVersion=${version}"
+          }
         }
       ]
     }
