@@ -8,6 +8,9 @@
     ".": {
       "package-name": "edupy-debugger",
       "include-component-in-tag": false,
+
+      "bump-minor-pre-major": true,
+
       "extra-files": [
         {
           "type": "generic",
