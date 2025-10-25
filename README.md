@@ -181,3 +181,4 @@ Integrationstests nutzen das IntelliJ‑Platform‑Testing‑Framework.
 EduPy‑Debugger steht unter der **MIT-Lizenz**.  
 Den vollständigen Text findest du in der Datei **LICENSE**.
 
+
