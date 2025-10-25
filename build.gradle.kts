@@ -6,7 +6,6 @@ import org.jetbrains.intellij.platform.gradle.tasks.TestIdePerformanceTask
 
 // für DSL-Helfer im Tasks-Block
 import org.gradle.kotlin.dsl.registering
-import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.withType
 
 /* ------------------------------------------------------------------- */

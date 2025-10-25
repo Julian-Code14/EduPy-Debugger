@@ -1,7 +1,7 @@
 name: release-please
 on:
   push:
-    branches: [main]        # bleibt so, da du auf main releast
+    branches: [main]
 
 permissions:
   contents: write
@@ -11,7 +11,60 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.rp.outputs.release_created }}
+      tag_name:        ${{ steps.rp.outputs.tag_name }}
     steps:
       - uses: googleapis/release-please-action@v4
+        id: rp
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    needs: release
+    if: ${{ needs.release.outputs.release_created == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Fetch Sources at release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag_name }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 17
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Extract version (strip leading 'v')
+        id: v
+        shell: bash
+        run: |
+          RAW="${{ needs.release.outputs.tag_name }}"
+          VERSION="${RAW#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Detected version: $VERSION"
+
+      - name: Publish Plugin to Marketplace
+        env:
+          PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+          CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
+        run: |
+          ./gradlew \
+            -PpluginVersion="${{ steps.v.outputs.version }}" \
+            publishPlugin --no-daemon --stacktrace
+
+      - name: Upload Release Asset (zip)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ needs.release.outputs.tag_name }}" ./build/distributions/*
