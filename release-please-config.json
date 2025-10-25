@@ -13,9 +13,11 @@
       "include-component-in-tag": false,
       "extra-files": [
         {
-          "type": "jproperties",
+          "type": "generic",
           "path": "gradle.properties",
-          "property": "pluginVersion"
+          "regex": true,
+          "search": "^(pluginVersion=).*?$",
+          "replace": "$1${version}"
         }
       ]
     }
