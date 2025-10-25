@@ -9,17 +9,7 @@
   "packages": {
     ".": {
       "package-name": "edupy-debugger",
-      "include-component-in-tag": false,
-      "extra-files": [
-        {
-          "type": "regex",
-          "path": "gradle.properties",
-          "regex": {
-            "pattern": "pluginVersion\\s*=\\s*[^\\r\\n]*",
-            "replace": "pluginVersion=${version}"
-          }
-        }
-      ]
+      "include-component-in-tag": false
     }
   }
 }
