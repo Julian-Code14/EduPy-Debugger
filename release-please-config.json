@@ -3,7 +3,6 @@
   "release-type": "java",
   "prerelease": true,
   "prerelease-type": "beta",
-
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": false,
 
@@ -16,8 +15,8 @@
           "type": "generic",
           "path": "gradle.properties",
           "regex": true,
-          "search": "^(pluginVersion=).*?$",
-          "replace": "$1${version}"
+          "search": "^\\s*pluginVersion\\s*=\\s*.*$",
+          "replace": "pluginVersion=${version}"
         }
       ]
     }
