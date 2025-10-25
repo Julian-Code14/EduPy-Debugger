@@ -5,6 +5,23 @@
 All notable changes to this project will be documented in this file.
 This format follows Keep a Changelog, and versions follow Semantic Versioning (including beta suffixes).
 
+## [1.0.0-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/v0.4.5-beta.0...v1.0.0-beta.0) (2025-10-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* the WebSocket protocol format has changed to JSON, breaking compatibility with older frontends.
+
+### Features
+
+* migrate debugger communication to JSON-based WebSocket architecture ([ce3ec99](https://github.com/Julian-Code14/EduPy-Debugger/commit/ce3ec9924653ff7cbf59dbaf870f371c3b20dc06))
+* switch debugger communication to JSON-based WebSocket protocol ([a448206](https://github.com/Julian-Code14/EduPy-Debugger/commit/a44820693d2ea1e81815cce075f42d1ab474c060))
+
+
+### Documentation
+
+* **changelog:** clean up history and standardize format ([105b92f](https://github.com/Julian-Code14/EduPy-Debugger/commit/105b92f9ccb50fa5e560bdf21a58ea14a218dbcd))
+
 ## [Unreleased]
 
 ## [0.4.5-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/v0.4.4-beta.0...v0.4.5-beta.0) — 2025-08-14
