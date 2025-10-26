@@ -4,15 +4,11 @@
   "prerelease-type": "beta",
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": false,
-
   "packages": {
     ".": {
       "release-type": "simple",
       "package-name": "edupy-debugger",
-      "include-component-in-tag": false,
-      "extra-files": [
-        "gradle.properties"
-      ]
+      "include-component-in-tag": false
     }
   }
 }
