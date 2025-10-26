@@ -1,6 +1,5 @@
 {
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
-  "release-type": "java",
   "prerelease": true,
   "prerelease-type": "beta",
   "bump-minor-pre-major": true,
@@ -8,6 +7,7 @@
 
   "packages": {
     ".": {
+      "release-type": "java",
       "package-name": "edupy-debugger",
       "include-component-in-tag": false
     }
