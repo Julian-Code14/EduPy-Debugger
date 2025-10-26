@@ -5,6 +5,28 @@
 All notable changes to this project will be documented in this file.
 This format follows Keep a Changelog, and versions follow Semantic Versioning (including beta suffixes).
 
+## [0.5.2-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/v0.5.1-beta.0...v0.5.2-beta.0) (2025-10-26)
+
+
+### Bug Fixes
+
+* **docs:** trigger 0.5.2-beta.0 release ([e820f18](https://github.com/Julian-Code14/EduPy-Debugger/commit/e820f18e350d66e13d09bd4272fb0e73254da1a9))
+* **release:** nudge release-please ([#206](https://github.com/Julian-Code14/EduPy-Debugger/issues/206)) ([d394212](https://github.com/Julian-Code14/EduPy-Debugger/commit/d394212ffc332b32af7d19f014622429e2d46e90))
+* **release:** nudge release-please after config move ([#205](https://github.com/Julian-Code14/EduPy-Debugger/issues/205)) ([7dd380d](https://github.com/Julian-Code14/EduPy-Debugger/commit/7dd380df58f3a7efe50faa5430f6e3d61c43bc2e))
+* **release:** trigger release notes for next version ([#203](https://github.com/Julian-Code14/EduPy-Debugger/issues/203)) ([2e705e5](https://github.com/Julian-Code14/EduPy-Debugger/commit/2e705e5a35fff7fffb461a9c3e2bc032f98676c8))
+* **release:** trigger release notes for next version ([#204](https://github.com/Julian-Code14/EduPy-Debugger/issues/204)) ([880c9d7](https://github.com/Julian-Code14/EduPy-Debugger/commit/880c9d7581ad2de9ccc2cc15d1769c6817294335))
+* trigger new patch release ([13f7704](https://github.com/Julian-Code14/EduPy-Debugger/commit/13f770404ee4808cc6a4f1752ddc3559b4b50906))
+
+
+### Miscellaneous Chores
+
+* cut release ([4ee89ec](https://github.com/Julian-Code14/EduPy-Debugger/commit/4ee89eccc43147cfb81c2951a332b720d1f943f0))
+* cut release ([dbede41](https://github.com/Julian-Code14/EduPy-Debugger/commit/dbede418177a9fffa1580fe5fdfeae6e9e49362b))
+* cut release ([d9f5e43](https://github.com/Julian-Code14/EduPy-Debugger/commit/d9f5e43179a67a11d8fc3874cf80133f009569b4))
+* force release 0.5.2-beta.0 ([a71ded0](https://github.com/Julian-Code14/EduPy-Debugger/commit/a71ded057ceece6e2f00276d1f04afa4fe49afc1))
+* manual release 0.5.2-beta.0 ([8404439](https://github.com/Julian-Code14/EduPy-Debugger/commit/8404439d087a9f3acfca4a843cf9651e7b6a3f11))
+* prepare forced release ([e6afc6a](https://github.com/Julian-Code14/EduPy-Debugger/commit/e6afc6a08a0900ebc8c197d7bd9b96949be236da))
+
 ## [0.5.1-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/v0.5.0-beta.0...v0.5.1-beta.0) (2025-10-25)
 
 
