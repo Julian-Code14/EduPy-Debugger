@@ -95,8 +95,10 @@ val signingCertFile = layout.buildDirectory.file("signing/chain.crt")
 val signingKeyFile  = layout.buildDirectory.file("signing/private.pem")
 
 val writeSigningFiles by tasks.registering {
+    notCompatibleWithConfigurationCache("Writes signing files from env vars at execution time")
     // nur ausführen, wenn Secrets gesetzt sind
     onlyIf { certChainEnv.orNull != null && privateKeyEnv.orNull != null }
+    doNotTrackState("Writes secret files which must not be cached")
     outputs.files(signingCertFile, signingKeyFile)
     doLast {
         signingCertFile.get().asFile.apply {
