@@ -5,6 +5,13 @@
 All notable changes to this project will be documented in this file.
 This format follows Keep a Changelog, and versions follow Semantic Versioning (including beta suffixes).
 
+## [0.5.3-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/v0.5.2-beta.0...v0.5.3-beta.0) (2025-10-26)
+
+
+### Bug Fixes
+
+* **publish:** writeSigningFiles task exception for publishing ([#210](https://github.com/Julian-Code14/EduPy-Debugger/issues/210)) ([e24ba28](https://github.com/Julian-Code14/EduPy-Debugger/commit/e24ba28f77b783bd801d0984a512c620e72a64f3))
+
 ## [0.5.2-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/v0.5.1-beta.0...v0.5.2-beta.0) (2025-10-26)
 
 
