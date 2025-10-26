@@ -8,7 +8,10 @@
     ".": {
       "release-type": "simple",
       "package-name": "edupy-debugger",
-      "include-component-in-tag": false
+      "include-component-in-tag": false,
+      "extra-files": [
+        "gradle.properties"
+      ]
     }
   }
 }
