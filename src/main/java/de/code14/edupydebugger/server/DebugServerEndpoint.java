@@ -525,7 +525,18 @@ public class DebugServerEndpoint {
         Project project = projectSupplier.get();
         if (project == null) return;
         ClassDiagramParser parser = classDiagramParserSupplier.get();
-        String plantUml = parser.generateClassDiagram(project);
+        String plantUml;
+        try {
+            var app = com.intellij.openapi.application.ApplicationManager.getApplication();
+            if (app != null) {
+                plantUml = com.intellij.openapi.application.ReadAction.compute(() -> parser.generateClassDiagram(project));
+            } else {
+                plantUml = parser.generateClassDiagram(project);
+            }
+        } catch (Throwable t) {
+            // Fallback for non‑IDE test contexts without Application instance
+            plantUml = parser.generateClassDiagram(project);
+        }
         String base64 = PlantUMLDiagramGenerator.generateDiagramAsBase64(plantUml);
         publishClassDiagram(base64);
     }
