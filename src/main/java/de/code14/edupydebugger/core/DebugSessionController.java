@@ -8,8 +8,6 @@ import de.code14.edupydebugger.analysis.dynamicanalysis.AttributeInfo;
 import de.code14.edupydebugger.analysis.dynamicanalysis.DebuggerUtils;
 import de.code14.edupydebugger.analysis.dynamicanalysis.ObjectInfo;
 import de.code14.edupydebugger.analysis.dynamicanalysis.StackFrameAnalyzer;
-import de.code14.edupydebugger.diagram.ObjectDiagramParser;
-import de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
 import de.code14.edupydebugger.server.dto.*;
 

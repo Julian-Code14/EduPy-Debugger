@@ -7,19 +7,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Key;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
 import de.code14.edupydebugger.server.dto.ConsolePayload;
-import de.code14.edupydebugger.server.dto.VariablesPayload;
-import de.code14.edupydebugger.server.dto.VariableDTO;
-import de.code14.edupydebugger.server.dto.ValueDTO;
-import de.code14.edupydebugger.server.dto.ObjectCardPayload;
-import de.code14.edupydebugger.server.dto.CardDTO;
-import de.code14.edupydebugger.analysis.dynamicanalysis.ObjectInfo;
-import de.code14.edupydebugger.analysis.dynamicanalysis.AttributeInfo;
-import de.code14.edupydebugger.diagram.ObjectDiagramParser;
-import de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * Listens to the standard output and error streams of the debugged Python process

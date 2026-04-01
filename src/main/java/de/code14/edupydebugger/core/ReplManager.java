@@ -79,7 +79,7 @@ public class ReplManager {
             }
             replHandler = new OSProcessHandler(gcl2);
             replHandler.startNotify();
-            LOGGER.info("Started fallback REPL using '" + executable + "'");
+            LOGGER.info("Started fallback REPL (retry) using '" + executable + "'");
         }
         bootstrapped = false;
         try { ensureBootstrapInjected(); } catch (Throwable t) { LOGGER.warn("REPL bootstrap failed", t); }
@@ -104,58 +104,57 @@ public class ReplManager {
     public synchronized void ensureBootstrapInjected() throws Exception {
         if (replHandler == null || replHandler.isProcessTerminated() || bootstrapped) return;
         var os = replHandler.getProcessInput();
-        if (os == null) return;
         // Robust one-liner using exec() to avoid interactive block/blank-line issues
-        StringBuilder sb = new StringBuilder();
-        sb.append("import json, os, sys;exec(\"");
-        sb.append("def __edupy_bootstrap():\\n");
-        sb.append("    wd = os.environ.get('EDUPY_WORKDIR')\\n");
-        sb.append("    if wd and wd not in sys.path: sys.path.insert(0, wd)\\n");
-        sb.append("    eps = os.environ.get('EDUPY_EXTRA_PATHS','')\\n");
-        sb.append("    for p in eps.split(os.pathsep):\\n        p = p.strip()\\n        if p and p not in sys.path: sys.path.insert(0, p)\\n");
-        sb.append("    try:\\n        sys.ps1=''\\n        sys.ps2=''\\n    except Exception:\\n        pass\\n");
-        sb.append("__edupy_bootstrap()\\n");
-        sb.append("del __edupy_bootstrap\\n");
-        sb.append("def _is_primitive(obj):\\n    return type(obj).__name__ in {'int','float','str','bool','list','dict','tuple','set'}\\n");
-        sb.append("def _is_noise(obj):\\n    tn=type(obj).__name__\\n    return tn in {'module','function','builtin_function_or_method','method','type'} or callable(obj)\\n");
-        sb.append("def _safe_repr(v):\\n    try:\\n        s=repr(v)\\n        return s if len(s)<=120 else s[:120]+' [...]'\\n    except Exception:\\n        return '<error>'\\n");
-        sb.append("def _edupy__snapshot():\\n");
-        sb.append("    vars_out=[]\\n");
-        sb.append("    objects={}\\n");
-        sb.append("    gs=globals()\\n");
-        sb.append("    def ensure_obj(o, ref_label):\\n");
-        sb.append("        oid=str(id(o))\\n");
-        sb.append("        if oid not in objects:\\n            objects[oid]={'ref': ref_label, 'attrs': []}\\n");
-        sb.append("        return oid\\n");
-        sb.append("    for k,v in list(gs.items()):\\n");
-        sb.append("        if k.startswith('_') or k in ('__name__','__builtins__'):\\n            continue\\n");
-        sb.append("        if _is_noise(v):\\n            continue\\n");
-        sb.append("        try:\\n");
-        sb.append("            t=type(v).__name__\\n");
-        sb.append("            if _is_primitive(v):\\n");
-        sb.append("                vars_out.append({'id': str(id(v)), 'name': k, 'type': t, 'repr': _safe_repr(v), 'scope': 'global'})\\n");
-        sb.append("            else:\\n");
-        sb.append("                oid=ensure_obj(v, f'{k}: {t}')\\n");
-        sb.append("                # attributes (best-effort)\\n");
-        sb.append("                try:\\n");
-        sb.append("                    for a in dir(v):\\n");
-        sb.append("                        if a.startswith('_'):\\n                            continue\\n");
-        sb.append("                        try:\\n");
-        sb.append("                            av=getattr(v,a)\\n");
-        sb.append("                            at=type(av).__name__\\n");
-        sb.append("                            if _is_noise(av):\\n                                continue\\n");
-        sb.append("                            if _is_primitive(av):\\n");
-        sb.append("                                objects[oid]['attrs'].append({'name': a, 'type': at, 'value': _safe_repr(av), 'visibility': 'public'})\\n");
-        sb.append("                            else:\\n");
-        sb.append("                                rid=ensure_obj(av, f'{t}.{a}: {at}')\\n");
-        sb.append("                                objects[oid]['attrs'].append({'name': a, 'type': at, 'value': 'refid:'+rid, 'visibility': 'public'})\\n");
-        sb.append("                        except Exception:\\n                            pass\\n");
-        sb.append("                except Exception:\\n                    pass\\n");
-        sb.append("                vars_out.append({'id': oid, 'name': k, 'type': t, 'repr': _safe_repr(v), 'scope': 'global'})\\n");
-        sb.append("        except Exception:\\n            pass\\n");
-        sb.append("    return json.dumps({'variables': vars_out, 'objects': objects})\\n");
-        sb.append("\")\n");
-        os.write(sb.toString().getBytes());
+        String sb =
+                "import json, os, sys;exec(\"" +
+                "def __edupy_bootstrap():\\n" +
+                "    wd = os.environ.get('EDUPY_WORKDIR')\\n" +
+                "    if wd and wd not in sys.path: sys.path.insert(0, wd)\\n" +
+                "    eps = os.environ.get('EDUPY_EXTRA_PATHS','')\\n" +
+                "    for p in eps.split(os.pathsep):\\n        p = p.strip()\\n        if p and p not in sys.path: sys.path.insert(0, p)\\n" +
+                "    try:\\n        sys.ps1=''\\n        sys.ps2=''\\n    except Exception:\\n        pass\\n" +
+                "__edupy_bootstrap()\\n" +
+                "del __edupy_bootstrap\\n" +
+                "def _is_primitive(obj):\\n    return type(obj).__name__ in {'int','float','str','bool','list','dict','tuple','set'}\\n" +
+                "def _is_noise(obj):\\n    tn=type(obj).__name__\\n    return tn in {'module','function','builtin_function_or_method','method','type'} or callable(obj)\\n" +
+                "def _safe_repr(v):\\n    try:\\n        s=repr(v)\\n        return s if len(s)<=120 else s[:120]+' [...]'\\n    except Exception:\\n        return '<error>'\\n" +
+                "def _edupy__snapshot():\\n" +
+                "    vars_out=[]\\n" +
+                "    objects={}\\n" +
+                "    gs=globals()\\n" +
+                "    def ensure_obj(o, ref_label):\\n" +
+                "        oid=str(id(o))\\n" +
+                "        if oid not in objects:\\n            objects[oid]={'ref': ref_label, 'attrs': []}\\n" +
+                "        return oid\\n" +
+                "    for k,v in list(gs.items()):\\n" +
+                "        if k.startswith('_') or k in ('__name__','__builtins__'):\\n            continue\\n" +
+                "        if _is_noise(v):\\n            continue\\n" +
+                "        try:\\n" +
+                "            t=type(v).__name__\\n" +
+                "            if _is_primitive(v):\\n" +
+                "                vars_out.append({'id': str(id(v)), 'name': k, 'type': t, 'repr': _safe_repr(v), 'scope': 'global'})\\n" +
+                "            else:\\n" +
+                "                oid=ensure_obj(v, f'{k}: {t}')\\n" +
+                "                # attributes (best-effort)\\n" +
+                "                try:\\n" +
+                "                    for a in dir(v):\\n" +
+                "                        if a.startswith('_'):\\n                            continue\\n" +
+                "                        try:\\n" +
+                "                            av=getattr(v,a)\\n" +
+                "                            at=type(av).__name__\\n" +
+                "                            if _is_noise(av):\\n                                continue\\n" +
+                "                            if _is_primitive(av):\\n" +
+                "                                objects[oid]['attrs'].append({'name': a, 'type': at, 'value': _safe_repr(av), 'visibility': 'public'})\\n" +
+                "                            else:\\n" +
+                "                                rid=ensure_obj(av, f'{t}.{a}: {at}')\\n" +
+                "                                objects[oid]['attrs'].append({'name': a, 'type': at, 'value': 'refid:'+rid, 'visibility': 'public'})\\n" +
+                "                        except Exception:\\n                            pass\\n" +
+                "                except Exception:\\n                    pass\\n" +
+                "                vars_out.append({'id': oid, 'name': k, 'type': t, 'repr': _safe_repr(v), 'scope': 'global'})\\n" +
+                "        except Exception:\\n            pass\\n" +
+                "    return json.dumps({'variables': vars_out, 'objects': objects})\\n" +
+                "\")\n";
+        os.write(sb.getBytes());
         os.flush();
         bootstrapped = true;
     }
@@ -165,7 +164,6 @@ public class ReplManager {
         if (replHandler == null || replHandler.isProcessTerminated()) return;
         ensureBootstrapInjected();
         var os = replHandler.getProcessInput();
-        if (os == null) return;
         String cmd = "print(\"__EDUPY_SNAPSHOT__\"+_edupy__snapshot())\n";
         os.write(cmd.getBytes());
         os.flush();
@@ -183,27 +181,18 @@ public class ReplManager {
 
     private String buildPythonPath(String existing) {
         String sep = java.io.File.pathSeparator;
-        StringBuilder sb = new StringBuilder();
-        if (workingDirectory != null) sb.append(workingDirectory);
-        for (String p : extraPaths) {
-            if (sb.length() > 0) sb.append(sep);
-            sb.append(p);
-        }
-        if (existing != null && !existing.isEmpty()) {
-            if (sb.length() > 0) sb.append(sep);
-            sb.append(existing);
-        }
-        return sb.toString();
+        java.util.StringJoiner joiner = new java.util.StringJoiner(sep);
+        if (workingDirectory != null) joiner.add(workingDirectory);
+        for (String p : extraPaths) joiner.add(p);
+        if (existing != null && !existing.isEmpty()) joiner.add(existing);
+        return joiner.toString();
     }
 
     private String buildExtraPaths() {
         String sep = java.io.File.pathSeparator;
-        StringBuilder sb = new StringBuilder();
-        for (String p : extraPaths) {
-            if (sb.length() > 0) sb.append(sep);
-            sb.append(p);
-        }
-        return sb.toString();
+        java.util.StringJoiner joiner = new java.util.StringJoiner(sep);
+        for (String p : extraPaths) joiner.add(p);
+        return joiner.toString();
     }
 
     /** Use an explicit interpreter (e.g., project SDK/venv python). */
