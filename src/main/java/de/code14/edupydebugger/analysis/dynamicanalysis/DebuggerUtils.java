@@ -146,6 +146,13 @@ public class DebuggerUtils {
                                 PyDebugValue ctx = (PyDebugValue) children.getValue(0);
                                 // Build both depth-based and name-based expressions and prefer depth-based
                                 String safeName = baseName.replace("'", "\\'");
+                                String safeFileBase = "";
+                                try {
+                                    if (f.getSourcePosition() != null && f.getSourcePosition().getFile() != null) {
+                                        String fb = f.getSourcePosition().getFile().getName();
+                                        if (fb != null) safeFileBase = fb.replace("'", "\\'");
+                                    }
+                                } catch (Throwable ignore) {}
                                 // Only take real parameter names from the frame (args + *varargs + **kwargs);
                                 // do NOT merge general locals here to avoid showing non-parameters.
                                 String namesExprDepth = String.format(
@@ -154,6 +161,9 @@ public class DebuggerUtils {
                                 String namesExprByName = String.format(
                                         "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else ','.join(__ins.getargvalues(__matches[%d].frame).args)))([fi for fi in __ins.stack() if getattr(fi,'function','')=='%s']))(__import__('inspect'))",
                                         occurrence, occurrence, safeName);
+                                String namesExprByFile = safeFileBase.isEmpty() ? "" : String.format(
+                                        "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else ','.join(__ins.getargvalues(__matches[%d].frame).args)))([fi for fi in __ins.stack() if getattr(fi,'function','')=='%s' and getattr(fi,'filename','').endswith('%s')]))(__import__('inspect'))",
+                                        occurrence, occurrence, safeName, safeFileBase);
                                 String namesByCodeByName = String.format(
                                         "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else (lambda __f,__c,__ac,__kc,__fl: "+
                                                 "','.join(list(__c.co_varnames[:__ac]) + "+
@@ -169,6 +179,12 @@ public class DebuggerUtils {
                                     PyDebugValue namesVal = ctx.getFrameAccessor().evaluate(namesExprDepth, false, true);
                                     String namesCsv = namesVal != null && namesVal.getValue() != null ? namesVal.getValue() : "";
                                     // Fallback to name-based selection if still empty
+                                    if (namesCsv.isEmpty() && !namesExprByFile.isEmpty()) {
+                                        try {
+                                            PyDebugValue nvf = ctx.getFrameAccessor().evaluate(namesExprByFile, false, true);
+                                            namesCsv = nvf != null && nvf.getValue() != null ? nvf.getValue() : "";
+                                        } catch (Throwable ignore) {}
+                                    }
                                     if (namesCsv.isEmpty()) {
                                         try {
                                             PyDebugValue nv = ctx.getFrameAccessor().evaluate(namesExprByName, false, true);
@@ -201,10 +217,17 @@ public class DebuggerUtils {
                                             String valExprByName = String.format(
                                                     "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else (lambda __av,__b: ((('refid:'+str(__b.id(__av.locals.get('%s', None))))) if (not isinstance(__av.locals.get('%s', None),(__b.int,__b.float,__b.str,__b.bool,__b.list,__b.dict,__b.tuple,__b.set))) else repr(__av.locals.get('%s', None))))(__ins.getargvalues(__matches[%d].frame), __import__('builtins'))))([fi for fi in __ins.stack() if getattr(fi,'function','')=='%s']))(__import__('inspect'))",
                                                     occurrence, anEsc, anEsc, anEsc, occurrence, safeName);
+                                            String valExprByFile = safeFileBase.isEmpty() ? "" : String.format(
+                                                    "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else (lambda __av,__b: ((('refid:'+str(__b.id(__av.locals.get('%s', None))))) if (not isinstance(__av.locals.get('%s', None),(__b.int,__b.float,__b.str,__b.bool,__b.list,__b.dict,__b.tuple,__b.set))) else repr(__av.locals.get('%s', None))))(__ins.getargvalues(__matches[%d].frame), __import__('builtins'))))([fi for fi in __ins.stack() if getattr(fi,'function','')=='%s' and getattr(fi,'filename','').endswith('%s')]))(__import__('inspect'))",
+                                                    occurrence, anEsc, anEsc, anEsc, occurrence, safeName, safeFileBase);
                                             try {
                                                 PyDebugValue rv = ctx.getFrameAccessor().evaluate(valExpr, false, true);
                                                 String vv = rv != null && rv.getValue() != null ? rv.getValue() : "";
                                                 if (vv.isEmpty()) {
+                                                    if (!valExprByFile.isEmpty()) {
+                                                        PyDebugValue rvf = ctx.getFrameAccessor().evaluate(valExprByFile, false, true);
+                                                        vv = rvf != null && rvf.getValue() != null ? rvf.getValue() : vv;
+                                                    }
                                                     PyDebugValue rv2 = ctx.getFrameAccessor().evaluate(valExprByName, false, true);
                                                     vv = rv2 != null && rv2.getValue() != null ? rv2.getValue() : vv;
                                                 }
