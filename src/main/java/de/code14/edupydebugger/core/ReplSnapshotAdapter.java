@@ -47,35 +47,39 @@ public final class ReplSnapshotAdapter {
             }
         }
 
-        Map<String,ObjectInfo> objects = new HashMap<>();
-        if (objectsMap != null) {
-            for (Map.Entry<?,?> e : objectsMap.entrySet()) {
-                String id = String.valueOf(e.getKey());
-                Object val = e.getValue();
-                if (!(val instanceof Map)) continue;
-                @SuppressWarnings("unchecked")
-                Map<String,Object> om = (Map<String,Object>) val;
-                String ref = String.valueOf(om.get("ref"));
-                List<AttributeInfo> attrs = new ArrayList<>();
-                Object attrsVal = om.get("attrs");
-                if (attrsVal instanceof List) {
-                    for (Object a : (List<?>) attrsVal) {
-                        if (!(a instanceof Map)) continue;
-                        @SuppressWarnings("unchecked")
-                        Map<String,Object> am = (Map<String,Object>) a;
-                        String an = String.valueOf(am.get("name"));
-                        String at = String.valueOf(am.get("type"));
-                        String av = String.valueOf(am.get("value"));
-                        attrs.add(new AttributeInfo(an, at, av, "public"));
-                    }
-                }
-                List<String> refs = new ArrayList<>();
-                refs.add(ref);
-                objects.put(id, new ObjectInfo(refs, attrs));
-            }
-        }
+        Map<String,ObjectInfo> objects = parseObjects(objectsMap);
 
         return new NormalizedSnapshot(varDtos, objects);
     }
-}
 
+    /** Extract building of the objects map to keep fromJson focused. */
+    private static Map<String,ObjectInfo> parseObjects(Map<?,?> objectsMap) {
+        Map<String,ObjectInfo> objects = new HashMap<>();
+        if (objectsMap == null) return objects;
+        for (Map.Entry<?,?> e : objectsMap.entrySet()) {
+            String id = String.valueOf(e.getKey());
+            Object val = e.getValue();
+            if (!(val instanceof Map)) continue;
+            @SuppressWarnings("unchecked")
+            Map<String,Object> om = (Map<String,Object>) val;
+            String ref = String.valueOf(om.get("ref"));
+            List<AttributeInfo> attrs = new ArrayList<>();
+            Object attrsVal = om.get("attrs");
+            if (attrsVal instanceof List) {
+                for (Object a : (List<?>) attrsVal) {
+                    if (!(a instanceof Map)) continue;
+                    @SuppressWarnings("unchecked")
+                    Map<String,Object> am = (Map<String,Object>) a;
+                    String an = String.valueOf(am.get("name"));
+                    String at = String.valueOf(am.get("type"));
+                    String av = String.valueOf(am.get("value"));
+                    attrs.add(new AttributeInfo(an, at, av, "public"));
+                }
+            }
+            List<String> refs = new ArrayList<>();
+            refs.add(ref);
+            objects.put(id, new ObjectInfo(refs, attrs));
+        }
+        return objects;
+    }
+}
