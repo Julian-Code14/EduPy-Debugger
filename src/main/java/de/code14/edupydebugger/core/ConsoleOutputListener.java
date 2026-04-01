@@ -103,40 +103,97 @@ public class ConsoleOutputListener {
         return containsPydevd && hasArg;
     }
 
-    /** Parses REPL JSON snapshot and publishes VariablesPayload. */
-    private void publishVariablesFromSnapshot(String json) {
-        List<Map<String, String>> items = new com.google.gson.Gson()
-                .fromJson(json, java.util.List.class);
-        if (items == null) return;
+    /** Parses REPL JSON snapshot and publishes Variables/ObjectCards/ObjectDiagram. */
+    private void publishVariablesFromSnapshot(String json) throws java.io.IOException {
+        com.google.gson.Gson g = new com.google.gson.Gson();
+        Object parsed = g.fromJson(json, Object.class);
 
-        de.code14.edupydebugger.server.dto.VariablesPayload payload =
-                new de.code14.edupydebugger.server.dto.VariablesPayload(new java.util.ArrayList<>());
+        java.util.List<?> varsList = null;
+        java.util.Map<?,?> objectsMap = null;
 
-        for (Object o : items) {
-            if (!(o instanceof java.util.Map)) continue;
-            @SuppressWarnings("unchecked")
-            java.util.Map<String, Object> m = (java.util.Map<String, Object>) o;
-            de.code14.edupydebugger.server.dto.VariableDTO dto = new de.code14.edupydebugger.server.dto.VariableDTO();
-            dto.id = String.valueOf(m.get("id"));
-            dto.names = java.util.Collections.singletonList(String.valueOf(m.get("name")));
-            dto.pyType = String.valueOf(m.get("type"));
-            dto.scope = String.valueOf(m.getOrDefault("scope", "global"));
-
-            de.code14.edupydebugger.server.dto.ValueDTO val = new de.code14.edupydebugger.server.dto.ValueDTO();
-            // primitive types list mirrors DebugSessionController.defaultTypes
-            java.util.Set<String> prim = new java.util.HashSet<>(java.util.Arrays.asList(
-                    "int","float","str","bool","list","dict","tuple","set"));
-            if (prim.contains(dto.pyType)) {
-                val.kind = "primitive";
-                val.repr = String.valueOf(m.get("repr"));
-            } else {
-                val.kind = "composite";
-                val.repr = String.valueOf(m.get("repr"));
-            }
-            dto.value = val;
-            payload.variables.add(dto);
+        if (parsed instanceof java.util.List) {
+            varsList = (java.util.List<?>) parsed; // backward compatibility
+        } else if (parsed instanceof java.util.Map) {
+            java.util.Map<?,?> root = (java.util.Map<?,?>) parsed;
+            Object v = root.get("variables");
+            if (v instanceof java.util.List) varsList = (java.util.List<?>) v;
+            Object o = root.get("objects");
+            if (o instanceof java.util.Map) objectsMap = (java.util.Map<?,?>) o;
         }
-        DebugServerEndpoint.publishVariables(payload);
+
+        // Variables payload
+        if (varsList != null) {
+            de.code14.edupydebugger.server.dto.VariablesPayload payload =
+                    new de.code14.edupydebugger.server.dto.VariablesPayload(new java.util.ArrayList<>());
+            for (Object o : varsList) {
+                if (!(o instanceof java.util.Map)) continue;
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> m = (java.util.Map<String, Object>) o;
+                de.code14.edupydebugger.server.dto.VariableDTO dto = new de.code14.edupydebugger.server.dto.VariableDTO();
+                dto.id = String.valueOf(m.get("id"));
+                dto.names = java.util.Collections.singletonList(String.valueOf(m.get("name")));
+                dto.pyType = String.valueOf(m.get("type"));
+                dto.scope = String.valueOf(m.getOrDefault("scope", "global"));
+
+                de.code14.edupydebugger.server.dto.ValueDTO val = new de.code14.edupydebugger.server.dto.ValueDTO();
+                java.util.Set<String> prim = new java.util.HashSet<>(java.util.Arrays.asList(
+                        "int","float","str","bool","list","dict","tuple","set"));
+                if (prim.contains(dto.pyType)) {
+                    val.kind = "primitive";
+                } else {
+                    val.kind = "composite";
+                }
+                val.repr = String.valueOf(m.get("repr"));
+                dto.value = val;
+                payload.variables.add(dto);
+            }
+            DebugServerEndpoint.publishVariables(payload);
+        }
+
+        // Object cards + diagram
+        if (objectsMap != null && !objectsMap.isEmpty()) {
+            java.util.Map<String, de.code14.edupydebugger.analysis.dynamicanalysis.ObjectInfo> objects = new java.util.HashMap<>();
+            for (java.util.Map.Entry<?,?> e : objectsMap.entrySet()) {
+                String id = String.valueOf(e.getKey());
+                Object val = e.getValue();
+                if (!(val instanceof java.util.Map)) continue;
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> om = (java.util.Map<String, Object>) val;
+                String ref = String.valueOf(om.get("ref"));
+                java.util.List<de.code14.edupydebugger.analysis.dynamicanalysis.AttributeInfo> attrs = new java.util.ArrayList<>();
+                Object attrsVal = om.get("attrs");
+                if (attrsVal instanceof java.util.List) {
+                    for (Object a : (java.util.List<?>) attrsVal) {
+                        if (!(a instanceof java.util.Map)) continue;
+                        @SuppressWarnings("unchecked")
+                        java.util.Map<String,Object> am = (java.util.Map<String,Object>) a;
+                        String an = String.valueOf(am.get("name"));
+                        String at = String.valueOf(am.get("type"));
+                        String av = String.valueOf(am.get("value"));
+                        attrs.add(new de.code14.edupydebugger.analysis.dynamicanalysis.AttributeInfo(an, at, av, "public"));
+                    }
+                }
+                java.util.List<String> refs = new java.util.ArrayList<>();
+                refs.add(ref);
+                objects.put(id, new de.code14.edupydebugger.analysis.dynamicanalysis.ObjectInfo(refs, attrs));
+            }
+
+            java.util.Map<String,String> cards = de.code14.edupydebugger.diagram.ObjectDiagramParser.generateObjectCards(objects);
+            de.code14.edupydebugger.server.dto.ObjectCardPayload oc = new de.code14.edupydebugger.server.dto.ObjectCardPayload();
+            oc.cards = new java.util.ArrayList<>();
+            for (java.util.Map.Entry<String,String> ce : cards.entrySet()) {
+                String svg = de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator.generateDiagramAsBase64(ce.getValue());
+                de.code14.edupydebugger.server.dto.CardDTO c = new de.code14.edupydebugger.server.dto.CardDTO();
+                c.id = ce.getKey();
+                c.svgBase64 = svg;
+                oc.cards.add(c);
+            }
+            de.code14.edupydebugger.server.DebugServerEndpoint.publishObjectCards(oc);
+
+            String od = de.code14.edupydebugger.diagram.ObjectDiagramParser.generateObjectDiagram(objects);
+            String odSvg = de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator.generateDiagramAsBase64(od);
+            de.code14.edupydebugger.server.DebugServerEndpoint.publishObjectDiagram(odSvg);
+        }
     }
 
     /** Flushes buffer when a full snapshot line is received. */
