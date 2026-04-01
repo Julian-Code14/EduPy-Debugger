@@ -4,11 +4,17 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.frame.XExecutionStack;
 import com.intellij.xdebugger.frame.XStackFrame;
+import com.intellij.xdebugger.frame.XCompositeNode;
+import com.intellij.xdebugger.frame.XValueChildrenList;
+import com.intellij.xdebugger.frame.XDebuggerTreeNodeHyperlink;
+import com.intellij.ui.SimpleTextAttributes;
 import com.jetbrains.python.debugger.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Utility class for working with the debugger and extracting stack frames.
@@ -112,6 +118,163 @@ public class DebuggerUtils {
         });
 
         return stackFrames;
+    }
+
+    /**
+     * Formats a human-readable call stack list like "func(a=1, b='x')" for each frame.
+     * Falls back to "name()" if argument inspection is not available.
+     */
+    public static List<String> formatCallstackFrames(List<PyStackFrame> frames) {
+        if (frames == null) return Collections.emptyList();
+        List<String> out = new ArrayList<>();
+        Map<String, Integer> nameOccurrence = new HashMap<>();
+        for (int idx = 0; idx < frames.size(); idx++) {
+            PyStackFrame f = frames.get(idx);
+            String base = f.getName();
+            if (base == null || base.isEmpty()) base = "<module>";
+            String[] holder = new String[]{base + "()"};
+            CountDownLatch latch = new CountDownLatch(1);
+            final int depth = idx;
+            final String baseName = base;
+            final int occurrence = nameOccurrence.merge(base, 1, Integer::sum) - 1; // 0-based for this name
+            try {
+                f.computeChildren(new XCompositeNode() {
+                    @Override
+                    public void addChildren(@NotNull XValueChildrenList children, boolean last) {
+                        try {
+                            if (children.size() > 0 && children.getValue(0) instanceof PyDebugValue) {
+                                PyDebugValue ctx = (PyDebugValue) children.getValue(0);
+                                // Build both depth-based and name-based expressions and prefer depth-based
+                                String safeName = baseName.replace("'", "\\'");
+                                String safeFileBase = "";
+                                try {
+                                    if (f.getSourcePosition() != null && f.getSourcePosition().getFile() != null) {
+                                        String fb = f.getSourcePosition().getFile().getName();
+                                        if (fb != null) safeFileBase = fb.replace("'", "\\'");
+                                    }
+                                } catch (Throwable ignore) {}
+                                // Only take real parameter names from the frame (args + *varargs + **kwargs);
+                                // do NOT merge general locals here to avoid showing non-parameters.
+                                String namesExprDepth = String.format(
+                                        "(lambda _sys,_ins,_n: (lambda _av: ','.join([a for a in (list(_av.args)+([] if _av.varargs is None else [_av.varargs])+([] if _av.keywords is None else [_av.keywords])) if a and not a.startswith('__') and not a.startswith('_pydev_') and not a.startswith('__py')]))(_ins.getargvalues(_sys._getframe(_n))))(__import__('sys'), __import__('inspect'), %d)",
+                                        depth);
+                                String namesExprByName = String.format(
+                                        "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else ','.join(__ins.getargvalues(__matches[%d].frame).args)))([fi for fi in __ins.stack() if getattr(fi,'function','')=='%s']))(__import__('inspect'))",
+                                        occurrence, occurrence, safeName);
+                                String namesExprByFile = safeFileBase.isEmpty() ? "" : String.format(
+                                        "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else ','.join(__ins.getargvalues(__matches[%d].frame).args)))([fi for fi in __ins.stack() if getattr(fi,'function','')=='%s' and getattr(fi,'filename','').endswith('%s')]))(__import__('inspect'))",
+                                        occurrence, occurrence, safeName, safeFileBase);
+                                String namesByCodeByName = String.format(
+                                        "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else (lambda __f,__c,__ac,__kc,__fl: "+
+                                                "','.join(list(__c.co_varnames[:__ac]) + "+
+                                                "([] if not (__fl & 4) else [__c.co_varnames[__ac+__kc]]) + "+
+                                                "([] if not (__fl & 8) else [__c.co_varnames[__ac+__kc + (1 if (__fl & 4) else 0)]]) + "+
+                                                "list(__c.co_varnames[__ac:__ac+__kc]) ))(__matches[%d].frame, __matches[%d].frame.f_code, __matches[%d].frame.f_code.co_argcount, __matches[%d].frame.f_code.co_kwonlyargcount, __matches[%d].frame.f_code.co_flags)))([fi for fi in __ins.stack() if getattr(fi,'function','')=='%s']))(__import__('inspect'))",
+                                        occurrence, occurrence, occurrence, occurrence, occurrence, occurrence, safeName);
+                                // No locals fallback here either; if name-based selection fails, we show name() only.
+                                if ("<module>".equals(baseName)) {
+                                    holder[0] = baseName + "()"; // avoid dumping module locals
+                                } else {
+                                    // Prefer file+name selection first (most precise), then depth, then name-only
+                                    String namesCsv = "";
+                                    if (!namesExprByFile.isEmpty()) {
+                                        try {
+                                            PyDebugValue nvf = ctx.getFrameAccessor().evaluate(namesExprByFile, false, true);
+                                            namesCsv = nvf != null && nvf.getValue() != null ? nvf.getValue() : "";
+                                        } catch (Throwable ignore) {}
+                                    }
+                                    if (namesCsv.isEmpty()) {
+                                        try {
+                                            PyDebugValue namesVal = ctx.getFrameAccessor().evaluate(namesExprDepth, false, true);
+                                            namesCsv = namesVal != null && namesVal.getValue() != null ? namesVal.getValue() : "";
+                                        } catch (Throwable ignore) {}
+                                    }
+                                    if (namesCsv.isEmpty()) {
+                                        try {
+                                            PyDebugValue nv = ctx.getFrameAccessor().evaluate(namesExprByName, false, true);
+                                            namesCsv = nv != null && nv.getValue() != null ? nv.getValue() : "";
+                                        } catch (Throwable ignore) {}
+                                    }
+                                    // Final fallback: derive names from code object layout
+                                    if (namesCsv.isEmpty()) {
+                                        try {
+                                            PyDebugValue nv2 = ctx.getFrameAccessor().evaluate(namesByCodeByName, false, true);
+                                            namesCsv = nv2 != null && nv2.getValue() != null ? nv2.getValue() : "";
+                                        } catch (Throwable ignore) {}
+                                    }
+                                    List<String> parts = new ArrayList<>();
+                                    if (!namesCsv.isEmpty()) {
+                                        // Deduplicate while preserving order
+                                        LinkedHashSet<String> ordered = new LinkedHashSet<>();
+                                        for (String s : namesCsv.split(",")) { String t = s.trim(); if (!t.isEmpty()) ordered.add(t); }
+                                        ordered.remove("_sys"); ordered.remove("_ins"); ordered.remove("_n");
+                                        String[] names = ordered.toArray(new String[0]);
+                                        int limit = Math.min(names.length, 12); // safeguard against pathological cases
+                                        for (int i = 0; i < limit; i++) {
+                                            String an = names[i].trim(); if (an.isEmpty()) continue;
+                                            if ("_sys".equals(an) || "_ins".equals(an) || "_n".equals(an)) continue;
+                                            String anEsc = an.replace("'", "\\'");
+                                            // Prefer depth-based value lookup; fallback to name-based frame if needed
+                                            String valExpr = String.format(
+                                                    "(lambda _sys,_ins,_n,_a: (lambda __av,__b: ((('refid:'+str(__b.id(__av.locals.get(_a, None))))) if (not isinstance(__av.locals.get(_a, None),(__b.int,__b.float,__b.str,__b.bool,__b.list,__b.dict,__b.tuple,__b.set))) else repr(__av.locals.get(_a, None))))(_ins.getargvalues(_sys._getframe(_n)), __import__('builtins')))(__import__('sys'), __import__('inspect'), %d, '%s')",
+                                                    depth, anEsc);
+                                            String valExprByName = String.format(
+                                                    "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else (lambda __av,__b: ((('refid:'+str(__b.id(__av.locals.get('%s', None))))) if (not isinstance(__av.locals.get('%s', None),(__b.int,__b.float,__b.str,__b.bool,__b.list,__b.dict,__b.tuple,__b.set))) else repr(__av.locals.get('%s', None))))(__ins.getargvalues(__matches[%d].frame), __import__('builtins'))))([fi for fi in __ins.stack() if getattr(fi,'function','')=='%s']))(__import__('inspect'))",
+                                                    occurrence, anEsc, anEsc, anEsc, occurrence, safeName);
+                                            String valExprByFile = safeFileBase.isEmpty() ? "" : String.format(
+                                                    "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else (lambda __av,__b: ((('refid:'+str(__b.id(__av.locals.get('%s', None))))) if (not isinstance(__av.locals.get('%s', None),(__b.int,__b.float,__b.str,__b.bool,__b.list,__b.dict,__b.tuple,__b.set))) else repr(__av.locals.get('%s', None))))(__ins.getargvalues(__matches[%d].frame), __import__('builtins'))))([fi for fi in __ins.stack() if getattr(fi,'function','')=='%s' and getattr(fi,'filename','').endswith('%s')]))(__import__('inspect'))",
+                                                    occurrence, anEsc, anEsc, anEsc, occurrence, safeName, safeFileBase);
+                                            try {
+                                                String vv = "";
+                                                if (!valExprByFile.isEmpty()) {
+                                                    PyDebugValue rvf = ctx.getFrameAccessor().evaluate(valExprByFile, false, true);
+                                                    vv = rvf != null && rvf.getValue() != null ? rvf.getValue() : "";
+                                                }
+                                                if (vv.isEmpty()) {
+                                                    PyDebugValue rv = ctx.getFrameAccessor().evaluate(valExpr, false, true);
+                                                    vv = rv != null && rv.getValue() != null ? rv.getValue() : vv;
+                                                }
+                                                if (vv.isEmpty()) {
+                                                    PyDebugValue rv2 = ctx.getFrameAccessor().evaluate(valExprByName, false, true);
+                                                    vv = rv2 != null && rv2.getValue() != null ? rv2.getValue() : vv;
+                                                }
+                                                if (vv.length() > 120) vv = vv.substring(0, 120) + " …";
+                                                parts.add(an + "=" + vv);
+                                            } catch (Throwable te) {
+                                                parts.add(an + "=");
+                                            }
+                                        }
+                                    }
+                                    String args = String.join(", ", parts);
+                                    if (args.length() > 200) args = args.substring(0, 200) + " …";
+                                    holder[0] = baseName + "(" + args + ")";
+                                }
+                            }
+                        } catch (Exception e) {
+                            LOGGER.debug("formatCallstackFrames: evaluation failed, falling back", e);
+                        } finally {
+                            if (last) latch.countDown();
+                        }
+                    }
+
+                    @Override public void tooManyChildren(int remaining) {}
+                    @Override public void tooManyChildren(int remaining, @NotNull Runnable addNextChildren) {}
+                    @Override public void setAlreadySorted(boolean alreadySorted) {}
+                    @Override public void setErrorMessage(@NotNull String errorMessage) { if (latch.getCount() > 0) latch.countDown(); }
+                    @Override public void setErrorMessage(@NotNull String errorMessage, @org.jetbrains.annotations.Nullable XDebuggerTreeNodeHyperlink link) { if (latch.getCount() > 0) latch.countDown(); }
+                    @Override public void setMessage(@NotNull String message, @org.jetbrains.annotations.Nullable javax.swing.Icon icon, @NotNull SimpleTextAttributes attributes, @org.jetbrains.annotations.Nullable XDebuggerTreeNodeHyperlink link) {}
+                });
+                // Wait a little longer to reliably receive children in real sessions
+                // (still bounded to keep tests fast when mocks don't call back)
+                latch.await(250, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            } catch (Throwable t) {
+                LOGGER.debug("formatCallstackFrames: computeChildren failed, falling back", t);
+            }
+            out.add(holder[0]);
+        }
+        return out;
     }
 
 }

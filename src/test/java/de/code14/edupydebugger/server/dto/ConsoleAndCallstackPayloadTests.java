@@ -19,10 +19,9 @@ public class ConsoleAndCallstackPayloadTests {
     @Test
     public void testCallstackPayloadRoundtrip() {
         CallstackPayload p = new CallstackPayload();
-        p.frames = Arrays.asList("main()", "solve()", "helper()");
+        p.frames = Arrays.asList("main()", "solve_knapsack(n=5)", "helper(x=1)");
         assertEquals(3, p.frames.size());
         assertEquals("main()", p.frames.get(0));
-        assertEquals("helper()", p.frames.get(2));
+        assertEquals("helper(x=1)", p.frames.get(2));
     }
 }
-

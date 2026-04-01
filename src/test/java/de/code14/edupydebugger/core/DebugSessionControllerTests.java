@@ -110,6 +110,8 @@ public class DebugSessionControllerTests {
                      })) {
 
             dbg.when(() -> DebuggerUtils.getStackFramesPerThread(mockXDebugSession)).thenReturn(framesMap);
+            dbg.when(() -> DebuggerUtils.formatCallstackFrames(Arrays.asList(f1, f2)))
+                    .thenReturn(Arrays.asList("frame1()", "frame2()"));
 
             // Object cards + object diagram werden über die Parser-/Generator-Kette erzeugt
             odp.when(() -> ObjectDiagramParser.generateObjectCards(anyMap())).thenReturn(fakeCardsPuml);
@@ -125,7 +127,7 @@ public class DebugSessionControllerTests {
             // Assert: Callstack veröffentlicht
             ArgumentCaptor<CallstackPayload> callstackCap = ArgumentCaptor.forClass(CallstackPayload.class);
             endpoint.verify(() -> DebugServerEndpoint.publishCallstack(callstackCap.capture()), times(1));
-            assertEquals(Arrays.asList("frame1", "frame2"), callstackCap.getValue().frames);
+            assertEquals(Arrays.asList("frame1()", "frame2()"), callstackCap.getValue().frames);
 
             // Object-Cards veröffentlicht (2 Karten)
             ArgumentCaptor<ObjectCardPayload> cardsCap = ArgumentCaptor.forClass(ObjectCardPayload.class);
