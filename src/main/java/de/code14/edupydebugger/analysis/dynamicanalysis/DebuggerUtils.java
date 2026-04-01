@@ -140,7 +140,9 @@ public class DebuggerUtils {
                                 PyDebugValue ctx = (PyDebugValue) children.getValue(0);
                                 // Best-effort: build arg string from current frame's locals.
                                 // Skip dunders and obvious debugger names; limit output length.
-                                String expr = "', '.join([k+'='+repr(locals().get(k, None)) for k in list(locals().keys()) if not k.startswith('__') and not k.startswith('_pydev_') and not k.startswith('__py')])";
+                                // Use a lambda to capture the outer locals mapping so lookups happen in the function's scope,
+                                // not the list-comprehension's inner scope (which would yield None values).
+                                String expr = "(lambda _L: ', '.join([k+'='+repr(_L.get(k, None)) for k in _L.keys() if not k.startswith('__') and not k.startswith('_pydev_') and not k.startswith('__py')]))(locals())";
                                 if ("<module>".equals(base)) {
                                     holder[0] = base + "()"; // avoid dumping module locals
                                 } else {
