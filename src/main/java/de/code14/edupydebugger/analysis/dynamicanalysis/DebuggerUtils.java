@@ -127,12 +127,14 @@ public class DebuggerUtils {
     public static List<String> formatCallstackFrames(List<PyStackFrame> frames) {
         if (frames == null) return Collections.emptyList();
         List<String> out = new ArrayList<>();
+        Map<String, Integer> nameOccurrence = new HashMap<>();
         for (int idx = 0; idx < frames.size(); idx++) {
             PyStackFrame f = frames.get(idx);
             String base = f.getName();
             String[] holder = new String[]{base + "()"};
             CountDownLatch latch = new CountDownLatch(1);
             final int depth = idx;
+            final int occurrence = nameOccurrence.merge(base, 1, Integer::sum) - 1; // 0-based for this name
             try {
                 f.computeChildren(new XCompositeNode() {
                     @Override
@@ -140,10 +142,11 @@ public class DebuggerUtils {
                         try {
                             if (children.size() > 0 && children.getValue(0) instanceof PyDebugValue) {
                                 PyDebugValue ctx = (PyDebugValue) children.getValue(0);
-                                // Build argument string from a specific frame using sys._getframe(idx)
+                                // Best-effort: choose the occurrence-th frame with matching function name using inspect.stack()
+                                String safeName = base.replace("'", "\'");
                                 String expr = String.format(
-                                        "(lambda _sys,_ins,_n: (lambda _f,_av: ', '.join([a+'='+repr(_av.locals.get(a, None)) for a in (list(_av.args)+([] if _av.varargs is None else [_av.varargs])+([] if _av.keywords is None else [_av.keywords])) if not a.startswith('__') and not a.startswith('_pydev_') and not a.startswith('__py')]))(_sys._getframe(_n), _ins.getargvalues(_sys._getframe(_n))))(__import__('sys'), __import__('inspect'), %d)",
-                                        depth);
+                                        "(lambda _ins,_nm,_k: (lambda _stk: (lambda _matches: (lambda _fi: ('' if _fi is None else (lambda _av: ', '.join([a+'='+repr(_av.locals.get(a, None)) for a in (list(_av.args)+([] if _av.varargs is None else [_av.varargs])+([] if _av.keywords is None else [_av.keywords])) if not a.startswith('__') and not a.startswith('_pydev_') and not a.startswith('__py')]))(_ins.getargvalues(_fi.frame))))(_matches[_k] if 0 <= _k < len(_matches) else None))([fi for fi in _stk if getattr(fi,'function','')==_nm]))(_ins.stack()))(__import__('inspect'), '%s', %d)",
+                                        safeName, occurrence);
                                 if ("<module>".equals(base)) {
                                     holder[0] = base + "()"; // avoid dumping module locals
                                 } else {
