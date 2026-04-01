@@ -146,54 +146,35 @@ public class DebuggerUtils {
                                 PyDebugValue ctx = (PyDebugValue) children.getValue(0);
                                 // Build both depth-based and name-based expressions and prefer depth-based
                                 String safeName = baseName.replace("'", "\\'");
+                                // Only take real parameter names from the frame (args + *varargs + **kwargs);
+                                // do NOT merge general locals here to avoid showing non-parameters.
                                 String namesExprDepth = String.format(
-                                        "(lambda _sys,_ins,_n: (lambda _av: ','.join([a for a in (list(_av.args)+([] if _av.varargs is None else [_av.varargs])+([] if _av.keywords is None else [_av.keywords])) if not a.startswith('__') and not a.startswith('_pydev_') and not a.startswith('__py')]))(_ins.getargvalues(_sys._getframe(_n))))(__import__('sys'), __import__('inspect'), %d)",
-                                        depth);
-                                String namesLocalsDepth = String.format(
-                                        "(lambda _sys,_n: ','.join([k for k in _sys._getframe(_n).f_locals.keys() if not k.startswith('__') and not k.startswith('_pydev_') and not k.startswith('__py')]))(__import__('sys'), %d)",
+                                        "(lambda _sys,_ins,_n: (lambda _av: ','.join([a for a in (list(_av.args)+([] if _av.varargs is None else [_av.varargs])+([] if _av.keywords is None else [_av.keywords])) if a and not a.startswith('__') and not a.startswith('_pydev_') and not a.startswith('__py')]))(_ins.getargvalues(_sys._getframe(_n))))(__import__('sys'), __import__('inspect'), %d)",
                                         depth);
                                 String namesExprByName = String.format(
                                         "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else ','.join(__ins.getargvalues(__matches[%d].frame).args)))([fi for fi in __ins.stack() if getattr(fi,'function','')=='%s']))(__import__('inspect'))",
                                         occurrence, occurrence, safeName);
-                                String namesLocalsByName = String.format(
-                                        "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else ','.join([k for k in __matches[%d].frame.f_locals.keys() if not k.startswith('__') and not k.startswith('_pydev_') and not k.startswith('__py')])))([fi for fi in __ins.stack() if getattr(fi,'function','')=='%s']))(__import__('inspect'))",
-                                        occurrence, occurrence, safeName);
+                                // No locals fallback here either; if name-based selection fails, we show name() only.
                                 if ("<module>".equals(baseName)) {
                                     holder[0] = baseName + "()"; // avoid dumping module locals
                                 } else {
-                                    // Try depth-based first
+                                    // Try depth-based parameter names first
                                     PyDebugValue namesVal = ctx.getFrameAccessor().evaluate(namesExprDepth, false, true);
                                     String namesCsv = namesVal != null && namesVal.getValue() != null ? namesVal.getValue() : "";
-                                    try {
-                                        PyDebugValue locsVal = ctx.getFrameAccessor().evaluate(namesLocalsDepth, false, true);
-                                        String locsCsv = locsVal != null && locsVal.getValue() != null ? locsVal.getValue() : "";
-                                        if (!locsCsv.isEmpty()) {
-                                            LinkedHashSet<String> merged = new LinkedHashSet<>();
-                                            if (!namesCsv.isEmpty()) {
-                                                for (String s : namesCsv.split(",")) { String t = s.trim(); if (!t.isEmpty()) merged.add(t); }
-                                            }
-                                            for (String s : locsCsv.split(",")) { String t = s.trim(); if (!t.isEmpty()) merged.add(t); }
-                                            merged.remove("_sys"); merged.remove("_ins"); merged.remove("_n");
-                                            StringBuilder sb = new StringBuilder();
-                                            for (String s : merged) { if (sb.length()>0) sb.append(','); sb.append(s); }
-                                            namesCsv = sb.toString();
-                                        }
-                                    } catch (Throwable ignore) {}
                                     // Fallback to name-based selection if still empty
                                     if (namesCsv.isEmpty()) {
                                         try {
                                             PyDebugValue nv = ctx.getFrameAccessor().evaluate(namesExprByName, false, true);
                                             namesCsv = nv != null && nv.getValue() != null ? nv.getValue() : "";
-                                            if (!namesCsv.isEmpty()) {
-                                                PyDebugValue lv = ctx.getFrameAccessor().evaluate(namesLocalsByName, false, true);
-                                                String locsCsv = lv != null && lv.getValue() != null ? lv.getValue() : "";
-                                                if (!locsCsv.isEmpty()) namesCsv = namesCsv + (namesCsv.isEmpty()?"":",") + locsCsv;
-                                            }
                                         } catch (Throwable ignore) {}
                                     }
                                     List<String> parts = new ArrayList<>();
                                     if (!namesCsv.isEmpty()) {
-                                        String[] names = namesCsv.split(",");
+                                        // Deduplicate while preserving order
+                                        LinkedHashSet<String> ordered = new LinkedHashSet<>();
+                                        for (String s : namesCsv.split(",")) { String t = s.trim(); if (!t.isEmpty()) ordered.add(t); }
+                                        ordered.remove("_sys"); ordered.remove("_ins"); ordered.remove("_n");
+                                        String[] names = ordered.toArray(new String[0]);
                                         int limit = Math.min(names.length, 12); // safeguard against pathological cases
                                         for (int i = 0; i < limit; i++) {
                                             String an = names[i].trim(); if (an.isEmpty()) continue;
