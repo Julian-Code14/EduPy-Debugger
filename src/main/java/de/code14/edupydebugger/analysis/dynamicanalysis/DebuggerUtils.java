@@ -175,14 +175,18 @@ public class DebuggerUtils {
                                 if ("<module>".equals(baseName)) {
                                     holder[0] = baseName + "()"; // avoid dumping module locals
                                 } else {
-                                    // Try depth-based parameter names first
-                                    PyDebugValue namesVal = ctx.getFrameAccessor().evaluate(namesExprDepth, false, true);
-                                    String namesCsv = namesVal != null && namesVal.getValue() != null ? namesVal.getValue() : "";
-                                    // Fallback to name-based selection if still empty
-                                    if (namesCsv.isEmpty() && !namesExprByFile.isEmpty()) {
+                                    // Prefer file+name selection first (most precise), then depth, then name-only
+                                    String namesCsv = "";
+                                    if (!namesExprByFile.isEmpty()) {
                                         try {
                                             PyDebugValue nvf = ctx.getFrameAccessor().evaluate(namesExprByFile, false, true);
                                             namesCsv = nvf != null && nvf.getValue() != null ? nvf.getValue() : "";
+                                        } catch (Throwable ignore) {}
+                                    }
+                                    if (namesCsv.isEmpty()) {
+                                        try {
+                                            PyDebugValue namesVal = ctx.getFrameAccessor().evaluate(namesExprDepth, false, true);
+                                            namesCsv = namesVal != null && namesVal.getValue() != null ? namesVal.getValue() : "";
                                         } catch (Throwable ignore) {}
                                     }
                                     if (namesCsv.isEmpty()) {
@@ -221,13 +225,16 @@ public class DebuggerUtils {
                                                     "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else (lambda __av,__b: ((('refid:'+str(__b.id(__av.locals.get('%s', None))))) if (not isinstance(__av.locals.get('%s', None),(__b.int,__b.float,__b.str,__b.bool,__b.list,__b.dict,__b.tuple,__b.set))) else repr(__av.locals.get('%s', None))))(__ins.getargvalues(__matches[%d].frame), __import__('builtins'))))([fi for fi in __ins.stack() if getattr(fi,'function','')=='%s' and getattr(fi,'filename','').endswith('%s')]))(__import__('inspect'))",
                                                     occurrence, anEsc, anEsc, anEsc, occurrence, safeName, safeFileBase);
                                             try {
-                                                PyDebugValue rv = ctx.getFrameAccessor().evaluate(valExpr, false, true);
-                                                String vv = rv != null && rv.getValue() != null ? rv.getValue() : "";
+                                                String vv = "";
+                                                if (!valExprByFile.isEmpty()) {
+                                                    PyDebugValue rvf = ctx.getFrameAccessor().evaluate(valExprByFile, false, true);
+                                                    vv = rvf != null && rvf.getValue() != null ? rvf.getValue() : "";
+                                                }
                                                 if (vv.isEmpty()) {
-                                                    if (!valExprByFile.isEmpty()) {
-                                                        PyDebugValue rvf = ctx.getFrameAccessor().evaluate(valExprByFile, false, true);
-                                                        vv = rvf != null && rvf.getValue() != null ? rvf.getValue() : vv;
-                                                    }
+                                                    PyDebugValue rv = ctx.getFrameAccessor().evaluate(valExpr, false, true);
+                                                    vv = rv != null && rv.getValue() != null ? rv.getValue() : vv;
+                                                }
+                                                if (vv.isEmpty()) {
                                                     PyDebugValue rv2 = ctx.getFrameAccessor().evaluate(valExprByName, false, true);
                                                     vv = rv2 != null && rv2.getValue() != null ? rv2.getValue() : vv;
                                                 }
