@@ -108,10 +108,8 @@ public class ReplManager {
         // Robust one-liner using exec() to avoid interactive block/blank-line issues
         StringBuilder sb = new StringBuilder();
         sb.append("import json, os, sys;");
-        sb.append("wd=os.environ.get('EDUPY_WORKDIR');");
-        sb.append("sys.path.insert(0,wd) if wd and wd not in sys.path else None;");
-        sb.append("eps=os.environ.get('EDUPY_EXTRA_PATHS','');");
-        sb.append("[sys.path.insert(0,p.strip()) for p in eps.split(os.pathsep) if p.strip() and p.strip() not in sys.path];");
+        sb.append("sys.path.insert(0,os.environ.get('EDUPY_WORKDIR')) if os.environ.get('EDUPY_WORKDIR') and os.environ.get('EDUPY_WORKDIR') not in sys.path else None;");
+        sb.append("[sys.path.insert(0,p.strip()) for p in os.environ.get('EDUPY_EXTRA_PATHS','').split(os.pathsep) if p.strip() and p.strip() not in sys.path];");
         sb.append("exec(\"");
         sb.append("def _edupy__snapshot():\\n");
         sb.append("    out=[]\\n");
@@ -121,6 +119,10 @@ public class ReplManager {
         sb.append("            continue\\n");
         sb.append("        try:\\n");
         sb.append("            t=type(v).__name__\\n");
+        sb.append("            if t in {'module','function','builtin_function_or_method','method','type'}:\\n");
+        sb.append("                continue\\n");
+        sb.append("            if callable(v):\\n");
+        sb.append("                continue\\n");
         sb.append("            if t in {'int','float','str','bool','list','dict','tuple','set'}:\\n");
         sb.append("                reprv=repr(v)\\n");
         sb.append("            else:\\n");
