@@ -303,10 +303,12 @@ public class VariableAnalyzer {
             if (digits) return true; // _i42, _i123 etc.
         }
         if (name.equals("_ih") || name.equals("_oh") || name.equals("In") || name.equals("Out")) return true;
-        // Cover debugger temp names, possibly truncated by UI into "__py_deb..."
+        // Cover debugger temp names, possibly truncated by UI into "__py..."
         if (name.startsWith("__py_debug")) return true;
         if (name.startsWith("__py_deb")) return true;
         if (name.startsWith("__py_")) return true;
+        if (name.startsWith("__py")) return true; // extremely truncated variant like "__py..."
+        if (name.startsWith("_") && name.endsWith("...")) return true; // truncated private/system names
         if (name.startsWith("_pydev_")) return true;
         if (name.startsWith("__pydev")) return true;
         // Python module-level dunders (and any other __dunder__)

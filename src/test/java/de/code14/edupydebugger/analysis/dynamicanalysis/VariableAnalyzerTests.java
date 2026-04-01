@@ -341,6 +341,45 @@ public class VariableAnalyzerTests {
     }
 
     @Test
+    public void testAnalyzeVariables_skipsHighlyTruncatedPyNames() throws PyDebuggerException {
+        PyStackFrame frame = mock(PyStackFrame.class);
+        VariableAnalyzer analyzer = new VariableAnalyzer(Collections.singletonList(frame));
+
+        PyDebugValue sys = mock(PyDebugValue.class);
+        PyDebugValue user = mock(PyDebugValue.class);
+
+        doAnswer(invocation -> {
+            XValueChildrenList childrenList = new XValueChildrenList();
+            childrenList.add(sys);
+            childrenList.add(user);
+            invocation.getArgument(0, XCompositeNode.class).addChildren(childrenList, true);
+            return null;
+        }).when(frame).computeChildren(any(XCompositeNode.class));
+
+        when(sys.getName()).thenReturn("__py...");
+        when(sys.getType()).thenReturn("int");
+        when(sys.getValue()).thenReturn("123");
+
+        when(user.getName()).thenReturn("ok");
+        when(user.getType()).thenReturn("int");
+        when(user.getValue()).thenReturn("5");
+
+        PyFrameAccessor acc = mock(PyFrameAccessor.class);
+        when(user.getFrameAccessor()).thenReturn(acc);
+        when(acc.evaluate(eq("__builtins__.id(ok)"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("id", "int", null, "77", false, null, false, false, false, null, acc));
+        when(acc.evaluate(eq("locals().get('ok', None) is not None"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("isLocal", "bool", null, "true", false, null, false, false, false, null, acc));
+        when(acc.evaluate(eq("globals().get('ok', None) is not None"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("isGlobal", "bool", null, "false", false, null, false, false, false, null, acc));
+
+        analyzer.analyzeVariables();
+        Map<String, List<String>> vars = analyzer.getVariables();
+        assertEquals(1, vars.size());
+        assertTrue(vars.containsKey("77"));
+    }
+
+    @Test
     public void testAnalyzeVariables_skipsUnderscoreGlobal() throws PyDebuggerException {
         // Arrange an eval context with a local dummy and globals containing '_' and 'user'
         PyDebugValue dummyLocal = mock(PyDebugValue.class);
