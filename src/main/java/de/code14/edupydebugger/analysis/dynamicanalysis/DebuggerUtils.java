@@ -131,9 +131,11 @@ public class DebuggerUtils {
         for (int idx = 0; idx < frames.size(); idx++) {
             PyStackFrame f = frames.get(idx);
             String base = f.getName();
+            if (base == null || base.isEmpty()) base = "<module>";
             String[] holder = new String[]{base + "()"};
             CountDownLatch latch = new CountDownLatch(1);
             final int depth = idx;
+            final String baseName = base;
             final int occurrence = nameOccurrence.merge(base, 1, Integer::sum) - 1; // 0-based for this name
             try {
                 f.computeChildren(new XCompositeNode() {
@@ -146,8 +148,8 @@ public class DebuggerUtils {
                                 String namesExpr = String.format(
                                         "(lambda _sys,_ins,_n: (lambda _av: ','.join([a for a in (list(_av.args)+([] if _av.varargs is None else [_av.varargs])+([] if _av.keywords is None else [_av.keywords])) if not a.startswith('__') and not a.startswith('_pydev_') and not a.startswith('__py')]))(_ins.getargvalues(_sys._getframe(_n))))(__import__('sys'), __import__('inspect'), %d)",
                                         depth);
-                                if ("<module>".equals(base)) {
-                                    holder[0] = base + "()"; // avoid dumping module locals
+                                if ("<module>".equals(baseName)) {
+                                    holder[0] = baseName + "()"; // avoid dumping module locals
                                 } else {
                                     PyDebugValue namesVal = ctx.getFrameAccessor().evaluate(namesExpr, false, true);
                                     String namesCsv = namesVal != null && namesVal.getValue() != null ? namesVal.getValue() : "";
@@ -157,6 +159,7 @@ public class DebuggerUtils {
                                         int limit = Math.min(names.length, 12); // safeguard against pathological cases
                                         for (int i = 0; i < limit; i++) {
                                             String an = names[i].trim(); if (an.isEmpty()) continue;
+                                            if ("_sys".equals(an) || "_ins".equals(an) || "_n".equals(an)) continue;
                                             String anEsc = an.replace("'", "\\'");
                                             String valExpr = String.format(
                                                     "(lambda _sys,_ins,_n,_a: (lambda _av,_v: ((('refid:'+str(__builtins__.id(_v)))) if (not isinstance(_v,(int,float,str,bool,list,dict,tuple,set))) else repr(_v)))(_ins.getargvalues(_sys._getframe(_n)), _ins.getargvalues(_sys._getframe(_n)).locals.get(_a, None)))(__import__('sys'), __import__('inspect'), %d, '%s')",
@@ -173,7 +176,7 @@ public class DebuggerUtils {
                                     }
                                     String args = String.join(", ", parts);
                                     if (args.length() > 200) args = args.substring(0, 200) + " …";
-                                    holder[0] = base + "(" + args + ")";
+                                    holder[0] = baseName + "(" + args + ")";
                                 }
                             }
                         } catch (Exception e) {
