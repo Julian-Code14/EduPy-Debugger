@@ -91,8 +91,13 @@ public class DebugSessionController {
             StackFrameAnalyzer analyzer = new StackFrameAnalyzer(stackFrames);
             analyzer.analyzeFrames();
 
-            Map<String, ObjectInfo> objects = handleObjects(analyzer);
-            handleVariables(analyzer, objects);
+            NormalizedSnapshot snapshot = DebugSnapshotAdapter.from(analyzer);
+            try {
+                PayloadPublisher.publishObjects(snapshot.objects());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            PayloadPublisher.publishVariablesWithSnippet(new ArrayList<>(snapshot.variables()), snapshot.objects());
         }
     }
 

@@ -114,75 +114,9 @@ public class ConsoleOutputListener {
 
     /** Parses REPL JSON snapshot and publishes Variables/ObjectCards/ObjectDiagram. */
     private void publishVariablesFromSnapshot(String json) throws java.io.IOException {
-        com.google.gson.Gson g = new com.google.gson.Gson();
-        Object parsed = g.fromJson(json, Object.class);
-
-        java.util.List<?> varsList = null;
-        java.util.Map<?,?> objectsMap = null;
-
-        if (parsed instanceof java.util.List) {
-            varsList = (java.util.List<?>) parsed; // backward compatibility
-        } else if (parsed instanceof java.util.Map) {
-            java.util.Map<?,?> root = (java.util.Map<?,?>) parsed;
-            Object v = root.get("variables");
-            if (v instanceof java.util.List) varsList = (java.util.List<?>) v;
-            Object o = root.get("objects");
-            if (o instanceof java.util.Map) objectsMap = (java.util.Map<?,?>) o;
-        }
-
-        // Build objects first (for composite attribute snippet)
-        java.util.Map<String, ObjectInfo> objects = new java.util.HashMap<>();
-        if (objectsMap != null && !objectsMap.isEmpty()) {
-            for (java.util.Map.Entry<?,?> e : objectsMap.entrySet()) {
-                String id = String.valueOf(e.getKey());
-                Object val = e.getValue();
-                if (!(val instanceof java.util.Map)) continue;
-                @SuppressWarnings("unchecked")
-                java.util.Map<String, Object> om = (java.util.Map<String, Object>) val;
-                String ref = String.valueOf(om.get("ref"));
-                java.util.List<AttributeInfo> attrs = new java.util.ArrayList<>();
-                Object attrsVal = om.get("attrs");
-                if (attrsVal instanceof java.util.List) {
-                    for (Object a : (java.util.List<?>) attrsVal) {
-                        if (!(a instanceof java.util.Map)) continue;
-                        @SuppressWarnings("unchecked")
-                        java.util.Map<String,Object> am = (java.util.Map<String,Object>) a;
-                        String an = String.valueOf(am.get("name"));
-                        String at = String.valueOf(am.get("type"));
-                        String av = String.valueOf(am.get("value"));
-                        attrs.add(new AttributeInfo(an, at, av, "public"));
-                    }
-                }
-                java.util.List<String> refs = new java.util.ArrayList<>();
-                refs.add(ref);
-                objects.put(id, new ObjectInfo(refs, attrs));
-            }
-        }
-
-        // Variables payload (now that objects are available)
-        java.util.List<VariableDTO> varDtos = new java.util.ArrayList<>();
-        if (varsList != null) {
-            for (Object o : varsList) {
-                if (!(o instanceof java.util.Map)) continue;
-                @SuppressWarnings("unchecked")
-                java.util.Map<String, Object> m = (java.util.Map<String, Object>) o;
-                VariableDTO dto = new VariableDTO();
-                dto.id = String.valueOf(m.get("id"));
-                dto.names = java.util.Collections.singletonList(String.valueOf(m.get("name")));
-                dto.pyType = String.valueOf(m.get("type"));
-                dto.scope = String.valueOf(m.getOrDefault("scope", "global"));
-                ValueDTO val = new ValueDTO();
-                val.repr = String.valueOf(m.get("repr"));
-                dto.value = val;
-                varDtos.add(dto);
-            }
-            PayloadPublisher.publishVariablesWithSnippet(varDtos, objects);
-        }
-
-        // Object cards + diagram
-        if (!objects.isEmpty()) {
-            PayloadPublisher.publishObjects(objects);
-        }
+        NormalizedSnapshot snapshot = ReplSnapshotAdapter.fromJson(json);
+        PayloadPublisher.publishVariablesWithSnippet(snapshot.variables(), snapshot.objects());
+        PayloadPublisher.publishObjects(snapshot.objects());
     }
 
     /** Flushes buffer when a full snapshot line is received. */
