@@ -219,6 +219,21 @@ public class DebugServerEndpoint {
                         .ifPresent(this::sendLatest);
                 break;
             }
+            case "repl_reset": {
+                // stop REPL process and clear controller state
+                try {
+                    de.code14.edupydebugger.core.ReplManager.getInstance().stopRepl();
+                } catch (Throwable ignore) {}
+                consoleController.setProcessHandler(null);
+                // clear cached payloads
+                lastClassDiagram = null;
+                lastObjectCards  = null;
+                lastObjectDiagram= null;
+                lastVariables    = null;
+                lastCallstack    = null;
+                lastThreads      = null;
+                break;
+            }
             default:
                 LOGGER.warn("Unknown message type: " + msg.type);
         }

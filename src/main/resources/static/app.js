@@ -246,6 +246,24 @@ document.getElementById("console-input").addEventListener("keydown", function (e
     }
 });
 
+// REPL Reset button
+const resetBtn = document.getElementById('repl-reset-btn');
+if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+        sendJson('repl_reset', {});
+        // Clear client-side state immediately
+        try {
+            document.getElementById('output-container').innerHTML = '';
+            const vtbody = document.querySelector('.variables-container tbody');
+            if (vtbody) vtbody.innerHTML = '';
+            const ct = document.querySelector('.threads-container tbody');
+            if (ct) ct.innerHTML = '';
+            const slides = document.getElementById('object-slides');
+            if (slides) slides.innerHTML = '';
+        } catch (e) { console.error(e); }
+    });
+}
+
 function logToConsole(message, isPrompt = false) {
     const outputContainer = document.getElementById("output-container");
     const newEntry = document.createElement('div');

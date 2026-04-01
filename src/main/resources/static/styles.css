@@ -298,6 +298,24 @@ th, td {
     resize: vertical;
 }
 
+/* Floating REPL reset button */
+#repl-reset-btn.floating-reset {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.08);
+    color: #e0e0e0;
+    border: 1px solid rgba(255,255,255,0.15);
+    cursor: pointer;
+    backdrop-filter: blur(2px);
+}
+#repl-reset-btn.floating-reset:hover {
+    background: rgba(255,255,255,0.15);
+}
+
 #output-container {
     flex-grow: 1;
     overflow-y: auto; /* Scrollbarer Inhalt */
@@ -471,4 +489,3 @@ th, td {
     display: inline-block;
     height: auto;
 }
-
