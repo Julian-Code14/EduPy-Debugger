@@ -6,6 +6,8 @@ import com.intellij.execution.process.ProcessHandler;
 import com.intellij.openapi.diagnostic.Logger;
 import com.jetbrains.python.debugger.PyDebugProcess;
 import de.code14.edupydebugger.core.ConsoleController;
+import de.code14.edupydebugger.core.ConsoleOutputListener;
+import de.code14.edupydebugger.core.ReplManager;
 import de.code14.edupydebugger.core.DebugProcessController;
 import de.code14.edupydebugger.core.DebugSessionController;
 import de.code14.edupydebugger.server.dto.*;
@@ -77,6 +79,9 @@ public class DebugServerEndpoint {
 
     /** True while at least one session is connected. */
     private static volatile boolean isConnected = false;
+
+    /** Tracks which process handlers already have a console listener wired to avoid duplicates. */
+    private static final Set<ProcessHandler> wiredHandlers = Collections.synchronizedSet(new HashSet<>());
 
     // --- Last-known payloads for quick GET responses ---
     private static DiagramPayload    lastClassDiagram;
@@ -173,6 +178,7 @@ public class DebugServerEndpoint {
                         .orElse(null);
                 if (p != null && p.text != null) {
                     try {
+                        ensureConsoleTarget();
                         consoleController.sendInputToProcess(p.text);
                     } catch (IOException e) {
                         LOGGER.error("Error sending console input", e);
@@ -201,6 +207,29 @@ public class DebugServerEndpoint {
             }
             default:
                 LOGGER.warn("Unknown message type: " + msg.type);
+        }
+    }
+
+    /**
+     * Ensures that console input has a valid target. If no debug process is present,
+     * a lightweight Python REPL is started and its output is bridged back to the UI.
+     */
+    private static void ensureConsoleTarget() {
+        ProcessHandler current = consoleController.getProcessHandler();
+        if (current != null && !current.isProcessTerminated()) return;
+
+        try {
+            ProcessHandler repl = ReplManager.getInstance().ensureReplStarted();
+            consoleController.setProcessHandler(repl);
+            // Wire output once
+            synchronized (wiredHandlers) {
+                if (!wiredHandlers.contains(repl)) {
+                    new ConsoleOutputListener(repl).attachConsoleListeners();
+                    wiredHandlers.add(repl);
+                }
+            }
+        } catch (Exception ex) {
+            LOGGER.warn("Failed to start fallback REPL", ex);
         }
     }
 

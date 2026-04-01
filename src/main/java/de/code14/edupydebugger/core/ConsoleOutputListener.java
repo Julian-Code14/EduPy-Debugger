@@ -24,6 +24,7 @@ public class ConsoleOutputListener {
 
     private static final Logger LOGGER = Logger.getInstance(ConsoleOutputListener.class);
     private final ProcessHandler processHandler;
+    private boolean startupLineSuppressed = false;
 
     /**
      * Constructs a new listener bound to the given {@link ProcessHandler}.
@@ -46,11 +47,35 @@ public class ConsoleOutputListener {
             @Override
             public void onTextAvailable(@NotNull ProcessEvent event, @NotNull Key outputType) {
                 String text = event.getText();
+                if (shouldSuppressStartupLine(text)) {
+                    // Drop the noisy launcher command printed by the Python debugger once.
+                    startupLineSuppressed = true;
+                    LOGGER.info("Suppressed debugger startup line");
+                    return;
+                }
+
                 LOGGER.info("Console Output: " + text);
                 ConsolePayload payload = new ConsolePayload();
                 payload.text = text;
                 DebugServerEndpoint.sendDebugMessage("console", payload);
             }
         });
+    }
+
+    /**
+     * Returns true for the initial pydevd launcher command that PyCharm prints into the console, e.g.
+     * "/path/to/python .../pydev/pydevd.py --multiprocess --client 127.0.0.1 --port 51817 --file main.py".
+     * We suppress this once per process to keep the console clean.
+     */
+    private boolean shouldSuppressStartupLine(String text) {
+        if (startupLineSuppressed || text == null) return false;
+        String t = text.trim();
+        if (t.isEmpty()) return false;
+
+        // Heuristics: contains pydevd.py and typical debug args
+        boolean containsPydevd = t.contains("pydev/pydevd.py") || t.contains("pydevd.py");
+        boolean hasArg = (t.contains("--client") || t.contains("--port")) && t.contains("--file");
+        // starts with a python executable path is common, but not required for the check
+        return containsPydevd && hasArg;
     }
 }
