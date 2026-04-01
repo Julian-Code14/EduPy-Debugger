@@ -504,5 +504,5 @@ th, td {
     cursor: pointer;
 }
 .variables-container td .value-full {
-    white-space: normal;
+    white-space: nowrap;
 }

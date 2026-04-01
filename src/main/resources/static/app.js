@@ -279,6 +279,7 @@ function formatListLike(text, pyType) {
 
 function formatDict(text) {
     let inner = stripOuter(text, '{', '}');
+    if (!inner.trim()) return '{}';
     const pairs = smartSplitByComma(inner);
     const lines = [];
     for (const p of pairs) {
@@ -291,7 +292,7 @@ function formatDict(text) {
             lines.push(p.trim());
         }
     }
-    return lines.join('\n');
+    return '{\n' + lines.join('\n') + '\n}';
 }
 
 function formatFullByType(pyType, text) {
@@ -311,7 +312,7 @@ function formatCompositeFull(text) {
         let val = line.slice(idx + 1).trim();
         if (val.startsWith('{') && val.includes(':')) {
             const body = formatDict(val);
-            out.push(`${name}:\n${body}`);
+            out.push(`${name}: ${body}`);
         } else if (val.startsWith('[') || val.startsWith('(') || (val.startsWith('{') && !val.includes(':'))) {
             // Try to infer container type brackets from current value
             let typ = 'list';

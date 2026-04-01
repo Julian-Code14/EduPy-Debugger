@@ -43,7 +43,7 @@ public final class PayloadPublisher {
                     // Supply full and a shortened preview
                     dto.value.full = (dto.value.full != null && !dto.value.full.isEmpty()) ? dto.value.full : base;
                     String full = dto.value.full;
-                    dto.value.repr = (full != null && full.length() > 120) ? (full.substring(0, 120) + " [...]") : base;
+                    dto.value.repr = (full != null && full.length() > 60) ? (full.substring(0, 60) + " [...]") : base;
                 } else {
                     // Non-container primitives keep full=null and show base
                     dto.value.repr = base;
