@@ -339,4 +339,45 @@ public class VariableAnalyzerTests {
         assertEquals(1, vars.size());
         assertTrue(vars.containsKey("9"));
     }
+
+    @Test
+    public void testAnalyzeVariables_skipsUnderscoreGlobal() throws PyDebuggerException {
+        // Arrange an eval context with a local dummy and globals containing '_' and 'user'
+        PyDebugValue dummyLocal = mock(PyDebugValue.class);
+        doAnswer(invocation -> {
+            XValueChildrenList childrenList = new XValueChildrenList();
+            childrenList.add(dummyLocal);
+            invocation.getArgument(0, XCompositeNode.class).addChildren(childrenList, true);
+            return null;
+        }).when(mockStackFrame).computeChildren(any(XCompositeNode.class));
+
+        when(dummyLocal.getName()).thenReturn("dummyLocal");
+        when(dummyLocal.getType()).thenReturn("int");
+        when(dummyLocal.getValue()).thenReturn("0");
+
+        PyFrameAccessor acc = mock(PyFrameAccessor.class);
+        when(dummyLocal.getFrameAccessor()).thenReturn(acc);
+
+        when(acc.evaluate(eq("__builtins__.id(dummyLocal)"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("id", "int", null, "1", false, null, false, false, false, null, acc));
+        when(acc.evaluate(eq("locals().get('dummyLocal', None) is not None"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("isLocal", "bool", null, "true", false, null, false, false, false, null, acc));
+        when(acc.evaluate(eq("globals().get('dummyLocal', None) is not None"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("isGlobal", "bool", null, "false", false, null, false, false, false, null, acc));
+
+        // Globals contain '_' (should be skipped) and 'user' (should be included)
+        when(acc.evaluate(eq("','.join([k for k in globals().keys()])"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("globals", "str", null, "_,user", false, null, false, false, false, null, acc));
+
+        PyDebugValue userVal = new PyDebugValue("user", "int", null, "99", false, null, false, false, false, null, acc);
+        when(acc.evaluate(eq("globals().get('user', None)"), anyBoolean(), anyBoolean())).thenReturn(userVal);
+        when(acc.evaluate(eq("__builtins__.id(globals()['user'])"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("id", "int", null, "99", false, null, false, false, false, null, acc));
+
+        variableAnalyzer.analyzeVariables();
+        Map<String, List<String>> vars = variableAnalyzer.getVariables();
+        assertEquals(2, vars.size());
+        assertTrue(vars.containsKey("1")); // dummyLocal
+        assertTrue(vars.containsKey("99")); // user
+    }
 }

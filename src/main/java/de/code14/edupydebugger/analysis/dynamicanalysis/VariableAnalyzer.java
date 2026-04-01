@@ -274,6 +274,14 @@ public class VariableAnalyzer {
         if (name == null || name.isEmpty()) return true;
         // Common interpreter/debugger/system globals
         if (name.equals("__builtins__")) return true;
+        // REPL last-result variable and common interactive artifacts
+        if (name.equals("_")) return true;             // Python/REPL last expression result
+        if (name.equals("_i") || name.equals("_ii") || name.equals("_iii")) return true; // IPython history
+        if (name.startsWith("_i") && name.length() > 2) {
+            boolean digits = true; for (int i = 2; i < name.length(); i++) { if (!Character.isDigit(name.charAt(i))) { digits = false; break; } }
+            if (digits) return true; // _i42, _i123 etc.
+        }
+        if (name.equals("_ih") || name.equals("_oh") || name.equals("In") || name.equals("Out")) return true;
         // Cover debugger temp names, possibly truncated by UI into "__py_deb..."
         if (name.startsWith("__py_debug")) return true;
         if (name.startsWith("__py_deb")) return true;
