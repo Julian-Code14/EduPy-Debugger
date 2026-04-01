@@ -132,7 +132,7 @@ public class VariableAnalyzer {
                                 }
                             } else {
                                 String repr = gv.getValue();
-                                if (repr == null && isBuiltinContainerType(t)) {
+                                if ((repr == null || repr.isBlank()) && isBuiltinContainerType(t)) {
                                     // Ensure we display a value for list/set/dict/tuple when added via globals()
                                     repr = evaluateExpression(evalCtx, "repr(globals()['" + name + "'])");
                                 }
@@ -263,7 +263,7 @@ public class VariableAnalyzer {
         if (name == null || name.isEmpty()) return true;
         // Common interpreter/debugger/system globals
         if (name.equals("__builtins__")) return true;
-        if (name.startsWith("__py_debug_temp_var_")) return true;
+        if (name.startsWith("__py_debug")) return true; // cover __py_debug_temp_var_* and similar
         if (name.startsWith("_pydev_")) return true;
         // Python module-level dunders (and any other __dunder__)
         if (name.startsWith("__") && name.endsWith("__")) return true;
