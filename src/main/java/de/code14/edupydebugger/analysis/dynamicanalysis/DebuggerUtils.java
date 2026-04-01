@@ -127,10 +127,12 @@ public class DebuggerUtils {
     public static List<String> formatCallstackFrames(List<PyStackFrame> frames) {
         if (frames == null) return Collections.emptyList();
         List<String> out = new ArrayList<>();
-        for (PyStackFrame f : frames) {
+        for (int idx = 0; idx < frames.size(); idx++) {
+            PyStackFrame f = frames.get(idx);
             String base = f.getName();
             String[] holder = new String[]{base + "()"};
             CountDownLatch latch = new CountDownLatch(1);
+            final int depth = idx;
             try {
                 f.computeChildren(new XCompositeNode() {
                     @Override
@@ -138,11 +140,10 @@ public class DebuggerUtils {
                         try {
                             if (children.size() > 0 && children.getValue(0) instanceof PyDebugValue) {
                                 PyDebugValue ctx = (PyDebugValue) children.getValue(0);
-                                // Best-effort: build arg string from current frame's locals.
-                                // Skip dunders and obvious debugger names; limit output length.
-                                // Use a lambda to capture the outer locals mapping so lookups happen in the function's scope,
-                                // not the list-comprehension's inner scope (which would yield None values).
-                                String expr = "(lambda _L: ', '.join([k+'='+repr(_L.get(k, None)) for k in _L.keys() if not k.startswith('__') and not k.startswith('_pydev_') and not k.startswith('__py')]))(locals())";
+                                // Build argument string from a specific frame using sys._getframe(idx)
+                                String expr = String.format(
+                                        "(lambda _sys,_ins,_n: (lambda _f,_av: ', '.join([a+'='+repr(_av.locals.get(a, None)) for a in (list(_av.args)+([] if _av.varargs is None else [_av.varargs])+([] if _av.keywords is None else [_av.keywords])) if not a.startswith('__') and not a.startswith('_pydev_') and not a.startswith('__py')]))(_sys._getframe(_n), _ins.getargvalues(_sys._getframe(_n))))(__import__('sys'), __import__('inspect'), %d)",
+                                        depth);
                                 if ("<module>".equals(base)) {
                                     holder[0] = base + "()"; // avoid dumping module locals
                                 } else {
