@@ -105,45 +105,46 @@ public class ReplManager {
         if (replHandler == null || replHandler.isProcessTerminated() || bootstrapped) return;
         var os = replHandler.getProcessInput();
         if (os == null) return;
-        String bootstrap = String.join("\n",
-                "import json, builtins, os, sys",
-                "wd = os.environ.get('EDUPY_WORKDIR')",
-                "if wd and wd not in sys.path: sys.path.insert(0, wd)",
-                "eps = os.environ.get('EDUPY_EXTRA_PATHS','')",
-                "for p in eps.split(os.pathsep):\n    p=p.strip()\n    if p and p not in sys.path: sys.path.insert(0,p)",
-                "_EDUPY_PRIMS = {'int','float','str','bool','list','dict','tuple','set'}",
-                "def _edupy__snapshot():",
-                "    out = []",
-                "    gs = globals()",
-                "    for k,v in list(gs.items()):",
-                "        if k.startswith('_') or k in ('__name__','__builtins__'):",
-                "            continue",
-                "        try:",
-                "            t = type(v).__name__",
-                "            if t in _EDUPY_PRIMS:",
-                "                reprv = repr(v)",
-                "            else:",
-                "                attrs = []",
-                "                try:",
-                "                    for a in dir(v):",
-                "                        if a.startswith('_'): continue",
-                "                        try:",
-                "                            av = getattr(v, a)",
-                "                            s = repr(av)",
-                "                            if len(s) > 20: s = s[:20] + ' [...]'",
-                "                            attrs.append(f'{a}: {s}')",
-                "                        except Exception:",
-                "                            pass",
-                "                except Exception:",
-                "                    pass",
-                "                reprv = '\\n'.join(attrs[:10])",
-                "            out.append({'id': str(id(v)), 'name': k, 'type': t, 'repr': reprv, 'scope': 'global'})",
-                "        except Exception:",
-                "            pass",
-                "    return json.dumps(out)",
-                ""
-        ) + "\n";
-        os.write(bootstrap.getBytes());
+        // Robust one-liner using exec() to avoid interactive block/blank-line issues
+        StringBuilder sb = new StringBuilder();
+        sb.append("import json, os, sys;");
+        sb.append("wd=os.environ.get('EDUPY_WORKDIR');");
+        sb.append("sys.path.insert(0,wd) if wd and wd not in sys.path else None;");
+        sb.append("eps=os.environ.get('EDUPY_EXTRA_PATHS','');");
+        sb.append("[sys.path.insert(0,p.strip()) for p in eps.split(os.pathsep) if p.strip() and p.strip() not in sys.path];");
+        sb.append("exec(\"");
+        sb.append("def _edupy__snapshot():\\n");
+        sb.append("    out=[]\\n");
+        sb.append("    gs=globals()\\n");
+        sb.append("    for k,v in list(gs.items()):\\n");
+        sb.append("        if k.startswith('_') or k in ('__name__','__builtins__'):\\n");
+        sb.append("            continue\\n");
+        sb.append("        try:\\n");
+        sb.append("            t=type(v).__name__\\n");
+        sb.append("            if t in {'int','float','str','bool','list','dict','tuple','set'}:\\n");
+        sb.append("                reprv=repr(v)\\n");
+        sb.append("            else:\\n");
+        sb.append("                attrs=[]\\n");
+        sb.append("                try:\\n");
+        sb.append("                    for a in dir(v):\\n");
+        sb.append("                        if a.startswith('_'):\\n");
+        sb.append("                            continue\\n");
+        sb.append("                        try:\\n");
+        sb.append("                            av=getattr(v,a)\\n");
+        sb.append("                            s=repr(av)\\n");
+        sb.append("                            if len(s)>20: s=s[:20]+' [...]'\\n");
+        sb.append("                            attrs.append(f'{a}: {s}')\\n");
+        sb.append("                        except Exception:\\n");
+        sb.append("                            pass\\n");
+        sb.append("                except Exception:\\n");
+        sb.append("                    pass\\n");
+        sb.append("                reprv='\\\\n'.join(attrs[:10])\\n");
+        sb.append("            out.append({'id': str(id(v)), 'name': k, 'type': t, 'repr': reprv, 'scope': 'global'})\\n");
+        sb.append("        except Exception:\\n");
+        sb.append("            pass\\n");
+        sb.append("    return json.dumps(out)\\n");
+        sb.append("\")\n");
+        os.write(sb.toString().getBytes());
         os.flush();
         bootstrapped = true;
     }
