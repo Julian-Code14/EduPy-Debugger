@@ -135,10 +135,10 @@ public class DebugServerEndpoint {
     // ======================================================================
 
     /**
-     * Dispatches all inbound JSON messages by {@code type}. Invalid or non-JSON messages are ignored.
-     *
-     * @param message the raw text frame
-     * @param session the sender session
+     * Dispatches all inbound JSON messages by {@code type}.
+     * <p>
+     * Parsing and light validation is delegated to {@code server.validation.DebugMessageValidator}
+     * to keep this method focused on behavior. Invalid or non‑JSON messages are ignored.
      */
     @OnMessage
     public void onMessage(String message, Session session) {

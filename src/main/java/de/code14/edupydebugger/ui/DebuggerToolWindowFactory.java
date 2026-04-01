@@ -108,7 +108,9 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
 
     /**
      * Disposes the JBCefBrowser when the tool window is no longer needed.
-     * This method is typically called when the project is closed.
+     * <p>
+     * Defensive and side‑effect free: ignores disposal issues so IDE shutdown stays quiet.
+     * No‑op when the browser was never initialized.
      */
     public static void closeJBCefBrowser() {
         if (jbCefBrowser != null) {
@@ -132,8 +134,7 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
     }
 
     /**
-     * Reloads the EduPy Debugger interface in the JBCefBrowser.
-     * This method is typically used to refresh the content displayed in the tool window.
+     * Reloads the EduPy Debugger interface if the browser exists (no‑op otherwise).
      */
     public static void reloadEduPyDebugger() {
         if (jbCefBrowser != null) {
