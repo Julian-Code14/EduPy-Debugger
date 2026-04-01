@@ -1,4 +1,4 @@
-package de.code14.edupydebugger.core;
+package de.code14.edupydebugger.core.snapshot;
 
 import com.google.gson.Gson;
 import de.code14.edupydebugger.analysis.dynamicanalysis.AttributeInfo;
@@ -8,9 +8,7 @@ import de.code14.edupydebugger.server.dto.VariableDTO;
 
 import java.util.*;
 
-/**
- * Parses the REPL JSON snapshot (variables + objects) into a normalized snapshot.
- */
+/** Parses the REPL JSON snapshot (variables + objects) into a normalized snapshot. */
 public final class ReplSnapshotAdapter {
     private ReplSnapshotAdapter() {}
 
@@ -52,7 +50,6 @@ public final class ReplSnapshotAdapter {
         return new NormalizedSnapshot(varDtos, objects);
     }
 
-    /** Extract building of the objects map to keep fromJson focused. */
     private static Map<String,ObjectInfo> parseObjects(Map<?,?> objectsMap) {
         Map<String,ObjectInfo> objects = new HashMap<>();
         if (objectsMap == null) return objects;
@@ -83,3 +80,4 @@ public final class ReplSnapshotAdapter {
         return objects;
     }
 }
+

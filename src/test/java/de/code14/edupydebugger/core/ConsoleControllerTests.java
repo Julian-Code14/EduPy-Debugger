@@ -1,5 +1,7 @@
 package de.code14.edupydebugger.core;
 
+import de.code14.edupydebugger.core.console.ConsoleController;
+
 import com.intellij.execution.process.ProcessHandler;
 import org.junit.Before;
 import org.junit.Test;

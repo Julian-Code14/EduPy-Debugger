@@ -12,7 +12,7 @@ import de.code14.edupydebugger.server.DebugWebSocketServer;
 import org.jetbrains.annotations.NotNull;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import de.code14.edupydebugger.core.ReplManager;
+import de.code14.edupydebugger.core.repl.ReplManager;
 import com.jetbrains.python.sdk.PythonSdkUtil;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.module.ModuleManager;

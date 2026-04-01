@@ -11,6 +11,7 @@ import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebuggerManagerListener;
 import com.jetbrains.python.debugger.PyDebugProcess;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
+import de.code14.edupydebugger.core.console.ConsoleOutputListener;
 import de.code14.edupydebugger.server.DebugWebServer;
 import de.code14.edupydebugger.server.DebugWebSocketServer;
 import de.code14.edupydebugger.ui.DebuggerToolWindowFactory;

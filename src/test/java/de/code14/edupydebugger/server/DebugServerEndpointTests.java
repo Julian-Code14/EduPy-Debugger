@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.intellij.execution.process.ProcessHandler;
 import com.jetbrains.python.debugger.PyDebugProcess;
-import de.code14.edupydebugger.core.ConsoleController;
+import de.code14.edupydebugger.core.console.ConsoleController;
 import de.code14.edupydebugger.core.DebugProcessController;
 import de.code14.edupydebugger.server.dto.CallstackPayload;
 import de.code14.edupydebugger.server.dto.DebugMessage;
