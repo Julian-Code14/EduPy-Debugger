@@ -261,4 +261,69 @@ public class DebugServerEndpointTests {
         assertNotNull(msg.payload);
         assertEquals(Arrays.asList("f1", "f2"), msg.payload.frames);
     }
+
+    @Test
+    public void testOnMessage_withInvalidJson_isIgnored() throws Exception {
+        DebugServerEndpoint ep = new DebugServerEndpoint();
+        when(mockSession.getBasicRemote()).thenReturn(mockBasicRemote);
+        ep.onOpen(mockSession);
+
+        // Ungültige JSON-Nachricht
+        ep.onMessage("not a json", mockSession);
+
+        // Keine Aussendung erwartet
+        verify(mockBasicRemote, never()).sendText(anyString());
+    }
+
+    @Test
+    public void testOnMessage_unknownType_doesNotSend() throws Exception {
+        DebugServerEndpoint ep = new DebugServerEndpoint();
+        when(mockSession.getBasicRemote()).thenReturn(mockBasicRemote);
+        ep.onOpen(mockSession);
+
+        ep.onMessage("{\"type\":\"unknown\",\"payload\":{}}", mockSession);
+
+        verify(mockBasicRemote, never()).sendText(anyString());
+    }
+
+    @Test
+    public void testGet_unknownResource_doesNotSend() throws Exception {
+        DebugServerEndpoint ep = new DebugServerEndpoint();
+        when(mockSession.getBasicRemote()).thenReturn(mockBasicRemote);
+        ep.onOpen(mockSession);
+
+        ep.onMessage("{\"type\":\"get\",\"payload\":{\"resource\":\"does_not_exist\"}}", mockSession);
+
+        verify(mockBasicRemote, never()).sendText(anyString());
+    }
+
+    @Test
+    public void testQueuedMessagesAreFlushedOnOpen() throws Exception {
+        // Noch nicht verbunden → Nachrichten gehen in die Queue
+        DebugServerEndpoint.publishClassDiagram("AAA");
+        DebugServerEndpoint.publishObjectDiagram("BBB");
+
+        DebugServerEndpoint ep = new DebugServerEndpoint();
+        when(mockSession.getBasicRemote()).thenReturn(mockBasicRemote);
+
+        ArgumentCaptor<String> cap = ArgumentCaptor.forClass(String.class);
+        doNothing().when(mockBasicRemote).sendText(cap.capture());
+
+        // Verbindet und flush't Queue
+        ep.onOpen(mockSession);
+
+        // Zwei Nachrichten erwartet
+        verify(mockBasicRemote, times(2)).sendText(anyString());
+
+        List<String> sent = cap.getAllValues();
+        assertEquals(2, sent.size());
+
+        // Typen prüfen (Reihenfolge gemäß Publizierung)
+        Type t = new TypeToken<DebugMessage<Map<String, Object>>>(){}.getType();
+        DebugMessage<Map<String, Object>> m1 = gson.fromJson(sent.get(0), t);
+        DebugMessage<Map<String, Object>> m2 = gson.fromJson(sent.get(1), t);
+
+        assertEquals("class_diagram", m1.type);
+        assertEquals("object_diagram", m2.type);
+    }
 }

@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 
@@ -63,5 +64,31 @@ public class DebugWebServerTests {
 
         // Verify that server.start() is called only once
         verify(mockHttpServer, times(1)).start();
+    }
+
+    @Test
+    public void testStopWebServerWhenNotRunning() {
+        // Server wurde nie gestartet → sollte nichts tun
+        webServer.stopWebServer();
+
+        // shutdownNow darf nicht aufgerufen werden
+        verify(mockHttpServer, never()).shutdownNow();
+        assertFalse(webServer.isRunning());
+    }
+
+    @Test
+    public void testStartWebServerFailureDoesNotSetRunning() throws Exception {
+        // start() wirft Exception → im IntelliJ-Testumfeld führt LOGGER.error zu AssertionError
+        doThrow(new RuntimeException("boom")).when(mockHttpServer).start();
+
+        try {
+            webServer.startWebServer();
+            fail("AssertionError expected due to Logger.error");
+        } catch (AssertionError expected) {
+            // erwartet: Logger.error signalisiert Fehler als AssertionError
+        }
+
+        verify(mockHttpServer, times(1)).start();
+        assertFalse(webServer.isRunning());
     }
 }
