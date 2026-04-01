@@ -46,18 +46,7 @@ public class DebugSessionController {
         add("dict"); add("tuple"); add("set");
     }};
 
-    /**
-     * Performs a dynamic analysis of the current debugging session.
-     * <p>
-     * The method inspects all threads and their corresponding stack frames to identify
-     * suspended states. It analyzes the most relevant thread (either the selected one
-     * or the first suspended thread) and publishes the resulting call stack, variables,
-     * and object diagrams to the frontend.
-     *
-     * @param selectedThread the name of the thread to analyze; if {@code null},
-     *                       the first suspended thread will be used instead
-     * @throws IOException if an error occurs during diagram generation or file processing
-     */
+    
     /**
      * Performs dynamic analysis for the selected (or first suspended) thread and publishes
      * results to the frontend. If the debug process is not yet available (e.g. very early

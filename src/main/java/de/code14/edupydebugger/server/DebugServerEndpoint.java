@@ -202,9 +202,8 @@ public class DebugServerEndpoint {
             }
             case "thread_selected": {
                 // payload: { "name": "Thread-1" } | empty -> null
-                String name = DebugMessageValidator
+                selectedThread = DebugMessageValidator
                         .extractSelectedThread(msg.payload, GSON);
-                selectedThread = name;
                 try {
                     debugSessionController.performDynamicAnalysis(selectedThread);
                 } catch (IOException e) {
