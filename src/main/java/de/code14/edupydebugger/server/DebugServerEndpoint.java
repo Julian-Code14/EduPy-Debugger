@@ -13,6 +13,8 @@ import jakarta.servlet.annotation.WebListener;
 import jakarta.websocket.*;
 import jakarta.websocket.server.ServerEndpoint;
 
+import de.code14.edupydebugger.server.validation.DebugMessageValidator;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
@@ -158,7 +160,7 @@ public class DebugServerEndpoint {
         switch (msg.type) {
             case "action": {
                 // payload: { "command": "resume|pause|step-over|step-into|step-out" }
-                String command = de.code14.edupydebugger.server.validation.DebugMessageValidator
+                String command = DebugMessageValidator
                         .extractActionCommand(msg.payload, GSON)
                         .orElse(null);
                 handleAction(command);
@@ -166,7 +168,7 @@ public class DebugServerEndpoint {
             }
             case "console_input": {
                 // payload: { "text": "..." }
-                ConsolePayload p = de.code14.edupydebugger.server.validation.DebugMessageValidator
+                ConsolePayload p = DebugMessageValidator
                         .extractConsoleInput(msg.payload, GSON)
                         .orElse(null);
                 if (p != null && p.text != null) {
@@ -180,7 +182,7 @@ public class DebugServerEndpoint {
             }
             case "thread_selected": {
                 // payload: { "name": "Thread-1" } | empty -> null
-                String name = de.code14.edupydebugger.server.validation.DebugMessageValidator
+                String name = DebugMessageValidator
                         .extractSelectedThread(msg.payload, GSON);
                 selectedThread = name;
                 try {
@@ -192,7 +194,7 @@ public class DebugServerEndpoint {
             }
             case "get": {
                 // payload: { "resource": "variables|object_cards|class_diagram|object_diagram|callstack|threads" }
-                de.code14.edupydebugger.server.validation.DebugMessageValidator
+                DebugMessageValidator
                         .extractGetResource(msg.payload, GSON)
                         .ifPresent(this::sendLatest);
                 break;
