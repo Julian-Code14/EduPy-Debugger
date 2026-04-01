@@ -239,8 +239,9 @@ public class DebuggerUtils {
                     @Override public void setErrorMessage(@NotNull String errorMessage, @org.jetbrains.annotations.Nullable XDebuggerTreeNodeHyperlink link) { if (latch.getCount() > 0) latch.countDown(); }
                     @Override public void setMessage(@NotNull String message, @org.jetbrains.annotations.Nullable javax.swing.Icon icon, @NotNull SimpleTextAttributes attributes, @org.jetbrains.annotations.Nullable XDebuggerTreeNodeHyperlink link) {}
                 });
-                // Wait briefly to avoid blocking tests when mocks don't call back
-                latch.await(50, TimeUnit.MILLISECONDS);
+                // Wait a little longer to reliably receive children in real sessions
+                // (still bounded to keep tests fast when mocks don't call back)
+                latch.await(250, TimeUnit.MILLISECONDS);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             } catch (Throwable t) {
