@@ -250,5 +250,7 @@ tasks {
     /* ------------------------ IDE-Run-Task --------------------------- */
     runIde {
         jvmArgs = listOf("--add-exports", "java.base/jdk.internal.vm=ALL-UNNAMED")
+        // Reduce platform noise during development runs; keeps plugin warnings/errors visible
+        systemProperty("idea.log.level", "ERROR")
     }
 }
