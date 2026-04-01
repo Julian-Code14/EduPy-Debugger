@@ -274,8 +274,12 @@ public class VariableAnalyzer {
         if (name == null || name.isEmpty()) return true;
         // Common interpreter/debugger/system globals
         if (name.equals("__builtins__")) return true;
-        if (name.startsWith("__py_debug")) return true; // cover __py_debug_temp_var_* and similar
+        // Cover debugger temp names, possibly truncated by UI into "__py_deb..."
+        if (name.startsWith("__py_debug")) return true;
+        if (name.startsWith("__py_deb")) return true;
+        if (name.startsWith("__py_")) return true;
         if (name.startsWith("_pydev_")) return true;
+        if (name.startsWith("__pydev")) return true;
         // Python module-level dunders (and any other __dunder__)
         if (name.startsWith("__") && name.endsWith("__")) return true;
         // Explicit allowlist skip for well-known module attrs

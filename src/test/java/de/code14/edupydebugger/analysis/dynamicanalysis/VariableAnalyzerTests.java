@@ -317,7 +317,7 @@ public class VariableAnalyzerTests {
             return null;
         }).when(mockStackFrame).computeChildren(any(XCompositeNode.class));
 
-        when(sys.getName()).thenReturn("__py_debug_temp_var_42");
+        when(sys.getName()).thenReturn("__py_deb..."); // truncated style name
         when(sys.getType()).thenReturn("int");
         when(sys.getValue()).thenReturn("123");
 
