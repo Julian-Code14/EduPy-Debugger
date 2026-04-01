@@ -1,6 +1,6 @@
 package de.code14.edupydebugger.server;
 
-import de.code14.edupydebugger.core.ReplManager;
+import de.code14.edupydebugger.core.repl.ReplManager;
 import jakarta.websocket.Session;
 import org.junit.Before;
 import org.junit.Test;
@@ -93,4 +93,3 @@ public class DebugServerEndpointReplTests {
         }
     }
 }
-

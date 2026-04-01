@@ -1,4 +1,4 @@
-package de.code14.edupydebugger.core;
+package de.code14.edupydebugger.core.repl;
 
 import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.execution.process.OSProcessHandler;
@@ -8,12 +8,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Manages a lightweight fallback Python REPL (outside of a debug session).
- * If the user types into the console without an active debug process, we
- * start a plain Python interpreter and wire its IO into the existing console
- * bridge so the UX behaves like a minimal REPL.
- */
+/** Lightweight Python REPL manager used when no debug session is active. */
 public class ReplManager {
 
     private static final Logger LOGGER = Logger.getInstance(ReplManager.class);
@@ -23,35 +18,21 @@ public class ReplManager {
     private boolean bootstrapped;
     private String workingDirectory;
     private List<String> extraPaths = new ArrayList<>();
-    private String interpreterPath; // optional: project interpreter
+    private String interpreterPath;
 
-    public static ReplManager getInstance() {
-        return INSTANCE;
-    }
+    public static ReplManager getInstance() { return INSTANCE; }
 
-    /**
-     * Ensures a REPL process is running and returns its ProcessHandler.
-     * Tries "python3" first, then "python".
-     */
     public synchronized ProcessHandler ensureReplStarted() throws Exception {
-        if (replHandler != null && !replHandler.isProcessTerminated()) {
-            return replHandler;
-        }
-
+        if (replHandler != null && !replHandler.isProcessTerminated()) return replHandler;
         List<String> cmd = new ArrayList<>();
         String executable = interpreterPath != null ? interpreterPath : "python3";
         try {
-            // prefer python3 if available
-            // if no explicit interpreter set, try python3 else python
-            cmd.add(executable);
-            cmd.add("-i"); // interactive
-            cmd.add("-q"); // quiet banner
+            cmd.add(executable); cmd.add("-i"); cmd.add("-q");
             GeneralCommandLine gcl = new GeneralCommandLine(cmd);
             if (workingDirectory != null) gcl.withWorkDirectory(workingDirectory);
             gcl.withEnvironment("PYTHONUNBUFFERED", "1");
             if (workingDirectory != null) {
                 gcl.withEnvironment("EDUPY_WORKDIR", workingDirectory);
-                // prepend to PYTHONPATH if present
                 String existing = System.getenv("PYTHONPATH");
                 String pp = buildPythonPath(existing);
                 gcl.withEnvironment("PYTHONPATH", pp);
@@ -61,12 +42,9 @@ public class ReplManager {
             replHandler.startNotify();
             LOGGER.info("Started fallback REPL using '" + executable + "'");
         } catch (Throwable primary) {
-            // retry with python
             cmd.clear();
             executable = interpreterPath != null ? interpreterPath : "python";
-            cmd.add(executable);
-            cmd.add("-i");
-            cmd.add("-q");
+            cmd.add(executable); cmd.add("-i"); cmd.add("-q");
             GeneralCommandLine gcl2 = new GeneralCommandLine(cmd);
             if (workingDirectory != null) gcl2.withWorkDirectory(workingDirectory);
             gcl2.withEnvironment("PYTHONUNBUFFERED", "1");
@@ -86,25 +64,17 @@ public class ReplManager {
         return replHandler;
     }
 
-    /** Stops the REPL if it is running. */
     public synchronized void stopRepl() {
         if (replHandler != null) {
-            try {
-                replHandler.destroyProcess();
-            } catch (Throwable t) {
-                // ignore; best-effort
-            } finally {
-                replHandler = null;
-                bootstrapped = false;
+            try { replHandler.destroyProcess(); } catch (Throwable ignore) {} finally {
+                replHandler = null; bootstrapped = false;
             }
         }
     }
 
-    /** Injects helper functions into the REPL to snapshot variables as JSON. */
     public synchronized void ensureBootstrapInjected() throws Exception {
         if (replHandler == null || replHandler.isProcessTerminated() || bootstrapped) return;
         var os = replHandler.getProcessInput();
-        // Robust one-liner using exec() to avoid interactive block/blank-line issues
         String sb =
                 "import json, os, sys;exec(\"" +
                 "def __edupy_bootstrap():\\n" +
@@ -135,7 +105,6 @@ public class ReplManager {
                 "                vars_out.append({'id': str(id(v)), 'name': k, 'type': t, 'repr': _safe_repr(v), 'scope': 'global'})\\n" +
                 "            else:\\n" +
                 "                oid=ensure_obj(v, f'{k}: {t}')\\n" +
-                "                # attributes (best-effort)\\n" +
                 "                try:\\n" +
                 "                    for a in dir(v):\\n" +
                 "                        if a.startswith('_'):\\n                            continue\\n" +
@@ -159,7 +128,6 @@ public class ReplManager {
         bootstrapped = true;
     }
 
-    /** Requests a variables snapshot from the REPL (parsed by the Java side via ConsoleOutputListener). */
     public synchronized void requestSnapshot() throws Exception {
         if (replHandler == null || replHandler.isProcessTerminated()) return;
         ensureBootstrapInjected();
@@ -169,15 +137,9 @@ public class ReplManager {
         os.flush();
     }
 
-    /** Sets the working directory used for the REPL process and PYTHONPATH. */
-    public synchronized void setWorkingDirectory(String workingDirectory) {
-        this.workingDirectory = workingDirectory;
-    }
-
-    /** Additional project source roots that should be importierbar. */
-    public synchronized void setExtraPythonPaths(List<String> paths) {
-        this.extraPaths = new ArrayList<>(paths != null ? paths : List.of());
-    }
+    public synchronized void setWorkingDirectory(String workingDirectory) { this.workingDirectory = workingDirectory; }
+    public synchronized void setExtraPythonPaths(List<String> paths) { this.extraPaths = new ArrayList<>(paths != null ? paths : List.of()); }
+    public synchronized void setInterpreterPath(String interpreterPath) { this.interpreterPath = interpreterPath; }
 
     private String buildPythonPath(String existing) {
         String sep = java.io.File.pathSeparator;
@@ -194,9 +156,5 @@ public class ReplManager {
         for (String p : extraPaths) joiner.add(p);
         return joiner.toString();
     }
-
-    /** Use an explicit interpreter (e.g., project SDK/venv python). */
-    public synchronized void setInterpreterPath(String interpreterPath) {
-        this.interpreterPath = interpreterPath;
-    }
 }
+

@@ -1,5 +1,7 @@
 package de.code14.edupydebugger.core;
 
+import de.code14.edupydebugger.core.console.ConsoleOutputListener;
+
 import de.code14.edupydebugger.server.DebugServerEndpoint;
 import de.code14.edupydebugger.server.dto.ObjectCardPayload;
 import de.code14.edupydebugger.server.dto.VariablesPayload;
