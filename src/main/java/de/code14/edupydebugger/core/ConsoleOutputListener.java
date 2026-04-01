@@ -121,38 +121,9 @@ public class ConsoleOutputListener {
             if (o instanceof java.util.Map) objectsMap = (java.util.Map<?,?>) o;
         }
 
-        // Variables payload
-        if (varsList != null) {
-            de.code14.edupydebugger.server.dto.VariablesPayload payload =
-                    new de.code14.edupydebugger.server.dto.VariablesPayload(new java.util.ArrayList<>());
-            for (Object o : varsList) {
-                if (!(o instanceof java.util.Map)) continue;
-                @SuppressWarnings("unchecked")
-                java.util.Map<String, Object> m = (java.util.Map<String, Object>) o;
-                de.code14.edupydebugger.server.dto.VariableDTO dto = new de.code14.edupydebugger.server.dto.VariableDTO();
-                dto.id = String.valueOf(m.get("id"));
-                dto.names = java.util.Collections.singletonList(String.valueOf(m.get("name")));
-                dto.pyType = String.valueOf(m.get("type"));
-                dto.scope = String.valueOf(m.getOrDefault("scope", "global"));
-
-                de.code14.edupydebugger.server.dto.ValueDTO val = new de.code14.edupydebugger.server.dto.ValueDTO();
-                java.util.Set<String> prim = new java.util.HashSet<>(java.util.Arrays.asList(
-                        "int","float","str","bool","list","dict","tuple","set"));
-                if (prim.contains(dto.pyType)) {
-                    val.kind = "primitive";
-                } else {
-                    val.kind = "composite";
-                }
-                val.repr = String.valueOf(m.get("repr"));
-                dto.value = val;
-                payload.variables.add(dto);
-            }
-            DebugServerEndpoint.publishVariables(payload);
-        }
-
-        // Object cards + diagram
+        // Build objects first (for composite attribute snippet)
+        java.util.Map<String, de.code14.edupydebugger.analysis.dynamicanalysis.ObjectInfo> objects = new java.util.HashMap<>();
         if (objectsMap != null && !objectsMap.isEmpty()) {
-            java.util.Map<String, de.code14.edupydebugger.analysis.dynamicanalysis.ObjectInfo> objects = new java.util.HashMap<>();
             for (java.util.Map.Entry<?,?> e : objectsMap.entrySet()) {
                 String id = String.valueOf(e.getKey());
                 Object val = e.getValue();
@@ -177,7 +148,50 @@ public class ConsoleOutputListener {
                 refs.add(ref);
                 objects.put(id, new de.code14.edupydebugger.analysis.dynamicanalysis.ObjectInfo(refs, attrs));
             }
+        }
 
+        // Variables payload (now that objects are available)
+        if (varsList != null) {
+            de.code14.edupydebugger.server.dto.VariablesPayload payload =
+                    new de.code14.edupydebugger.server.dto.VariablesPayload(new java.util.ArrayList<>());
+            for (Object o : varsList) {
+                if (!(o instanceof java.util.Map)) continue;
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> m = (java.util.Map<String, Object>) o;
+                de.code14.edupydebugger.server.dto.VariableDTO dto = new de.code14.edupydebugger.server.dto.VariableDTO();
+                dto.id = String.valueOf(m.get("id"));
+                dto.names = java.util.Collections.singletonList(String.valueOf(m.get("name")));
+                dto.pyType = String.valueOf(m.get("type"));
+                dto.scope = String.valueOf(m.getOrDefault("scope", "global"));
+
+                de.code14.edupydebugger.server.dto.ValueDTO val = new de.code14.edupydebugger.server.dto.ValueDTO();
+                java.util.Set<String> prim = new java.util.HashSet<>(java.util.Arrays.asList(
+                        "int","float","str","bool","list","dict","tuple","set"));
+                if (prim.contains(dto.pyType)) {
+                    val.kind = "primitive";
+                    val.repr = String.valueOf(m.get("repr"));
+                } else {
+                    val.kind = "composite";
+                    // Compact attribute snippet for table from objects map
+                    de.code14.edupydebugger.analysis.dynamicanalysis.ObjectInfo info = objects.get(dto.id);
+                    StringBuilder sb = new StringBuilder();
+                    if (info != null) {
+                        for (de.code14.edupydebugger.analysis.dynamicanalysis.AttributeInfo a : info.attributes()) {
+                            String shown = a.value();
+                            if (shown.length() > 20) shown = shown.substring(0, 20) + " [...]";
+                            sb.append(a.name()).append(": ").append(shown).append("\n");
+                        }
+                    }
+                    val.repr = sb.toString().trim();
+                }
+                dto.value = val;
+                payload.variables.add(dto);
+            }
+            DebugServerEndpoint.publishVariables(payload);
+        }
+
+        // Object cards + diagram
+        if (!objects.isEmpty()) {
             java.util.Map<String,String> cards = de.code14.edupydebugger.diagram.ObjectDiagramParser.generateObjectCards(objects);
             de.code14.edupydebugger.server.dto.ObjectCardPayload oc = new de.code14.edupydebugger.server.dto.ObjectCardPayload();
             oc.cards = new java.util.ArrayList<>();

@@ -108,10 +108,14 @@ public class ReplManager {
         // Robust one-liner using exec() to avoid interactive block/blank-line issues
         StringBuilder sb = new StringBuilder();
         sb.append("import json, os, sys;exec(\"");
-        sb.append("wd = os.environ.get('EDUPY_WORKDIR')\\n");
-        sb.append("if wd and wd not in sys.path: sys.path.insert(0, wd)\\n");
-        sb.append("eps = os.environ.get('EDUPY_EXTRA_PATHS','')\\n");
-        sb.append("for p in eps.split(os.pathsep):\\n    p = p.strip()\\n    if p and p not in sys.path: sys.path.insert(0, p)\\n");
+        sb.append("def __edupy_bootstrap():\\n");
+        sb.append("    wd = os.environ.get('EDUPY_WORKDIR')\\n");
+        sb.append("    if wd and wd not in sys.path: sys.path.insert(0, wd)\\n");
+        sb.append("    eps = os.environ.get('EDUPY_EXTRA_PATHS','')\\n");
+        sb.append("    for p in eps.split(os.pathsep):\\n        p = p.strip()\\n        if p and p not in sys.path: sys.path.insert(0, p)\\n");
+        sb.append("    try:\\n        sys.ps1=''\\n        sys.ps2=''\\n    except Exception:\\n        pass\\n");
+        sb.append("__edupy_bootstrap()\\n");
+        sb.append("del __edupy_bootstrap\\n");
         sb.append("def _is_primitive(obj):\\n    return type(obj).__name__ in {'int','float','str','bool','list','dict','tuple','set'}\\n");
         sb.append("def _is_noise(obj):\\n    tn=type(obj).__name__\\n    return tn in {'module','function','builtin_function_or_method','method','type'} or callable(obj)\\n");
         sb.append("def _safe_repr(v):\\n    try:\\n        s=repr(v)\\n        return s if len(s)<=120 else s[:120]+' [...]'\\n    except Exception:\\n        return '<error>'\\n");
