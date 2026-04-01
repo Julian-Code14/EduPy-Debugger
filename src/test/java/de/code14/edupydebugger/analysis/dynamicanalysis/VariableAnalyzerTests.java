@@ -185,8 +185,8 @@ public class VariableAnalyzerTests {
                 .thenReturn(new PyDebugValue("isGlobal", "bool", null, "false", false, null, false, false, false, null, mockAccessor));
 
         // Global enrichment: globals list contains 'g' and a built-in-like name that should be skipped
-        when(mockAccessor.evaluate(eq("list(globals().keys())"), anyBoolean(), anyBoolean()))
-                .thenReturn(new PyDebugValue("globals", "list", null, "['g', '__name__']", false, null, false, false, false, null, mockAccessor));
+        when(mockAccessor.evaluate(eq("','.join([k for k in globals().keys()])"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("globals", "str", null, "g,__name__", false, null, false, false, false, null, mockAccessor));
 
         // Evaluate global 'g'
         PyDebugValue gVal = new PyDebugValue("g", "int", null, "7", false, null, false, false, false, null, mockAccessor);
@@ -236,9 +236,9 @@ public class VariableAnalyzerTests {
                 .thenReturn(new PyDebugValue("isGlobal", "bool", null, "false", false, null, false, false, false, null, acc));
 
         // globals list includes various system names that must be skipped
-        when(acc.evaluate(eq("list(globals().keys())"), anyBoolean(), anyBoolean()))
-                .thenReturn(new PyDebugValue("globals", "list", null,
-                        "['__name__', '__file__', '__package__', '__loader__', '__doc__', '__builtins__', '__py_debug_temp_var_123', 'user']",
+        when(acc.evaluate(eq("','.join([k for k in globals().keys()])"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("globals", "str", null,
+                        "__name__,__file__,__package__,__loader__,__doc__,__builtins__,__py_debug_temp_var_123,user",
                         false, null, false, false, false, null, acc));
 
         // user is a real global to be included
@@ -254,5 +254,53 @@ public class VariableAnalyzerTests {
         assertEquals(2, vars.size());
         assertTrue(vars.containsKey("1"));
         assertTrue(vars.containsKey("99"));
+    }
+
+    @Test
+    public void testAnalyzeVariables_globalsContainersHaveReprWhenPausedLocally() throws PyDebuggerException {
+        // Arrange an eval context
+        doAnswer(invocation -> {
+            XValueChildrenList childrenList = new XValueChildrenList();
+            childrenList.add(mockValue);
+            invocation.getArgument(0, XCompositeNode.class).addChildren(childrenList, true);
+            return null;
+        }).when(mockStackFrame).computeChildren(any(XCompositeNode.class));
+
+        when(mockValue.getName()).thenReturn("local");
+        when(mockValue.getType()).thenReturn("int");
+        when(mockValue.getValue()).thenReturn("0");
+
+        PyFrameAccessor acc = mock(PyFrameAccessor.class);
+        when(mockValue.getFrameAccessor()).thenReturn(acc);
+
+        when(acc.evaluate(eq("__builtins__.id(local)"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("id", "int", null, "10", false, null, false, false, false, null, acc));
+        when(acc.evaluate(eq("locals().get('local', None) is not None"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("isLocal", "bool", null, "true", false, null, false, false, false, null, acc));
+        when(acc.evaluate(eq("globals().get('local', None) is not None"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("isGlobal", "bool", null, "false", false, null, false, false, false, null, acc));
+
+        when(acc.evaluate(eq("','.join([k for k in globals().keys()])"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("globals", "str", null, "nums", false, null, false, false, false, null, acc));
+
+        PyDebugValue gv = new PyDebugValue("nums", "list", null, null, false, null, false, false, false, null, acc);
+        when(acc.evaluate(eq("globals().get('nums', None)"), anyBoolean(), anyBoolean())).thenReturn(gv);
+        when(acc.evaluate(eq("__builtins__.id(globals()['nums'])"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("id", "int", null, "555", false, null, false, false, false, null, acc));
+        when(acc.evaluate(eq("repr(globals()['nums'])"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("repr", "str", null, "[1, 2, 3]", false, null, false, false, false, null, acc));
+
+        variableAnalyzer.analyzeVariables();
+        Map<String, List<String>> vars = variableAnalyzer.getVariables();
+        String idForNums = null;
+        for (Map.Entry<String, List<String>> e : vars.entrySet()) {
+            if (e.getValue() != null && !e.getValue().isEmpty() && e.getValue().get(0).contains("nums")) {
+                idForNums = e.getKey();
+                break;
+            }
+        }
+        assertNotNull(idForNums);
+        assertEquals("[1, 2, 3]", vars.get(idForNums).get(2).replace("~", ", "));
+        assertEquals("global", vars.get(idForNums).get(3));
     }
 }

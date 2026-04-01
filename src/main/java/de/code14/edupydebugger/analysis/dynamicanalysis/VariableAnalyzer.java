@@ -96,7 +96,11 @@ public class VariableAnalyzer {
                 // Best-effort: only when we have an evaluation context
                 if (evalCtx != null) {
                     try {
-                        List<String> globalNames = parsePythonList(evaluateExpression(evalCtx, "list(globals().keys())"));
+                        // Prefer a CSV join to avoid bracket parsing issues; fall back to list() repr when empty
+                        String joined = evaluateExpression(evalCtx, "','.join([k for k in globals().keys()])");
+                        List<String> globalNames = joined != null && !joined.isEmpty()
+                                ? parseCsvNames(joined)
+                                : parsePythonList(evaluateExpression(evalCtx, "list(globals().keys())"));
                         for (String rawName : globalNames) {
                             String name = rawName.replace("'", "").trim();
                             if (name.isEmpty()) continue;
@@ -104,7 +108,7 @@ public class VariableAnalyzer {
 
                             // Evaluate the global value itself for type and repr
                             PyDebugValue gv = evaluateExpressionValue(evalCtx, "globals().get('" + name + "', None)");
-                            if (gv == null || gv.getValue() == null) continue;
+                            if (gv == null) continue;
 
                             // Skip noisy entries that are not user variables
                             String t = gv.getType();
@@ -127,10 +131,16 @@ public class VariableAnalyzer {
                                     }
                                 }
                             } else {
+                                String repr = gv.getValue();
+                                if (repr == null && isBuiltinContainerType(t)) {
+                                    // Ensure we display a value for list/set/dict/tuple when added via globals()
+                                    repr = evaluateExpression(evalCtx, "repr(globals()['" + name + "'])");
+                                }
+                                if (repr == null) repr = "";
                                 variables.put(id, new ArrayList<>(Arrays.asList(
                                         name,
                                         t,
-                                        Objects.requireNonNull(gv.getValue()).replace(", ", "~"),
+                                        repr.replace(", ", "~"),
                                         "global"
                                 )));
                             }
@@ -235,6 +245,17 @@ public class VariableAnalyzer {
         return items;
     }
 
+    /** Parses a comma-separated string of names into a list (used for globals join). */
+    private List<String> parseCsvNames(String csv) {
+        List<String> out = new ArrayList<>();
+        if (csv == null || csv.isEmpty()) return out;
+        for (String s : csv.split(",")) {
+            String t = s.trim();
+            if (!t.isEmpty()) out.add(t);
+        }
+        return out;
+    }
+
     /**
      * Returns true if a global name should be excluded from the variables table (system/dunder/debug temp names).
      */
@@ -250,6 +271,10 @@ public class VariableAnalyzer {
         Set<String> known = Set.of("__name__", "__file__", "__package__", "__loader__", "__spec__", "__doc__", "__cached__");
         if (known.contains(name)) return true;
         return false;
+    }
+
+    private boolean isBuiltinContainerType(String t) {
+        return "list".equals(t) || "set".equals(t) || "dict".equals(t) || "tuple".equals(t);
     }
 
     /**
