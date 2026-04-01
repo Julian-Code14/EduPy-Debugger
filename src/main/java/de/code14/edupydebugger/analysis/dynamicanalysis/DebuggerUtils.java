@@ -149,11 +149,29 @@ public class DebuggerUtils {
                                 String namesExpr = String.format(
                                         "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else ','.join(__ins.getargvalues(__matches[%d].frame).args)))([fi for fi in __ins.stack() if getattr(fi,'function','')=='%s']))(__import__('inspect'))",
                                         occurrence, occurrence, safeName);
+                                String namesLocalsExpr = String.format(
+                                        "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else ','.join([k for k in __matches[%d].frame.f_locals.keys() if not k.startswith('__') and not k.startswith('_pydev_') and not k.startswith('__py')])))([fi for fi in __ins.stack() if getattr(fi,'function','')=='%s']))(__import__('inspect'))",
+                                        occurrence, occurrence, safeName);
                                 if ("<module>".equals(baseName)) {
                                     holder[0] = baseName + "()"; // avoid dumping module locals
                                 } else {
                                     PyDebugValue namesVal = ctx.getFrameAccessor().evaluate(namesExpr, false, true);
                                     String namesCsv = namesVal != null && namesVal.getValue() != null ? namesVal.getValue() : "";
+                                    try {
+                                        PyDebugValue locsVal = ctx.getFrameAccessor().evaluate(namesLocalsExpr, false, true);
+                                        String locsCsv = locsVal != null && locsVal.getValue() != null ? locsVal.getValue() : "";
+                                        if (!locsCsv.isEmpty()) {
+                                            LinkedHashSet<String> merged = new LinkedHashSet<>();
+                                            if (!namesCsv.isEmpty()) {
+                                                for (String s : namesCsv.split(",")) { String t = s.trim(); if (!t.isEmpty()) merged.add(t); }
+                                            }
+                                            for (String s : locsCsv.split(",")) { String t = s.trim(); if (!t.isEmpty()) merged.add(t); }
+                                            merged.remove("_sys"); merged.remove("_ins"); merged.remove("_n");
+                                            StringBuilder sb = new StringBuilder();
+                                            for (String s : merged) { if (sb.length()>0) sb.append(','); sb.append(s); }
+                                            namesCsv = sb.toString();
+                                        }
+                                    } catch (Throwable ignore) {}
                                     List<String> parts = new ArrayList<>();
                                     if (!namesCsv.isEmpty()) {
                                         String[] names = namesCsv.split(",");
