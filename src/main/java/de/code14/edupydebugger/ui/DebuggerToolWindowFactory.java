@@ -13,6 +13,10 @@ import org.jetbrains.annotations.NotNull;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import de.code14.edupydebugger.core.ReplManager;
+import com.jetbrains.python.sdk.PythonSdkUtil;
+import com.intellij.openapi.projectRoots.Sdk;
+import com.intellij.openapi.module.ModuleManager;
+import com.intellij.openapi.module.Module;
 
 import javax.swing.*;
 import java.awt.*;
@@ -50,6 +54,17 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
                 if (vf != null && vf.exists()) paths.add(vf.getPath());
             }
             ReplManager.getInstance().setExtraPythonPaths(paths);
+            // Set project interpreter if available
+            try {
+                Module[] modules = ModuleManager.getInstance(project).getModules();
+                for (Module m : modules) {
+                    Sdk pySdk = PythonSdkUtil.findPythonSdk(m);
+                    if (pySdk != null && pySdk.getHomePath() != null) {
+                        ReplManager.getInstance().setInterpreterPath(pySdk.getHomePath());
+                        break;
+                    }
+                }
+            } catch (Throwable ignore2) {}
         } catch (Throwable ignore) {}
         initializeBrowser();
         JPanel panel = new JPanel(new BorderLayout());

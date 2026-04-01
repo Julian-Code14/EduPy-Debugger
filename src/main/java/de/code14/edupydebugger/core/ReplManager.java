@@ -23,6 +23,7 @@ public class ReplManager {
     private boolean bootstrapped;
     private String workingDirectory;
     private List<String> extraPaths = new ArrayList<>();
+    private String interpreterPath; // optional: project interpreter
 
     public static ReplManager getInstance() {
         return INSTANCE;
@@ -38,10 +39,10 @@ public class ReplManager {
         }
 
         List<String> cmd = new ArrayList<>();
-        String executable = "python3";
+        String executable = interpreterPath != null ? interpreterPath : "python3";
         try {
             // prefer python3 if available
-            executable = "python3";
+            // if no explicit interpreter set, try python3 else python
             cmd.add(executable);
             cmd.add("-i"); // interactive
             cmd.add("-q"); // quiet banner
@@ -62,7 +63,7 @@ public class ReplManager {
         } catch (Throwable primary) {
             // retry with python
             cmd.clear();
-            executable = "python";
+            executable = interpreterPath != null ? interpreterPath : "python";
             cmd.add(executable);
             cmd.add("-i");
             cmd.add("-q");
@@ -191,5 +192,10 @@ public class ReplManager {
             sb.append(p);
         }
         return sb.toString();
+    }
+
+    /** Use an explicit interpreter (e.g., project SDK/venv python). */
+    public synchronized void setInterpreterPath(String interpreterPath) {
+        this.interpreterPath = interpreterPath;
     }
 }
