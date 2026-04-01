@@ -176,6 +176,11 @@ select:focus {
     overflow-x: auto;
 }
 
+/* Callstack table: enable horizontal scrolling like variables table */
+.threads-container {
+    overflow-x: auto;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
