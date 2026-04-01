@@ -21,6 +21,7 @@ public class ReplManager {
 
     private OSProcessHandler replHandler;
     private boolean bootstrapped;
+    private String workingDirectory;
 
     public static ReplManager getInstance() {
         return INSTANCE;
@@ -44,8 +45,17 @@ public class ReplManager {
             cmd.add("-i"); // interactive
             cmd.add("-q"); // quiet banner
             GeneralCommandLine gcl = new GeneralCommandLine(cmd);
+            if (workingDirectory != null) gcl.withWorkDirectory(workingDirectory);
             gcl.withEnvironment("PYTHONUNBUFFERED", "1");
+            if (workingDirectory != null) {
+                gcl.withEnvironment("EDUPY_WORKDIR", workingDirectory);
+                // prepend to PYTHONPATH if present
+                String existing = System.getenv("PYTHONPATH");
+                String pp = workingDirectory + (existing != null && !existing.isEmpty() ? java.io.File.pathSeparator + existing : "");
+                gcl.withEnvironment("PYTHONPATH", pp);
+            }
             replHandler = new OSProcessHandler(gcl);
+            replHandler.startNotify();
             LOGGER.info("Started fallback REPL using '" + executable + "'");
         } catch (Throwable primary) {
             // retry with python
@@ -55,8 +65,16 @@ public class ReplManager {
             cmd.add("-i");
             cmd.add("-q");
             GeneralCommandLine gcl2 = new GeneralCommandLine(cmd);
+            if (workingDirectory != null) gcl2.withWorkDirectory(workingDirectory);
             gcl2.withEnvironment("PYTHONUNBUFFERED", "1");
+            if (workingDirectory != null) {
+                gcl2.withEnvironment("EDUPY_WORKDIR", workingDirectory);
+                String existing = System.getenv("PYTHONPATH");
+                String pp = workingDirectory + (existing != null && !existing.isEmpty() ? java.io.File.pathSeparator + existing : "");
+                gcl2.withEnvironment("PYTHONPATH", pp);
+            }
             replHandler = new OSProcessHandler(gcl2);
+            replHandler.startNotify();
             LOGGER.info("Started fallback REPL using '" + executable + "'");
         }
         bootstrapped = false;
@@ -84,7 +102,9 @@ public class ReplManager {
         var os = replHandler.getProcessInput();
         if (os == null) return;
         String bootstrap = String.join("\n",
-                "import json, builtins",
+                "import json, builtins, os, sys",
+                "wd = os.environ.get('EDUPY_WORKDIR')",
+                "if wd and wd not in sys.path: sys.path.insert(0, wd)",
                 "_EDUPY_PRIMS = {'int','float','str','bool','list','dict','tuple','set'}",
                 "def _edupy__snapshot():",
                 "    out = []",
@@ -131,5 +151,10 @@ public class ReplManager {
         String cmd = "print(\"__EDUPY_SNAPSHOT__\"+_edupy__snapshot())\n";
         os.write(cmd.getBytes());
         os.flush();
+    }
+
+    /** Sets the working directory used for the REPL process and PYTHONPATH. */
+    public synchronized void setWorkingDirectory(String workingDirectory) {
+        this.workingDirectory = workingDirectory;
     }
 }

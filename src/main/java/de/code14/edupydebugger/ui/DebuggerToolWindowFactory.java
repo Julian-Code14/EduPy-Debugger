@@ -10,6 +10,7 @@ import com.intellij.ui.jcef.JBCefBrowser;
 import de.code14.edupydebugger.server.DebugWebServer;
 import de.code14.edupydebugger.server.DebugWebSocketServer;
 import org.jetbrains.annotations.NotNull;
+import de.code14.edupydebugger.core.ReplManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -38,6 +39,7 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
      */
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+        try { ReplManager.getInstance().setWorkingDirectory(project.getBasePath()); } catch (Throwable ignore) {}
         initializeBrowser();
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(jbCefBrowser.getComponent(), BorderLayout.CENTER);
