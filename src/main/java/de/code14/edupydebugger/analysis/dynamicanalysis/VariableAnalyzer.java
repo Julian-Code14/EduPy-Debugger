@@ -100,6 +100,7 @@ public class VariableAnalyzer {
                         for (String rawName : globalNames) {
                             String name = rawName.replace("'", "").trim();
                             if (name.isEmpty()) continue;
+                            if (shouldSkipGlobalName(name)) continue;
 
                             // Evaluate the global value itself for type and repr
                             PyDebugValue gv = evaluateExpressionValue(evalCtx, "globals().get('" + name + "', None)");
@@ -232,6 +233,23 @@ public class VariableAnalyzer {
             items.add(s.trim());
         }
         return items;
+    }
+
+    /**
+     * Returns true if a global name should be excluded from the variables table (system/dunder/debug temp names).
+     */
+    private boolean shouldSkipGlobalName(String name) {
+        if (name == null || name.isEmpty()) return true;
+        // Common interpreter/debugger/system globals
+        if (name.equals("__builtins__")) return true;
+        if (name.startsWith("__py_debug_temp_var_")) return true;
+        if (name.startsWith("_pydev_")) return true;
+        // Python module-level dunders (and any other __dunder__)
+        if (name.startsWith("__") && name.endsWith("__")) return true;
+        // Explicit allowlist skip for well-known module attrs
+        Set<String> known = Set.of("__name__", "__file__", "__package__", "__loader__", "__spec__", "__doc__", "__cached__");
+        if (known.contains(name)) return true;
+        return false;
     }
 
     /**

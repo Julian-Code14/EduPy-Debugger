@@ -15,6 +15,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -207,5 +208,51 @@ public class VariableAnalyzerTests {
         assertEquals("local", vars.get("11").get(3));
         assertEquals("global", vars.get("77").get(3));
         assertEquals("7", vars.get("77").get(2));
+    }
+
+    @Test
+    public void testAnalyzeVariables_skipsSystemAndDunderGlobals() throws PyDebuggerException {
+        // Arrange
+        doAnswer(invocation -> {
+            XValueChildrenList childrenList = new XValueChildrenList();
+            childrenList.add(mockValue); // local provides eval context
+            invocation.getArgument(0, XCompositeNode.class).addChildren(childrenList, true);
+            return null;
+        }).when(mockStackFrame).computeChildren(any(XCompositeNode.class));
+
+        when(mockValue.getName()).thenReturn("dummyLocal");
+        when(mockValue.getType()).thenReturn("int");
+        when(mockValue.getValue()).thenReturn("0");
+
+        PyFrameAccessor acc = mock(PyFrameAccessor.class);
+        when(mockValue.getFrameAccessor()).thenReturn(acc);
+
+        // local id + scope
+        when(acc.evaluate(eq("__builtins__.id(dummyLocal)"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("id", "int", null, "1", false, null, false, false, false, null, acc));
+        when(acc.evaluate(eq("locals().get('dummyLocal', None) is not None"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("isLocal", "bool", null, "true", false, null, false, false, false, null, acc));
+        when(acc.evaluate(eq("globals().get('dummyLocal', None) is not None"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("isGlobal", "bool", null, "false", false, null, false, false, false, null, acc));
+
+        // globals list includes various system names that must be skipped
+        when(acc.evaluate(eq("list(globals().keys())"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("globals", "list", null,
+                        "['__name__', '__file__', '__package__', '__loader__', '__doc__', '__builtins__', '__py_debug_temp_var_123', 'user']",
+                        false, null, false, false, false, null, acc));
+
+        // user is a real global to be included
+        PyDebugValue userVal = new PyDebugValue("user", "int", null, "99", false, null, false, false, false, null, acc);
+        when(acc.evaluate(eq("globals().get('user', None)"), anyBoolean(), anyBoolean())).thenReturn(userVal);
+        when(acc.evaluate(eq("__builtins__.id(globals()['user'])"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("id", "int", null, "99", false, null, false, false, false, null, acc));
+
+        variableAnalyzer.analyzeVariables();
+
+        Map<String, List<String>> vars = variableAnalyzer.getVariables();
+        // Should contain only the local and 'user' global, not the dunders/debug temp
+        assertEquals(2, vars.size());
+        assertTrue(vars.containsKey("1"));
+        assertTrue(vars.containsKey("99"));
     }
 }
