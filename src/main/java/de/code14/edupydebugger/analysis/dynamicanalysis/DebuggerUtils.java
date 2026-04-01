@@ -138,10 +138,18 @@ public class DebuggerUtils {
                         try {
                             if (children.size() > 0 && children.getValue(0) instanceof PyDebugValue) {
                                 PyDebugValue ctx = (PyDebugValue) children.getValue(0);
-                                String expr = "(lambda _ins: ', '.join([a + '=' + repr(locals().get(a, globals().get(a, None))) for a in _ins.getargvalues(_ins.currentframe()).args]))(__import__('inspect'))";
-                                PyDebugValue v = ctx.getFrameAccessor().evaluate(expr, false, true);
-                                String args = v != null && v.getValue() != null ? v.getValue() : "";
-                                holder[0] = base + "(" + args + ")";
+                                // Best-effort: build arg string from current frame's locals.
+                                // Skip dunders and obvious debugger names; limit output length.
+                                String expr = "', '.join([k+'='+repr(locals().get(k, None)) for k in list(locals().keys()) if not k.startswith('__') and not k.startswith('_pydev_') and not k.startswith('__py')])";
+                                if ("<module>".equals(base)) {
+                                    holder[0] = base + "()"; // avoid dumping module locals
+                                } else {
+                                    PyDebugValue v = ctx.getFrameAccessor().evaluate(expr, false, true);
+                                    String args = v != null && v.getValue() != null ? v.getValue() : "";
+                                    // Trim overly long argument strings for readability
+                                    if (args.length() > 200) args = args.substring(0, 200) + " …";
+                                    holder[0] = base + "(" + args + ")";
+                                }
                             }
                         } catch (Exception e) {
                             LOGGER.debug("formatCallstackFrames: evaluation failed, falling back", e);
