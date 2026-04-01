@@ -108,8 +108,9 @@ public class ReplManager {
         // Robust one-liner using exec() to avoid interactive block/blank-line issues
         StringBuilder sb = new StringBuilder();
         sb.append("import json, os, sys;");
-        sb.append("sys.path.insert(0,os.environ.get('EDUPY_WORKDIR')) if os.environ.get('EDUPY_WORKDIR') and os.environ.get('EDUPY_WORKDIR') not in sys.path else None;");
-        sb.append("[sys.path.insert(0,p.strip()) for p in os.environ.get('EDUPY_EXTRA_PATHS','').split(os.pathsep) if p.strip() and p.strip() not in sys.path];");
+        sb.append("wd=os.environ.get('EDUPY_WORKDIR');");
+        sb.append("if wd and wd not in sys.path: sys.path.insert(0,wd);");
+        sb.append("__edupy_tmp=[sys.path.insert(0,p.strip()) for p in os.environ.get('EDUPY_EXTRA_PATHS','').split(os.pathsep) if p.strip() and p.strip() not in sys.path];");
         sb.append("exec(\"");
         sb.append("def _is_primitive(obj):\\n    return type(obj).__name__ in {'int','float','str','bool','list','dict','tuple','set'}\\n");
         sb.append("def _is_noise(obj):\\n    tn=type(obj).__name__\\n    return tn in {'module','function','builtin_function_or_method','method','type'} or callable(obj)\\n");

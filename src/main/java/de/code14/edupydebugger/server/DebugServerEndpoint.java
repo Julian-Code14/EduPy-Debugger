@@ -191,6 +191,7 @@ public class DebugServerEndpoint {
                         consoleController.sendInputToProcess(p.text);
                         // In REPL mode, trigger a variables snapshot after each input
                         if (debugProcessController.getDebugProcess() == null) {
+                            try { Thread.sleep(10); } catch (InterruptedException ignored) {}
                             try { ReplManager.getInstance().requestSnapshot(); } catch (Exception ignore) {}
                         }
                     } catch (IOException e) {
@@ -287,6 +288,8 @@ public class DebugServerEndpoint {
                     if (debugProcessController.getDebugProcess() == null) {
                         try {
                             ensureConsoleTarget();
+                            // Delay lightly to avoid printing [] on fresh REPL
+                            try { Thread.sleep(10); } catch (InterruptedException ignored) {}
                             ReplManager.getInstance().requestSnapshot();
                         } catch (Exception e) {
                             LOGGER.warn("Failed to request REPL snapshot on GET", e);
