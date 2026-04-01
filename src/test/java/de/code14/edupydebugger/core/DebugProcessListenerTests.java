@@ -100,16 +100,18 @@ public class DebugProcessListenerTests {
 
     @Test
     public void testProcessStopped() {
-        // Mocking the static method in DebuggerToolWindowFactory
-        try (MockedStatic<DebuggerToolWindowFactory> toolWindowFactoryMock = Mockito.mockStatic(DebuggerToolWindowFactory.class)) {
+        // Mocking the static methods
+        try (MockedStatic<DebuggerToolWindowFactory> toolWindowFactoryMock = Mockito.mockStatic(DebuggerToolWindowFactory.class);
+             MockedStatic<de.code14.edupydebugger.server.DebugServerEndpoint> epMock = Mockito.mockStatic(de.code14.edupydebugger.server.DebugServerEndpoint.class)) {
 
             // Act: simulate stopping the process
             debugProcessListener.processStopped(pyDebugProcess);
 
-            // Assert: verify that reloadEduPyDebugger was called once
+            // Assert: verify that reloadEduPyDebugger was called once and endpoints cleared
             toolWindowFactoryMock.verify(DebuggerToolWindowFactory::reloadEduPyDebugger, times(1));
+            epMock.verify(() -> de.code14.edupydebugger.server.DebugServerEndpoint.setDebugProcess(null), times(1));
+            epMock.verify(() -> de.code14.edupydebugger.server.DebugServerEndpoint.setProcessHandler(null), times(1));
         }
     }
 
 }
-

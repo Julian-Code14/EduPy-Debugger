@@ -8,8 +8,6 @@ import de.code14.edupydebugger.analysis.dynamicanalysis.AttributeInfo;
 import de.code14.edupydebugger.analysis.dynamicanalysis.DebuggerUtils;
 import de.code14.edupydebugger.analysis.dynamicanalysis.ObjectInfo;
 import de.code14.edupydebugger.analysis.dynamicanalysis.StackFrameAnalyzer;
-import de.code14.edupydebugger.diagram.ObjectDiagramParser;
-import de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
 import de.code14.edupydebugger.server.dto.*;
 
@@ -48,18 +46,7 @@ public class DebugSessionController {
         add("dict"); add("tuple"); add("set");
     }};
 
-    /**
-     * Performs a dynamic analysis of the current debugging session.
-     * <p>
-     * The method inspects all threads and their corresponding stack frames to identify
-     * suspended states. It analyzes the most relevant thread (either the selected one
-     * or the first suspended thread) and publishes the resulting call stack, variables,
-     * and object diagrams to the frontend.
-     *
-     * @param selectedThread the name of the thread to analyze; if {@code null},
-     *                       the first suspended thread will be used instead
-     * @throws IOException if an error occurs during diagram generation or file processing
-     */
+    
     /**
      * Performs dynamic analysis for the selected (or first suspended) thread and publishes
      * results to the frontend. If the debug process is not yet available (e.g. very early
@@ -91,8 +78,13 @@ public class DebugSessionController {
             StackFrameAnalyzer analyzer = new StackFrameAnalyzer(stackFrames);
             analyzer.analyzeFrames();
 
-            Map<String, ObjectInfo> objects = handleObjects(analyzer);
-            handleVariables(analyzer, objects);
+            NormalizedSnapshot snapshot = DebugSnapshotAdapter.from(analyzer);
+            try {
+                PayloadPublisher.publishObjects(snapshot.objects());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            PayloadPublisher.publishVariablesWithSnippet(new ArrayList<>(snapshot.variables()), snapshot.objects());
         }
     }
 
@@ -160,7 +152,7 @@ public class DebugSessionController {
             variables.add(dto);
         }
 
-        DebugServerEndpoint.publishVariables(new VariablesPayload(variables));
+        PayloadPublisher.publishVariablesWithSnippet(variables, objects);
     }
 
     /**
@@ -176,23 +168,7 @@ public class DebugSessionController {
     private Map<String, ObjectInfo> handleObjects(StackFrameAnalyzer analyzer) throws IOException {
         Map<String, ObjectInfo> objects = analyzer.getObjects();
 
-        // Objektkarten -> Base64 SVG je Objekt
-        Map<String, String> cardsPuml = ObjectDiagramParser.generateObjectCards(objects);
-        ObjectCardPayload ocPayload = new ObjectCardPayload();
-        ocPayload.cards = new ArrayList<>();
-        for (Map.Entry<String, String> entry : cardsPuml.entrySet()) {
-            String base64 = PlantUMLDiagramGenerator.generateDiagramAsBase64(entry.getValue());
-            CardDTO c = new CardDTO();
-            c.id = entry.getKey();
-            c.svgBase64 = base64;
-            ocPayload.cards.add(c);
-        }
-        DebugServerEndpoint.publishObjectCards(ocPayload);
-
-        // Objektdiagramm
-        String odPuml = ObjectDiagramParser.generateObjectDiagram(objects);
-        String odBase64 = PlantUMLDiagramGenerator.generateDiagramAsBase64(odPuml);
-        DebugServerEndpoint.publishObjectDiagram(odBase64);
+        PayloadPublisher.publishObjects(objects);
 
         return objects;
     }

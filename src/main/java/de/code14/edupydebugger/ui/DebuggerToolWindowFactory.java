@@ -7,7 +7,16 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.ui.jcef.JBCefBrowser;
+import de.code14.edupydebugger.server.DebugWebServer;
+import de.code14.edupydebugger.server.DebugWebSocketServer;
 import org.jetbrains.annotations.NotNull;
+import com.intellij.openapi.roots.ProjectRootManager;
+import com.intellij.openapi.vfs.VirtualFile;
+import de.code14.edupydebugger.core.ReplManager;
+import com.jetbrains.python.sdk.PythonSdkUtil;
+import com.intellij.openapi.projectRoots.Sdk;
+import com.intellij.openapi.module.ModuleManager;
+import com.intellij.openapi.module.Module;
 
 import javax.swing.*;
 import java.awt.*;
@@ -36,6 +45,27 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
      */
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+        try {
+            ReplManager.getInstance().setWorkingDirectory(project.getBasePath());
+            // Collect source roots for PYTHONPATH
+            VirtualFile[] roots = ProjectRootManager.getInstance(project).getContentSourceRoots();
+            java.util.List<String> paths = new java.util.ArrayList<>();
+            for (VirtualFile vf : roots) {
+                if (vf != null && vf.exists()) paths.add(vf.getPath());
+            }
+            ReplManager.getInstance().setExtraPythonPaths(paths);
+            // Set project interpreter if available
+            try {
+                Module[] modules = ModuleManager.getInstance(project).getModules();
+                for (Module m : modules) {
+                    Sdk pySdk = PythonSdkUtil.findPythonSdk(m);
+                    if (pySdk != null && pySdk.getHomePath() != null) {
+                        ReplManager.getInstance().setInterpreterPath(pySdk.getHomePath());
+                        break;
+                    }
+                }
+            } catch (Throwable ignore2) {}
+        } catch (Throwable ignore) {}
         initializeBrowser();
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(jbCefBrowser.getComponent(), BorderLayout.CENTER);
@@ -71,6 +101,18 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
      * Loads the debugger UI from a specified local URL.
      */
     private void initializeBrowser() {
+        // Ensure servers are running even without an active debug session
+        try {
+            if (!DebugWebSocketServer.getInstance().isRunning()) {
+                DebugWebSocketServer.getInstance().startWebSocketServer();
+            }
+            if (!DebugWebServer.getInstance().isRunning()) {
+                DebugWebServer.getInstance().startWebServer();
+            }
+        } catch (Throwable t) {
+            LOGGER.warn("Could not start web/socket servers from ToolWindow init", t);
+        }
+
         if (jbCefBrowser == null && JBCefApp.isSupported()) {
             jbCefBrowser = new JBCefBrowser("http://127.0.0.1:8026/index.html");
             LOGGER.info("Loading JBCef browser...");
