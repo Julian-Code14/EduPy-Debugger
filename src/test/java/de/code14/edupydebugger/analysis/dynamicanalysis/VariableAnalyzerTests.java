@@ -303,4 +303,40 @@ public class VariableAnalyzerTests {
         assertEquals("[1, 2, 3]", vars.get(idForNums).get(2).replace("~", ", "));
         assertEquals("global", vars.get(idForNums).get(3));
     }
+
+    @Test
+    public void testAnalyzeVariables_skipsDebuggerInjectedLocals() throws PyDebuggerException {
+        PyDebugValue sys = mock(PyDebugValue.class);
+        PyDebugValue user = mock(PyDebugValue.class);
+
+        doAnswer(invocation -> {
+            XValueChildrenList childrenList = new XValueChildrenList();
+            childrenList.add(sys);
+            childrenList.add(user);
+            invocation.getArgument(0, XCompositeNode.class).addChildren(childrenList, true);
+            return null;
+        }).when(mockStackFrame).computeChildren(any(XCompositeNode.class));
+
+        when(sys.getName()).thenReturn("__py_debug_temp_var_42");
+        when(sys.getType()).thenReturn("int");
+        when(sys.getValue()).thenReturn("123");
+
+        when(user.getName()).thenReturn("x");
+        when(user.getType()).thenReturn("int");
+        when(user.getValue()).thenReturn("5");
+
+        PyFrameAccessor acc = mock(PyFrameAccessor.class);
+        when(user.getFrameAccessor()).thenReturn(acc);
+        when(acc.evaluate(eq("__builtins__.id(x)"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("id", "int", null, "9", false, null, false, false, false, null, acc));
+        when(acc.evaluate(eq("locals().get('x', None) is not None"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("isLocal", "bool", null, "true", false, null, false, false, false, null, acc));
+        when(acc.evaluate(eq("globals().get('x', None) is not None"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("isGlobal", "bool", null, "false", false, null, false, false, false, null, acc));
+
+        variableAnalyzer.analyzeVariables();
+        Map<String, List<String>> vars = variableAnalyzer.getVariables();
+        assertEquals(1, vars.size());
+        assertTrue(vars.containsKey("9"));
+    }
 }

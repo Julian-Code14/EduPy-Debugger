@@ -74,6 +74,10 @@ public class VariableAnalyzer {
                 PyDebugValue evalCtx = null;
                 for (int i = 0; i < children.size(); i++) {
                     PyDebugValue value = (PyDebugValue) children.getValue(i);
+                    // Skip debugger/system injected locals early
+                    if (shouldSkipGlobalName(value.getName())) {
+                        continue;
+                    }
                     if (evalCtx == null) evalCtx = value; // use first available value as evaluation context
                     String id = determinePythonId(value, value.getName());
                     // If the file changes, variables from another file would not be defined -> exclude
@@ -82,10 +86,17 @@ public class VariableAnalyzer {
                         if (variables.containsKey(id)) { // If there are more names for an id
                             variables.get(id).set(0, variables.get(id).get(0) + "###" + value.getName());
                         } else { // Default: new variable found -> put key-value-pair into the map
+                            String raw = value.getValue();
+                            if ((raw == null || raw.isBlank()) && isBuiltinContainerType(value.getType())) {
+                                try {
+                                    raw = evaluateExpression(value, "repr(" + value.getName() + ")");
+                                } catch (Exception ignore) {}
+                            }
+                            if (raw == null) raw = "";
                             variables.put(id, new ArrayList<>(Arrays.asList(
                                     value.getName(),
                                     value.getType(),
-                                    Objects.requireNonNull(value.getValue()).replace(", ", "~"),
+                                    raw.replace(", ", "~"),
                                     determineScope(value)
                             )));
                         }
