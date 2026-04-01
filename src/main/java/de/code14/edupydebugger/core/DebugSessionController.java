@@ -135,14 +135,11 @@ public class DebugSessionController {
             ValueDTO val = new ValueDTO();
             if (defaultTypes.contains(type)) {
                 val.kind = "primitive";
-                String base = value.replace("~", ", ");
-                // If analyzer provided a full representation as 5th element, use it; otherwise fall back to base
-                String full = (v.size() >= 5 && v.get(4) != null) ? v.get(4) : base;
-                val.full = full;
-                // Keep UI behavior consistent with REPL: shorten long previews but allow expand to full
-                val.repr = (full != null && full.length() > 120)
-                        ? (full.substring(0, 120) + " [...]")
-                        : base;
+                val.repr = value.replace("~", ", ");
+                // Optional: if analyzer provided a full representation as 5th element, attach it
+                if (v.size() >= 5) {
+                    val.full = v.get(4);
+                }
             } else {
                 val.kind = "composite";
                 // Kompakte Attribut-Repräsentation für die Tabelle (Detailanzeige via Objektkarten)

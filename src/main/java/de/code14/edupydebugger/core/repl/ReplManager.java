@@ -102,7 +102,7 @@ public class ReplManager {
                 "        try:\\n" +
                 "            t=type(v).__name__\\n" +
                 "            if _is_primitive(v):\\n" +
-                "                vars_out.append({'id': str(id(v)), 'name': k, 'type': t, 'repr': _safe_repr(v), 'scope': 'global'})\\n" +
+                "                vars_out.append({'id': str(id(v)), 'name': k, 'type': t, 'repr': _safe_repr(v), 'full': repr(v), 'scope': 'global'})\\n" +
                 "            else:\\n" +
                 "                oid=ensure_obj(v, f'{k}: {t}')\\n" +
                 "                try:\\n" +
@@ -119,7 +119,7 @@ public class ReplManager {
                 "                                objects[oid]['attrs'].append({'name': a, 'type': at, 'value': 'refid:'+rid, 'visibility': 'public'})\\n" +
                 "                        except Exception:\\n                            pass\\n" +
                 "                except Exception:\\n                    pass\\n" +
-                "                vars_out.append({'id': oid, 'name': k, 'type': t, 'repr': _safe_repr(v), 'scope': 'global'})\\n" +
+                "                vars_out.append({'id': oid, 'name': k, 'type': t, 'repr': _safe_repr(v), 'full': repr(v), 'scope': 'global'})\\n" +
                 "        except Exception:\\n            pass\\n" +
                 "    return json.dumps({'variables': vars_out, 'objects': objects})\\n" +
                 "\")\n";
@@ -157,4 +157,3 @@ public class ReplManager {
         return joiner.toString();
     }
 }
-

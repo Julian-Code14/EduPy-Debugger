@@ -165,7 +165,15 @@ function createValueCell(v) {
     previewDiv.innerHTML = processValue(v.value);
     td.appendChild(previewDiv);
 
-    const fullText = v?.value?.full;
+    let fullText = v?.value?.full;
+    // Optional formatting for nicer full view: lists/sets side-by-side, dicts key:value per line
+    if (fullText && typeof fullText === 'string') {
+        if (['list','tuple','set','dict'].includes((v.pyType || '').toLowerCase())) {
+            fullText = formatFullByType(v.pyType, fullText);
+        } else if (v.value.kind === 'composite') {
+            fullText = formatCompositeFull(fullText);
+        }
+    }
     const hasExpandable = fullText && typeof fullText === 'string' && fullText.length > 0 && fullText !== v?.value?.repr;
     if (hasExpandable) {
         const fullDiv = document.createElement('div');
@@ -194,6 +202,121 @@ function createValueCell(v) {
         td.appendChild(btn);
     }
     return td;
+}
+
+// ---------- Pretty formatting for "full" ----------
+function stripOuter(s, open, close) {
+    s = (s || '').trim();
+    if (s.startsWith(open) && s.endsWith(close)) return s.slice(1, -1);
+    return s;
+}
+
+function smartSplitByComma(s) {
+    const parts = [];
+    let buf = '';
+    let depthRound = 0, depthSquare = 0, depthCurly = 0;
+    let inSingle = false, inDouble = false, escape = false;
+    for (let i = 0; i < s.length; i++) {
+        const ch = s[i];
+        if (escape) { buf += ch; escape = false; continue; }
+        if (ch === '\\') { buf += ch; escape = true; continue; }
+        if (!inDouble && ch === '\'' ) { inSingle = !inSingle; buf += ch; continue; }
+        if (!inSingle && ch === '"') { inDouble = !inDouble; buf += ch; continue; }
+        if (!inSingle && !inDouble) {
+            if (ch === '(') depthRound++;
+            else if (ch === ')') depthRound = Math.max(0, depthRound-1);
+            else if (ch === '[') depthSquare++;
+            else if (ch === ']') depthSquare = Math.max(0, depthSquare-1);
+            else if (ch === '{') depthCurly++;
+            else if (ch === '}') depthCurly = Math.max(0, depthCurly-1);
+            else if (ch === ',' && depthRound===0 && depthSquare===0 && depthCurly===0) {
+                parts.push(buf.trim()); buf = ''; continue;
+            }
+        }
+        buf += ch;
+    }
+    if (buf.trim().length) parts.push(buf.trim());
+    return parts;
+}
+
+function smartSplitFirstColon(s) {
+    let depthRound = 0, depthSquare = 0, depthCurly = 0;
+    let inSingle = false, inDouble = false, escape = false;
+    for (let i = 0; i < s.length; i++) {
+        const ch = s[i];
+        if (escape) { escape = false; continue; }
+        if (ch === '\\') { escape = true; continue; }
+        if (!inDouble && ch === '\'') { inSingle = !inSingle; continue; }
+        if (!inSingle && ch === '"') { inDouble = !inDouble; continue; }
+        if (!inSingle && !inDouble) {
+            if (ch === '(') depthRound++;
+            else if (ch === ')') depthRound = Math.max(0, depthRound-1);
+            else if (ch === '[') depthSquare++;
+            else if (ch === ']') depthSquare = Math.max(0, depthSquare-1);
+            else if (ch === '{') depthCurly++;
+            else if (ch === '}') depthCurly = Math.max(0, depthCurly-1);
+            else if (ch === ':' && depthRound===0 && depthSquare===0 && depthCurly===0) {
+                return i;
+            }
+        }
+    }
+    return -1;
+}
+
+function formatListLike(text) {
+    let inner = text.trim();
+    if ((inner.startsWith('[') && inner.endsWith(']')) || (inner.startsWith('(') && inner.endsWith(')'))) {
+        inner = inner.slice(1, -1);
+    } else if (inner.startsWith('{') && inner.endsWith('}')) {
+        // could be a set; treat as list
+        inner = inner.slice(1, -1);
+    }
+    const items = smartSplitByComma(inner);
+    return items.join(', ');
+}
+
+function formatDict(text) {
+    let inner = stripOuter(text, '{', '}');
+    const pairs = smartSplitByComma(inner);
+    const lines = [];
+    for (const p of pairs) {
+        const idx = smartSplitFirstColon(p);
+        if (idx >= 0) {
+            const k = p.slice(0, idx).trim();
+            const v = p.slice(idx + 1).trim();
+            lines.push(`${k}: ${v}`);
+        } else if (p.trim()) {
+            lines.push(p.trim());
+        }
+    }
+    return lines.join('\n');
+}
+
+function formatFullByType(pyType, text) {
+    const t = (pyType || '').toLowerCase();
+    if (t === 'dict') return formatDict(text);
+    if (t === 'list' || t === 'tuple' || t === 'set') return formatListLike(text);
+    return text;
+}
+
+function formatCompositeFull(text) {
+    const lines = (text || '').split('\n');
+    const out = [];
+    for (const line of lines) {
+        const idx = line.indexOf(':');
+        if (idx <= 0) { out.push(line); continue; }
+        const name = line.slice(0, idx).trim();
+        let val = line.slice(idx + 1).trim();
+        if (val.startsWith('{') && val.includes(':')) {
+            const body = formatDict(val);
+            out.push(`${name}:\n${body}`);
+        } else if (val.startsWith('[') || val.startsWith('(') || (val.startsWith('{') && !val.includes(':'))) {
+            out.push(`${name}: ${formatListLike(val)}`);
+        } else {
+            out.push(line);
+        }
+    }
+    return out.join('\n');
 }
 
 function escapeHtml(s) {
