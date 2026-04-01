@@ -222,7 +222,7 @@ public class DebugServerEndpoint {
             case "repl_reset": {
                 // stop REPL process and clear controller state
                 try {
-                    de.code14.edupydebugger.core.ReplManager.getInstance().stopRepl();
+                    ReplManager.getInstance().stopRepl();
                 } catch (Throwable ignore) {}
                 consoleController.setProcessHandler(null);
                 // clear cached payloads

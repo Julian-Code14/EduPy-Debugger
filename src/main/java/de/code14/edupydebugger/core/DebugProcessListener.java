@@ -130,8 +130,8 @@ public class DebugProcessListener implements XDebuggerManagerListener {
         DebuggerToolWindowFactory.reloadEduPyDebugger();
         // Clear integration so REPL mode can take over cleanly
         try {
-            de.code14.edupydebugger.server.DebugServerEndpoint.setDebugProcess(null);
-            de.code14.edupydebugger.server.DebugServerEndpoint.setProcessHandler(null);
+            DebugServerEndpoint.setDebugProcess(null);
+            DebugServerEndpoint.setProcessHandler(null);
         } catch (Throwable ignore) {}
     }
 
