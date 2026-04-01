@@ -91,7 +91,11 @@ function renderCallstack(payload) {
     (payload?.frames || []).forEach(f => {
         const tr = document.createElement('tr');
         const td = document.createElement('td');
-        td.textContent = f;
+        // Replace refid:123 with clickable link to object card
+        const html = (f || '').replace(/refid:(\d+)/g, (_, rid) =>
+            `<a href="javascript:void(0);" onclick="jumpToSlide(${rid})">${rid}</a>`
+        ).replaceAll('\n', '<br>');
+        td.innerHTML = html;
         tr.appendChild(td);
         tableBody.appendChild(tr);
     });
