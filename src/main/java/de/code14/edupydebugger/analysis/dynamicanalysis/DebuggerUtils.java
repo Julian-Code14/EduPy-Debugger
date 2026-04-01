@@ -144,10 +144,11 @@ public class DebuggerUtils {
                         try {
                             if (children.size() > 0 && children.getValue(0) instanceof PyDebugValue) {
                                 PyDebugValue ctx = (PyDebugValue) children.getValue(0);
-                                // Step 1: get relevant argument names for this exact frame depth as comma-separated list
+                                // Step 1: name-based selection to avoid eval-stack depth ambiguity
+                                String safeName = baseName.replace("'", "\\'");
                                 String namesExpr = String.format(
-                                        "(lambda _sys,_ins,_n: (lambda _av: ','.join([a for a in (list(_av.args)+([] if _av.varargs is None else [_av.varargs])+([] if _av.keywords is None else [_av.keywords])) if not a.startswith('__') and not a.startswith('_pydev_') and not a.startswith('__py')]))(_ins.getargvalues(_sys._getframe(_n))))(__import__('sys'), __import__('inspect'), %d)",
-                                        depth);
+                                        "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else ','.join(__ins.getargvalues(__matches[%d].frame).args)))([fi for fi in __ins.stack() if getattr(fi,'function','')=='%s']))(__import__('inspect'))",
+                                        occurrence, occurrence, safeName);
                                 if ("<module>".equals(baseName)) {
                                     holder[0] = baseName + "()"; // avoid dumping module locals
                                 } else {
@@ -162,8 +163,8 @@ public class DebuggerUtils {
                                             if ("_sys".equals(an) || "_ins".equals(an) || "_n".equals(an)) continue;
                                             String anEsc = an.replace("'", "\\'");
                                             String valExpr = String.format(
-                                                    "(lambda _sys,_ins,_n,_a: (lambda _av,_v: ((('refid:'+str(__builtins__.id(_v)))) if (not isinstance(_v,(int,float,str,bool,list,dict,tuple,set))) else repr(_v)))(_ins.getargvalues(_sys._getframe(_n)), _ins.getargvalues(_sys._getframe(_n)).locals.get(_a, None)))(__import__('sys'), __import__('inspect'), %d, '%s')",
-                                                    depth, anEsc);
+                                                    "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else (lambda __av: ((('refid:'+str(__builtins__.id(__av.locals.get('%s', None))))) if (not isinstance(__av.locals.get('%s', None),(int,float,str,bool,list,dict,tuple,set))) else repr(__av.locals.get('%s', None))))(__ins.getargvalues(__matches[%d].frame))))([fi for fi in __ins.stack() if getattr(fi,'function','')=='%s']))(__import__('inspect'))",
+                                                    occurrence, anEsc, anEsc, anEsc, occurrence, safeName);
                                             try {
                                                 PyDebugValue rv = ctx.getFrameAccessor().evaluate(valExpr, false, true);
                                                 String vv = rv != null && rv.getValue() != null ? rv.getValue() : "";
