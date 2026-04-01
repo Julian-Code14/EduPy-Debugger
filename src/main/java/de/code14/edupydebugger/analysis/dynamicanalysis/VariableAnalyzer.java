@@ -84,7 +84,13 @@ public class VariableAnalyzer {
                     if (!id.contains("is not defined")) {
                         namesInFrame.add(value.getName());
                         if (variables.containsKey(id)) { // If there are more names for an id
-                            variables.get(id).set(0, variables.get(id).get(0) + "###" + value.getName());
+                            List<String> meta = variables.get(id);
+                            String existing = meta.get(0);
+                            // Avoid duplicate names like "self, self, self" across frames
+                            List<String> parts = Arrays.asList(existing.split("###"));
+                            if (!parts.contains(value.getName())) {
+                                meta.set(0, existing + "###" + value.getName());
+                            }
                         } else { // Default: new variable found -> put key-value-pair into the map
                             String raw = value.getValue();
                             if ((raw == null || raw.isBlank()) && isBuiltinContainerType(value.getType())) {
