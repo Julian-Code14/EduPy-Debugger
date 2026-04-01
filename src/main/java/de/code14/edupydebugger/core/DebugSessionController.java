@@ -9,6 +9,9 @@ import de.code14.edupydebugger.analysis.dynamicanalysis.DebuggerUtils;
 import de.code14.edupydebugger.analysis.dynamicanalysis.ObjectInfo;
 import de.code14.edupydebugger.analysis.dynamicanalysis.StackFrameAnalyzer;
 import de.code14.edupydebugger.server.DebugServerEndpoint;
+import de.code14.edupydebugger.core.snapshot.NormalizedSnapshot;
+import de.code14.edupydebugger.core.snapshot.DebugSnapshotAdapter;
+import de.code14.edupydebugger.core.publish.PayloadPublisher;
 import de.code14.edupydebugger.server.dto.*;
 
 import org.jetbrains.annotations.Nullable;

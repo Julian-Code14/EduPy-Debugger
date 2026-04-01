@@ -1,5 +1,7 @@
 package de.code14.edupydebugger.core;
 
+import de.code14.edupydebugger.core.console.ConsoleOutputListener;
+
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;

@@ -1,4 +1,4 @@
-package de.code14.edupydebugger.core;
+package de.code14.edupydebugger.core.publish;
 
 import de.code14.edupydebugger.analysis.dynamicanalysis.AttributeInfo;
 import de.code14.edupydebugger.analysis.dynamicanalysis.ObjectInfo;
@@ -10,24 +10,15 @@ import de.code14.edupydebugger.server.dto.*;
 import java.io.IOException;
 import java.util.*;
 
-/**
- * Centralizes publishing of Variables, Object Cards, and Object Diagram so both
- * REPL and Debug paths use identical formatting and transport.
- */
+/** Central publishing for variables/object cards/diagram (used by REPL and Debug). */
 public final class PayloadPublisher {
-
     private PayloadPublisher() {}
 
-    /**
-     * Ensures composite variables get a compact attribute snippet and publishes the variables payload.
-     */
-    public static void publishVariablesWithSnippet(List<VariableDTO> variables,
-                                                   Map<String, ObjectInfo> objects) {
+    public static void publishVariablesWithSnippet(List<VariableDTO> variables, Map<String, ObjectInfo> objects) {
         Set<String> prim = new HashSet<>(Arrays.asList("int","float","str","bool","list","dict","tuple","set"));
         for (VariableDTO dto : variables) {
             if (dto == null || dto.value == null) continue;
             if (!prim.contains(dto.pyType)) {
-                // composite → (re)build compact snippet from objects map
                 ObjectInfo info = (objects != null) ? objects.get(dto.id) : null;
                 StringBuilder sb = new StringBuilder();
                 if (info != null) {
@@ -44,9 +35,6 @@ public final class PayloadPublisher {
         DebugServerEndpoint.publishVariables(new VariablesPayload(variables));
     }
 
-    /**
-     * Publishes object cards and object diagram derived from the objects map.
-     */
     public static void publishObjects(Map<String, ObjectInfo> objects) throws IOException {
         if (objects == null) objects = java.util.Collections.emptyMap();
         Map<String, String> cardsPuml = ObjectDiagramParser.generateObjectCards(objects);
@@ -66,3 +54,4 @@ public final class PayloadPublisher {
         DebugServerEndpoint.publishObjectDiagram(odBase64);
     }
 }
+

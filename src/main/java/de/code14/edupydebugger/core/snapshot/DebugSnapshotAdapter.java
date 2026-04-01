@@ -1,4 +1,4 @@
-package de.code14.edupydebugger.core;
+package de.code14.edupydebugger.core.snapshot;
 
 import de.code14.edupydebugger.analysis.dynamicanalysis.ObjectInfo;
 import de.code14.edupydebugger.analysis.dynamicanalysis.StackFrameAnalyzer;
@@ -7,9 +7,7 @@ import de.code14.edupydebugger.server.dto.VariableDTO;
 
 import java.util.*;
 
-/**
- * Builds a normalized snapshot (variables + objects) from a StackFrameAnalyzer (debug path).
- */
+/** Builds a normalized snapshot (variables + objects) from a StackFrameAnalyzer (debug path). */
 public final class DebugSnapshotAdapter {
     private DebugSnapshotAdapter() {}
 
