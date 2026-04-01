@@ -136,6 +136,10 @@ public class DebugSessionController {
             if (defaultTypes.contains(type)) {
                 val.kind = "primitive";
                 val.repr = value.replace("~", ", ");
+                // Optional: if analyzer provided a full representation as 5th element, attach it
+                if (v.size() >= 5) {
+                    val.full = v.get(4);
+                }
             } else {
                 val.kind = "composite";
                 // Kompakte Attribut-Repräsentation für die Tabelle (Detailanzeige via Objektkarten)

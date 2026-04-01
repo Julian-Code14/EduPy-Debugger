@@ -21,15 +21,18 @@ public final class PayloadPublisher {
             if (!prim.contains(dto.pyType)) {
                 ObjectInfo info = (objects != null) ? objects.get(dto.id) : null;
                 StringBuilder sb = new StringBuilder();
+                StringBuilder full = new StringBuilder();
                 if (info != null) {
                     for (AttributeInfo a : info.attributes()) {
                         String shown = a.value();
                         if (shown.length() > 20) shown = shown.substring(0, 20) + " [...]";
                         sb.append(a.name()).append(": ").append(shown).append("\n");
+                        full.append(a.name()).append(": ").append(a.value()).append("\n");
                     }
                 }
                 dto.value.kind = "composite";
                 dto.value.repr = sb.toString().trim();
+                dto.value.full = full.toString().trim();
             }
         }
         DebugServerEndpoint.publishVariables(new VariablesPayload(variables));
@@ -54,4 +57,3 @@ public final class PayloadPublisher {
         DebugServerEndpoint.publishObjectDiagram(odBase64);
     }
 }
-

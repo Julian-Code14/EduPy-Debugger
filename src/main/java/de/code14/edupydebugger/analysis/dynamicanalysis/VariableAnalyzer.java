@@ -104,12 +104,22 @@ public class VariableAnalyzer {
                                 } catch (Exception ignore) {}
                             }
                             if (raw == null) raw = "";
-                            variables.put(id, new ArrayList<>(Arrays.asList(
+                            List<String> meta = new ArrayList<>(Arrays.asList(
                                     value.getName(),
                                     value.getType(),
                                     raw.replace(", ", "~"),
                                     determineScope(value)
-                            )));
+                            ));
+                            // For builtin containers, attach a full, untruncated repr as 5th element
+                            if (isBuiltinContainerType(value.getType())) {
+                                try {
+                                    String full = evaluateExpression(value, "repr(" + value.getName() + ")");
+                                    meta.add(full != null ? full : "");
+                                } catch (Exception ex) {
+                                    meta.add("");
+                                }
+                            }
+                            variables.put(id, meta);
                         }
                     }
                 }

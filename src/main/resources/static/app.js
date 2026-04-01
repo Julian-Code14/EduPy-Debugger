@@ -115,13 +115,22 @@ function renderVariables(payload) {
 
         const names = (v.names || []).join(", ");
         const type = v.pyType || '';
-        const val = processValue(v.value);
+        const valCell = createValueCell(v);
         const scope = v.scope || '';
         const id = v.id || '';
 
-        [names, type, val, scope, id].forEach((value) => {
+        // Name, Type
+        [names, type].forEach((value) => {
             const td = document.createElement('td');
-            td.innerHTML = value;
+            td.textContent = value;
+            tr.appendChild(td);
+        });
+        // Value cell with preview/full toggle when available
+        tr.appendChild(valCell);
+        // Scope, ID
+        [scope, id].forEach((value) => {
+            const td = document.createElement('td');
+            td.textContent = value;
             tr.appendChild(td);
         });
 
@@ -138,13 +147,53 @@ function renderVariables(payload) {
 
 function processValue(valueDTO) {
     if (!valueDTO) return '';
-    if (valueDTO.kind === 'primitive') return escapeHtml(valueDTO.repr || '');
+    return htmlize(valueDTO.kind, valueDTO.repr);
+}
 
-    // 'composite': wir ersetzen "refid:123" durch klickbaren Link
-    const raw = valueDTO.repr || '';
+function htmlize(kind, text) {
+    if (kind === 'primitive') return escapeHtml(text || '').replaceAll('\n', '<br>');
+    const raw = text || '';
     return raw.replace(/refid:(\d+)/g, (_, rid) =>
         `<a href="javascript:void(0);" onclick="jumpToSlide(${rid})">${rid}</a>`
     ).replaceAll('\n', '<br>');
+}
+
+function createValueCell(v) {
+    const td = document.createElement('td');
+    const previewDiv = document.createElement('div');
+    previewDiv.className = 'value-preview';
+    previewDiv.innerHTML = processValue(v.value);
+    td.appendChild(previewDiv);
+
+    const fullText = v?.value?.full;
+    const hasExpandable = fullText && typeof fullText === 'string' && fullText.length > 0 && fullText !== v?.value?.repr;
+    if (hasExpandable) {
+        const fullDiv = document.createElement('div');
+        fullDiv.className = 'value-full';
+        fullDiv.style.display = 'none';
+        fullDiv.innerHTML = htmlize(v.value.kind, fullText);
+        td.appendChild(fullDiv);
+
+        const btn = document.createElement('button');
+        btn.className = 'expand-btn';
+        btn.type = 'button';
+        btn.textContent = 'Mehr';
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const open = fullDiv.style.display !== 'none';
+            if (open) {
+                fullDiv.style.display = 'none';
+                previewDiv.style.display = 'block';
+                btn.textContent = 'Mehr';
+            } else {
+                fullDiv.style.display = 'block';
+                previewDiv.style.display = 'none';
+                btn.textContent = 'Weniger';
+            }
+        });
+        td.appendChild(btn);
+    }
+    return td;
 }
 
 function escapeHtml(s) {

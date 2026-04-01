@@ -11,4 +11,7 @@ public class ValueDTO {
     /** String representation or summarized attribute list */
     public String repr; // bei primitive/composite
 
+    /** Optional: full, untruncated representation for expandable values. */
+    public String full;
+
 }

@@ -494,3 +494,15 @@ th, td {
     display: inline-block;
     height: auto;
 }
+
+/* Expandable value toggle in variables table */
+.expand-btn {
+    margin-top: 4px;
+    padding: 2px 6px;
+    font-size: 12px;
+    line-height: 1.2;
+    cursor: pointer;
+}
+.variables-container td .value-full {
+    white-space: normal;
+}
