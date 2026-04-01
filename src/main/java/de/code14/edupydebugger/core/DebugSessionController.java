@@ -60,7 +60,16 @@ public class DebugSessionController {
      *                       the first suspended thread will be used instead
      * @throws IOException if an error occurs during diagram generation or file processing
      */
+    /**
+     * Performs dynamic analysis for the selected (or first suspended) thread and publishes
+     * results to the frontend. If the debug process is not yet available (e.g. very early
+     * lifecycle events), the call returns immediately without side effects.
+     */
     public void performDynamicAnalysis(@Nullable String selectedThread) throws IOException {
+        if (this.debugProcess == null) {
+            LOGGER.warn("performDynamicAnalysis called without debugProcess; ignoring.");
+            return;
+        }
         Map<PyThreadInfo, List<PyStackFrame>> perThreadFrames =
                 DebuggerUtils.getStackFramesPerThread(this.debugProcess.getSession());
 
