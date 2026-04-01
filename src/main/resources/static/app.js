@@ -263,16 +263,18 @@ function smartSplitFirstColon(s) {
     return -1;
 }
 
-function formatListLike(text) {
-    let inner = text.trim();
-    if ((inner.startsWith('[') && inner.endsWith(']')) || (inner.startsWith('(') && inner.endsWith(')'))) {
-        inner = inner.slice(1, -1);
-    } else if (inner.startsWith('{') && inner.endsWith('}')) {
-        // could be a set; treat as list
+function formatListLike(text, pyType) {
+    let inner = (text || '').trim();
+    let open = '[', close = ']';
+    const t = (pyType || '').toLowerCase();
+    if (t === 'tuple') { open = '('; close = ')'; }
+    if (t === 'set') { open = '{'; close = '}'; }
+    // Strip any existing outermost brackets to avoid duplicates
+    if ((inner.startsWith('[') && inner.endsWith(']')) || (inner.startsWith('(') && inner.endsWith(')')) || (inner.startsWith('{') && inner.endsWith('}'))) {
         inner = inner.slice(1, -1);
     }
     const items = smartSplitByComma(inner);
-    return items.join(', ');
+    return `${open}${items.join(', ')}${close}`;
 }
 
 function formatDict(text) {
@@ -295,7 +297,7 @@ function formatDict(text) {
 function formatFullByType(pyType, text) {
     const t = (pyType || '').toLowerCase();
     if (t === 'dict') return formatDict(text);
-    if (t === 'list' || t === 'tuple' || t === 'set') return formatListLike(text);
+    if (t === 'list' || t === 'tuple' || t === 'set') return formatListLike(text, pyType);
     return text;
 }
 
@@ -311,7 +313,11 @@ function formatCompositeFull(text) {
             const body = formatDict(val);
             out.push(`${name}:\n${body}`);
         } else if (val.startsWith('[') || val.startsWith('(') || (val.startsWith('{') && !val.includes(':'))) {
-            out.push(`${name}: ${formatListLike(val)}`);
+            // Try to infer container type brackets from current value
+            let typ = 'list';
+            if (val.startsWith('(')) typ = 'tuple';
+            if (val.startsWith('{')) typ = 'set';
+            out.push(`${name}: ${formatListLike(val, typ)}`);
         } else {
             out.push(line);
         }
