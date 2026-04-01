@@ -240,9 +240,29 @@ document.getElementById("console-input").addEventListener("keydown", function (e
         const inputValue = inputField.value;
         logToConsole(inputValue, true);
         sendJson('console_input', { text: inputValue });
+        // Ask server for a fresh variables snapshot (covers REPL and debug)
+        setTimeout(() => sendJson('get', { resource: 'variables' }), 50);
         inputField.value = "";
     }
 });
+
+// REPL Reset button
+const resetBtn = document.getElementById('repl-reset-btn');
+if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+        sendJson('repl_reset', {});
+        // Clear client-side state immediately
+        try {
+            document.getElementById('output-container').innerHTML = '';
+            const vtbody = document.querySelector('.variables-container tbody');
+            if (vtbody) vtbody.innerHTML = '';
+            const ct = document.querySelector('.threads-container tbody');
+            if (ct) ct.innerHTML = '';
+            const slides = document.getElementById('object-slides');
+            if (slides) slides.innerHTML = '';
+        } catch (e) { console.error(e); }
+    });
+}
 
 function logToConsole(message, isPrompt = false) {
     const outputContainer = document.getElementById("output-container");

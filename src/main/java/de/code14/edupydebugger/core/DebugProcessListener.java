@@ -128,6 +128,11 @@ public class DebugProcessListener implements XDebuggerManagerListener {
     @Override
     public void processStopped(@NotNull XDebugProcess debugProcess) {
         DebuggerToolWindowFactory.reloadEduPyDebugger();
+        // Clear integration so REPL mode can take over cleanly
+        try {
+            DebugServerEndpoint.setDebugProcess(null);
+            DebugServerEndpoint.setProcessHandler(null);
+        } catch (Throwable ignore) {}
     }
 
     /**

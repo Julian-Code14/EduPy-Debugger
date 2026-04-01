@@ -6,6 +6,8 @@ import com.intellij.execution.process.ProcessHandler;
 import com.intellij.openapi.diagnostic.Logger;
 import com.jetbrains.python.debugger.PyDebugProcess;
 import de.code14.edupydebugger.core.ConsoleController;
+import de.code14.edupydebugger.core.ConsoleOutputListener;
+import de.code14.edupydebugger.core.ReplManager;
 import de.code14.edupydebugger.core.DebugProcessController;
 import de.code14.edupydebugger.core.DebugSessionController;
 import de.code14.edupydebugger.server.dto.*;
@@ -78,6 +80,9 @@ public class DebugServerEndpoint {
     /** True while at least one session is connected. */
     private static volatile boolean isConnected = false;
 
+    /** Tracks which process handlers already have a console listener wired to avoid duplicates. */
+    private static final Set<ProcessHandler> wiredHandlers = Collections.synchronizedSet(new HashSet<>());
+
     // --- Last-known payloads for quick GET responses ---
     private static DiagramPayload    lastClassDiagram;
     private static ObjectCardPayload lastObjectCards;
@@ -114,6 +119,15 @@ public class DebugServerEndpoint {
                 Thread.currentThread().interrupt();
                 LOGGER.error("Interrupted while sending queued messages", e);
             }
+        }
+
+        // Optional: send a connection banner when -Dedupy.ws.banner=true
+        if (Boolean.getBoolean("edupy.ws.banner")) {
+            try {
+                ConsolePayload p = new ConsolePayload();
+                p.text = "[EduPy] WebSocket connected: " + session.getId();
+                sendDebugMessage("console", p);
+            } catch (Throwable ignore) {}
         }
     }
 
@@ -173,7 +187,13 @@ public class DebugServerEndpoint {
                         .orElse(null);
                 if (p != null && p.text != null) {
                     try {
+                        ensureConsoleTarget();
                         consoleController.sendInputToProcess(p.text);
+                        // In REPL mode, trigger a variables snapshot after each input
+                        if (debugProcessController.getDebugProcess() == null) {
+                            try { Thread.sleep(10); } catch (InterruptedException ignored) {}
+                            try { ReplManager.getInstance().requestSnapshot(); } catch (Exception ignore) {}
+                        }
                     } catch (IOException e) {
                         LOGGER.error("Error sending console input", e);
                     }
@@ -182,9 +202,8 @@ public class DebugServerEndpoint {
             }
             case "thread_selected": {
                 // payload: { "name": "Thread-1" } | empty -> null
-                String name = DebugMessageValidator
+                selectedThread = DebugMessageValidator
                         .extractSelectedThread(msg.payload, GSON);
-                selectedThread = name;
                 try {
                     debugSessionController.performDynamicAnalysis(selectedThread);
                 } catch (IOException e) {
@@ -199,8 +218,46 @@ public class DebugServerEndpoint {
                         .ifPresent(this::sendLatest);
                 break;
             }
+            case "repl_reset": {
+                // stop REPL process and clear controller state
+                try {
+                    ReplManager.getInstance().stopRepl();
+                } catch (Throwable ignore) {}
+                consoleController.setProcessHandler(null);
+                // clear cached payloads
+                lastClassDiagram = null;
+                lastObjectCards  = null;
+                lastObjectDiagram= null;
+                lastVariables    = null;
+                lastCallstack    = null;
+                lastThreads      = null;
+                break;
+            }
             default:
                 LOGGER.warn("Unknown message type: " + msg.type);
+        }
+    }
+
+    /**
+     * Ensures that console input has a valid target. If no debug process is present,
+     * a lightweight Python REPL is started and its output is bridged back to the UI.
+     */
+    private static void ensureConsoleTarget() {
+        ProcessHandler current = consoleController.getProcessHandler();
+        if (current != null && !current.isProcessTerminated()) return;
+
+        try {
+            ProcessHandler repl = ReplManager.getInstance().ensureReplStarted();
+            consoleController.setProcessHandler(repl);
+            // Wire output once
+            synchronized (wiredHandlers) {
+                if (!wiredHandlers.contains(repl)) {
+                    new ConsoleOutputListener(repl).attachConsoleListeners();
+                    wiredHandlers.add(repl);
+                }
+            }
+        } catch (Exception ex) {
+            LOGGER.warn("Failed to start fallback REPL", ex);
         }
     }
 
@@ -238,7 +295,21 @@ public class DebugServerEndpoint {
                 if (lastObjectDiagram != null) sendDebugMessage("object_diagram", lastObjectDiagram);
             }
             case "variables" -> {
-                if (lastVariables != null) sendDebugMessage("variables", lastVariables);
+                if (lastVariables != null) {
+                    sendDebugMessage("variables", lastVariables);
+                } else {
+                    // In REPL mode, ensure we have a target and trigger a snapshot
+                    if (debugProcessController.getDebugProcess() == null) {
+                        try {
+                            ensureConsoleTarget();
+                            // Delay lightly to avoid printing [] on fresh REPL
+                            try { Thread.sleep(10); } catch (InterruptedException ignored) {}
+                            ReplManager.getInstance().requestSnapshot();
+                        } catch (Exception e) {
+                            LOGGER.warn("Failed to request REPL snapshot on GET", e);
+                        }
+                    }
+                }
             }
             case "callstack" -> {
                 if (lastCallstack != null) sendDebugMessage("callstack", lastCallstack);

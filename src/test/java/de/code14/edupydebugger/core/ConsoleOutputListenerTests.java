@@ -70,6 +70,31 @@ public class ConsoleOutputListenerTests {
     }
 
     @Test
+    public void testStartupLineIsSuppressedOnce() {
+        try (MockedStatic<DebugServerEndpoint> mockedStatic = Mockito.mockStatic(DebugServerEndpoint.class)) {
+            consoleOutputListener.attachConsoleListeners();
+
+            ArgumentCaptor<ProcessListener> listenerCaptor = ArgumentCaptor.forClass(ProcessListener.class);
+            verify(processHandler).addProcessListener(listenerCaptor.capture());
+            ProcessListener listener = listenerCaptor.getValue();
+
+            // Simuliere die typische pydevd-Startzeile
+            when(processEvent.getText()).thenReturn(
+                    "/usr/bin/python3 .../pydev/pydevd.py --multiprocess --client 127.0.0.1 --port 51817 --file main.py\n"
+            );
+            listener.onTextAvailable(processEvent, outputType);
+
+            // Keine Weiterleitung erwartet
+            mockedStatic.verify(() -> DebugServerEndpoint.sendDebugMessage(anyString(), any()), never());
+
+            // Nächste normale Zeile wird weitergeleitet
+            when(processEvent.getText()).thenReturn("print('hi') -> hi\n");
+            listener.onTextAvailable(processEvent, outputType);
+            mockedStatic.verify(() -> DebugServerEndpoint.sendDebugMessage(eq("console"), any()), times(1));
+        }
+    }
+
+    @Test
     public void testAttachConsoleListeners_doesNotThrow() {
         // Erwartung: kein Fehler beim Anhängen der Listener
         consoleOutputListener.attachConsoleListeners();
