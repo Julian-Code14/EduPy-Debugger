@@ -120,6 +120,15 @@ public class DebugServerEndpoint {
                 LOGGER.error("Interrupted while sending queued messages", e);
             }
         }
+
+        // Optional: send a connection banner when -Dedupy.ws.banner=true
+        if (Boolean.getBoolean("edupy.ws.banner")) {
+            try {
+                ConsolePayload p = new ConsolePayload();
+                p.text = "[EduPy] WebSocket connected: " + session.getId();
+                sendDebugMessage("console", p);
+            } catch (Throwable ignore) {}
+        }
     }
 
     /**

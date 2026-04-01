@@ -240,6 +240,8 @@ document.getElementById("console-input").addEventListener("keydown", function (e
         const inputValue = inputField.value;
         logToConsole(inputValue, true);
         sendJson('console_input', { text: inputValue });
+        // Ask server for a fresh variables snapshot (covers REPL and debug)
+        setTimeout(() => sendJson('get', { resource: 'variables' }), 50);
         inputField.value = "";
     }
 });
