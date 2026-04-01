@@ -157,5 +157,55 @@ public class VariableAnalyzerTests {
         assertEquals("42", variableInfo.get(2));
         assertEquals("unknown", variableInfo.get(3));
     }
-}
 
+    @Test
+    public void testAnalyzeVariables_enrichesGlobalsEvenWhenLocalScope() throws PyDebuggerException {
+        // Arrange: one local variable to provide an evaluation context
+        doAnswer(invocation -> {
+            XValueChildrenList childrenList = new XValueChildrenList();
+            childrenList.add(mockValue);
+            invocation.getArgument(0, XCompositeNode.class).addChildren(childrenList, true);
+            return null;
+        }).when(mockStackFrame).computeChildren(any(XCompositeNode.class));
+
+        when(mockValue.getName()).thenReturn("localVar");
+        when(mockValue.getType()).thenReturn("int");
+        when(mockValue.getValue()).thenReturn("1");
+
+        PyFrameAccessor mockAccessor = mock(PyFrameAccessor.class);
+        when(mockValue.getFrameAccessor()).thenReturn(mockAccessor);
+
+        // Local id/scope
+        when(mockAccessor.evaluate(eq("__builtins__.id(localVar)"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("id", "int", null, "11", false, null, false, false, false, null, mockAccessor));
+        when(mockAccessor.evaluate(eq("locals().get('localVar', None) is not None"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("isLocal", "bool", null, "true", false, null, false, false, false, null, mockAccessor));
+        when(mockAccessor.evaluate(eq("globals().get('localVar', None) is not None"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("isGlobal", "bool", null, "false", false, null, false, false, false, null, mockAccessor));
+
+        // Global enrichment: globals list contains 'g' and a built-in-like name that should be skipped
+        when(mockAccessor.evaluate(eq("list(globals().keys())"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("globals", "list", null, "['g', '__name__']", false, null, false, false, false, null, mockAccessor));
+
+        // Evaluate global 'g'
+        PyDebugValue gVal = new PyDebugValue("g", "int", null, "7", false, null, false, false, false, null, mockAccessor);
+        when(mockAccessor.evaluate(eq("globals().get('g', None)"), anyBoolean(), anyBoolean())).thenReturn(gVal);
+        // ID for global g
+        when(mockAccessor.evaluate(eq("__builtins__.id(globals()['g'])"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("id", "int", null, "77", false, null, false, false, false, null, mockAccessor));
+
+        // '__name__' is skipped by type/module
+        when(mockAccessor.evaluate(eq("globals().get('__name__', None)"), anyBoolean(), anyBoolean()))
+                .thenReturn(new PyDebugValue("__name__", "module", null, "<module>", false, null, false, false, false, null, mockAccessor));
+
+        // Act
+        variableAnalyzer.analyzeVariables();
+
+        // Assert: contains both local (11) and global (77)
+        Map<String, List<String>> vars = variableAnalyzer.getVariables();
+        assertEquals(2, vars.size());
+        assertEquals("local", vars.get("11").get(3));
+        assertEquals("global", vars.get("77").get(3));
+        assertEquals("7", vars.get("77").get(2));
+    }
+}

@@ -98,8 +98,8 @@ public class DebugSessionController {
      */
     private void publishCallstack(List<PyStackFrame> frames) {
         CallstackPayload payload = new CallstackPayload();
-        payload.frames = new ArrayList<>();
-        for (PyStackFrame f : frames) payload.frames.add(f.getName());
+        // Enrich frames to include actual parameters where available
+        payload.frames = DebuggerUtils.formatCallstackFrames(frames);
         DebugServerEndpoint.publishCallstack(payload);
     }
 

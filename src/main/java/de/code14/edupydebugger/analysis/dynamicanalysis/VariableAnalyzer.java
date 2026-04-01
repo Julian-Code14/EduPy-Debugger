@@ -69,11 +69,16 @@ public class VariableAnalyzer {
             public void addChildren(@NotNull XValueChildrenList children, boolean last) {
                 LOGGER.debug("Analyzing PyStackFrame: " + pyStackFrame.getFrameId());
 
+                // Keep a small set of names visible directly in this frame
+                Set<String> namesInFrame = new HashSet<>();
+                PyDebugValue evalCtx = null;
                 for (int i = 0; i < children.size(); i++) {
                     PyDebugValue value = (PyDebugValue) children.getValue(i);
+                    if (evalCtx == null) evalCtx = value; // use first available value as evaluation context
                     String id = determinePythonId(value, value.getName());
                     // If the file changes, variables from another file would not be defined -> exclude
                     if (!id.contains("is not defined")) {
+                        namesInFrame.add(value.getName());
                         if (variables.containsKey(id)) { // If there are more names for an id
                             variables.get(id).set(0, variables.get(id).get(0) + "###" + value.getName());
                         } else { // Default: new variable found -> put key-value-pair into the map
@@ -84,6 +89,53 @@ public class VariableAnalyzer {
                                     determineScope(value)
                             )));
                         }
+                    }
+                }
+
+                // Additionally enrich with globals (even when stopped in a local scope)
+                // Best-effort: only when we have an evaluation context
+                if (evalCtx != null) {
+                    try {
+                        List<String> globalNames = parsePythonList(evaluateExpression(evalCtx, "list(globals().keys())"));
+                        for (String rawName : globalNames) {
+                            String name = rawName.replace("'", "").trim();
+                            if (name.isEmpty()) continue;
+
+                            // Evaluate the global value itself for type and repr
+                            PyDebugValue gv = evaluateExpressionValue(evalCtx, "globals().get('" + name + "', None)");
+                            if (gv == null || gv.getValue() == null) continue;
+
+                            // Skip noisy entries that are not user variables
+                            String t = gv.getType();
+                            if (t == null) continue;
+                            if (t.equals("module") || t.equals("function") || t.equals("builtin_function_or_method") || t.equals("type")) {
+                                continue;
+                            }
+
+                            String id = determinePythonId(evalCtx, "globals()['" + name + "']");
+                            if (id.contains("is not defined")) continue;
+
+                            // If this object id is already known, just merge the name; else add as global variable
+                            if (variables.containsKey(id)) {
+                                List<String> meta = variables.get(id);
+                                if (meta != null) {
+                                    String existing = meta.get(0);
+                                    // Avoid duplicate name merges
+                                    if (!Arrays.asList(existing.split("###")).contains(name)) {
+                                        meta.set(0, existing + "###" + name);
+                                    }
+                                }
+                            } else {
+                                variables.put(id, new ArrayList<>(Arrays.asList(
+                                        name,
+                                        t,
+                                        Objects.requireNonNull(gv.getValue()).replace(", ", "~"),
+                                        "global"
+                                )));
+                            }
+                        }
+                    } catch (Exception ex) {
+                        LOGGER.debug("Global enrichment failed (non-fatal)", ex);
                     }
                 }
 
@@ -149,6 +201,37 @@ public class VariableAnalyzer {
             LOGGER.warn("Error evaluating expression: " + expression, e);
             return "";
         }
+    }
+
+    /**
+     * Evaluates a Python expression in the current frame and returns the raw {@link PyDebugValue}.
+     * Returns {@code null} on failure.
+     */
+    private @Nullable PyDebugValue evaluateExpressionValue(PyDebugValue value, String expression) {
+        try {
+            return value.getFrameAccessor().evaluate(expression, false, true);
+        } catch (PyDebuggerException e) {
+            LOGGER.warn("Error evaluating expression: " + expression, e);
+            return null;
+        }
+    }
+
+    /**
+     * Parses a Python list string representation like "['a', 'b']" into a list of items.
+     */
+    private List<String> parsePythonList(String listStr) {
+        List<String> items = new ArrayList<>();
+        if (listStr == null) return items;
+        listStr = listStr.trim();
+        if (listStr.length() < 2) return items;
+        if (listStr.charAt(0) == '[' && listStr.charAt(listStr.length() - 1) == ']') {
+            listStr = listStr.substring(1, listStr.length() - 1);
+        }
+        if (listStr.trim().isEmpty()) return items;
+        for (String s : listStr.split(", ")) {
+            items.add(s.trim());
+        }
+        return items;
     }
 
     /**

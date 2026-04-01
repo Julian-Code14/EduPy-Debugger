@@ -4,11 +4,17 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.frame.XExecutionStack;
 import com.intellij.xdebugger.frame.XStackFrame;
+import com.intellij.xdebugger.frame.XCompositeNode;
+import com.intellij.xdebugger.frame.XValueChildrenList;
+import com.intellij.xdebugger.frame.XDebuggerTreeNodeHyperlink;
+import com.intellij.ui.SimpleTextAttributes;
 import com.jetbrains.python.debugger.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Utility class for working with the debugger and extracting stack frames.
@@ -112,6 +118,55 @@ public class DebuggerUtils {
         });
 
         return stackFrames;
+    }
+
+    /**
+     * Formats a human-readable call stack list like "func(a=1, b='x')" for each frame.
+     * Falls back to "name()" if argument inspection is not available.
+     */
+    public static List<String> formatCallstackFrames(List<PyStackFrame> frames) {
+        if (frames == null) return Collections.emptyList();
+        List<String> out = new ArrayList<>();
+        for (PyStackFrame f : frames) {
+            String base = f.getName();
+            String[] holder = new String[]{base + "()"};
+            CountDownLatch latch = new CountDownLatch(1);
+            try {
+                f.computeChildren(new XCompositeNode() {
+                    @Override
+                    public void addChildren(@NotNull XValueChildrenList children, boolean last) {
+                        try {
+                            if (children.size() > 0 && children.getValue(0) instanceof PyDebugValue) {
+                                PyDebugValue ctx = (PyDebugValue) children.getValue(0);
+                                String expr = "(lambda _ins: ', '.join([a + '=' + repr(locals().get(a, globals().get(a, None))) for a in _ins.getargvalues(_ins.currentframe()).args]))(__import__('inspect'))";
+                                PyDebugValue v = ctx.getFrameAccessor().evaluate(expr, false, true);
+                                String args = v != null && v.getValue() != null ? v.getValue() : "";
+                                holder[0] = base + "(" + args + ")";
+                            }
+                        } catch (Exception e) {
+                            LOGGER.debug("formatCallstackFrames: evaluation failed, falling back", e);
+                        } finally {
+                            if (last) latch.countDown();
+                        }
+                    }
+
+                    @Override public void tooManyChildren(int remaining) {}
+                    @Override public void tooManyChildren(int remaining, @NotNull Runnable addNextChildren) {}
+                    @Override public void setAlreadySorted(boolean alreadySorted) {}
+                    @Override public void setErrorMessage(@NotNull String errorMessage) { if (latch.getCount() > 0) latch.countDown(); }
+                    @Override public void setErrorMessage(@NotNull String errorMessage, @org.jetbrains.annotations.Nullable XDebuggerTreeNodeHyperlink link) { if (latch.getCount() > 0) latch.countDown(); }
+                    @Override public void setMessage(@NotNull String message, @org.jetbrains.annotations.Nullable javax.swing.Icon icon, @NotNull SimpleTextAttributes attributes, @org.jetbrains.annotations.Nullable XDebuggerTreeNodeHyperlink link) {}
+                });
+                // Wait briefly to avoid blocking tests when mocks don't call back
+                latch.await(50, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            } catch (Throwable t) {
+                LOGGER.debug("formatCallstackFrames: computeChildren failed, falling back", t);
+            }
+            out.add(holder[0]);
+        }
+        return out;
     }
 
 }
