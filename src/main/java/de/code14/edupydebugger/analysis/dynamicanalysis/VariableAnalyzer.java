@@ -44,9 +44,14 @@ public class VariableAnalyzer {
      */
     public void analyzeVariables() {
         variables.clear();
-        CountDownLatch latch = new CountDownLatch(this.pyStackFrames.size());
+        // Collect ONLY from the top (current) frame to reflect the latest state in the variables table.
+        // Global enrichment below will still add global names from the same context.
+        List<PyStackFrame> framesToAnalyze = this.pyStackFrames.isEmpty()
+                ? Collections.emptyList()
+                : Collections.singletonList(this.pyStackFrames.get(0));
+        CountDownLatch latch = new CountDownLatch(framesToAnalyze.size());
 
-        for (PyStackFrame frame : this.pyStackFrames) {
+        for (PyStackFrame frame : framesToAnalyze) {
             collectVariables(frame, latch);
         }
 
