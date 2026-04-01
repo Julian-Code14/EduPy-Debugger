@@ -160,8 +160,8 @@ public class ConsoleOutputListener {
         }
 
         // Variables payload (now that objects are available)
+        java.util.List<VariableDTO> varDtos = new java.util.ArrayList<>();
         if (varsList != null) {
-            VariablesPayload payload = new VariablesPayload(new java.util.ArrayList<>());
             for (Object o : varsList) {
                 if (!(o instanceof java.util.Map)) continue;
                 @SuppressWarnings("unchecked")
@@ -171,50 +171,17 @@ public class ConsoleOutputListener {
                 dto.names = java.util.Collections.singletonList(String.valueOf(m.get("name")));
                 dto.pyType = String.valueOf(m.get("type"));
                 dto.scope = String.valueOf(m.getOrDefault("scope", "global"));
-
                 ValueDTO val = new ValueDTO();
-                java.util.Set<String> prim = new java.util.HashSet<>(java.util.Arrays.asList(
-                        "int","float","str","bool","list","dict","tuple","set"));
-                if (prim.contains(dto.pyType)) {
-                    val.kind = "primitive";
-                    val.repr = String.valueOf(m.get("repr"));
-                } else {
-                    val.kind = "composite";
-                    // Compact attribute snippet for table from objects map
-                    ObjectInfo info = objects.get(dto.id);
-                    StringBuilder sb = new StringBuilder();
-                    if (info != null) {
-                        for (AttributeInfo a : info.attributes()) {
-                            String shown = a.value();
-                            if (shown.length() > 20) shown = shown.substring(0, 20) + " [...]";
-                            sb.append(a.name()).append(": ").append(shown).append("\n");
-                        }
-                    }
-                    val.repr = sb.toString().trim();
-                }
+                val.repr = String.valueOf(m.get("repr"));
                 dto.value = val;
-                payload.variables.add(dto);
+                varDtos.add(dto);
             }
-            DebugServerEndpoint.publishVariables(payload);
+            PayloadPublisher.publishVariablesWithSnippet(varDtos, objects);
         }
 
         // Object cards + diagram
         if (!objects.isEmpty()) {
-            java.util.Map<String,String> cards = ObjectDiagramParser.generateObjectCards(objects);
-            ObjectCardPayload oc = new ObjectCardPayload();
-            oc.cards = new java.util.ArrayList<>();
-            for (java.util.Map.Entry<String,String> ce : cards.entrySet()) {
-                String svg = PlantUMLDiagramGenerator.generateDiagramAsBase64(ce.getValue());
-                CardDTO c = new CardDTO();
-                c.id = ce.getKey();
-                c.svgBase64 = svg;
-                oc.cards.add(c);
-            }
-            DebugServerEndpoint.publishObjectCards(oc);
-
-            String od = ObjectDiagramParser.generateObjectDiagram(objects);
-            String odSvg = PlantUMLDiagramGenerator.generateDiagramAsBase64(od);
-            DebugServerEndpoint.publishObjectDiagram(odSvg);
+            PayloadPublisher.publishObjects(objects);
         }
     }
 

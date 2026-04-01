@@ -160,7 +160,7 @@ public class DebugSessionController {
             variables.add(dto);
         }
 
-        DebugServerEndpoint.publishVariables(new VariablesPayload(variables));
+        PayloadPublisher.publishVariablesWithSnippet(variables, objects);
     }
 
     /**
@@ -176,23 +176,7 @@ public class DebugSessionController {
     private Map<String, ObjectInfo> handleObjects(StackFrameAnalyzer analyzer) throws IOException {
         Map<String, ObjectInfo> objects = analyzer.getObjects();
 
-        // Objektkarten -> Base64 SVG je Objekt
-        Map<String, String> cardsPuml = ObjectDiagramParser.generateObjectCards(objects);
-        ObjectCardPayload ocPayload = new ObjectCardPayload();
-        ocPayload.cards = new ArrayList<>();
-        for (Map.Entry<String, String> entry : cardsPuml.entrySet()) {
-            String base64 = PlantUMLDiagramGenerator.generateDiagramAsBase64(entry.getValue());
-            CardDTO c = new CardDTO();
-            c.id = entry.getKey();
-            c.svgBase64 = base64;
-            ocPayload.cards.add(c);
-        }
-        DebugServerEndpoint.publishObjectCards(ocPayload);
-
-        // Objektdiagramm
-        String odPuml = ObjectDiagramParser.generateObjectDiagram(objects);
-        String odBase64 = PlantUMLDiagramGenerator.generateDiagramAsBase64(odPuml);
-        DebugServerEndpoint.publishObjectDiagram(odBase64);
+        PayloadPublisher.publishObjects(objects);
 
         return objects;
     }
