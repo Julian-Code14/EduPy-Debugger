@@ -10,6 +10,8 @@ import com.intellij.ui.jcef.JBCefBrowser;
 import de.code14.edupydebugger.server.DebugWebServer;
 import de.code14.edupydebugger.server.DebugWebSocketServer;
 import org.jetbrains.annotations.NotNull;
+import com.intellij.openapi.roots.ProjectRootManager;
+import com.intellij.openapi.vfs.VirtualFile;
 import de.code14.edupydebugger.core.ReplManager;
 
 import javax.swing.*;
@@ -39,7 +41,16 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
      */
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        try { ReplManager.getInstance().setWorkingDirectory(project.getBasePath()); } catch (Throwable ignore) {}
+        try {
+            ReplManager.getInstance().setWorkingDirectory(project.getBasePath());
+            // Collect source roots for PYTHONPATH
+            VirtualFile[] roots = ProjectRootManager.getInstance(project).getContentSourceRoots();
+            java.util.List<String> paths = new java.util.ArrayList<>();
+            for (VirtualFile vf : roots) {
+                if (vf != null && vf.exists()) paths.add(vf.getPath());
+            }
+            ReplManager.getInstance().setExtraPythonPaths(paths);
+        } catch (Throwable ignore) {}
         initializeBrowser();
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(jbCefBrowser.getComponent(), BorderLayout.CENTER);

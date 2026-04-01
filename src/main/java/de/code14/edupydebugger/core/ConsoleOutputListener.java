@@ -28,6 +28,9 @@ public class ConsoleOutputListener {
     private static final Logger LOGGER = Logger.getInstance(ConsoleOutputListener.class);
     private final ProcessHandler processHandler;
     private boolean startupLineSuppressed = false;
+    private static final String SNAPSHOT_PREFIX = "__EDUPY_SNAPSHOT__";
+    private final StringBuilder snapshotBuffer = new StringBuilder();
+    private boolean capturingSnapshot = false;
 
     /**
      * Constructs a new listener bound to the given {@link ProcessHandler}.
@@ -57,14 +60,22 @@ public class ConsoleOutputListener {
                     return;
                 }
 
-                // REPL variables snapshot marker handling
-                if (text != null && text.startsWith("__EDUPY_SNAPSHOT__")) {
-                    try {
-                        publishVariablesFromSnapshot(text.substring("__EDUPY_SNAPSHOT__".length()));
-                    } catch (Throwable t) {
-                        LOGGER.warn("Failed to parse REPL snapshot", t);
+                // REPL snapshot handling across partial chunks
+                if (text != null) {
+                    if (capturingSnapshot) {
+                        snapshotBuffer.append(text);
+                        if (flushSnapshotIfComplete()) return; // handled as variables payload
+                    } else {
+                        int idx = text.indexOf(SNAPSHOT_PREFIX);
+                        if (idx >= 0) {
+                            capturingSnapshot = true;
+                            snapshotBuffer.setLength(0);
+                            snapshotBuffer.append(text.substring(idx));
+                            if (flushSnapshotIfComplete()) return;
+                            // keep buffering until complete
+                            return;
+                        }
                     }
-                    return;
                 }
 
                 LOGGER.info("Console Output: " + text);
@@ -126,5 +137,22 @@ public class ConsoleOutputListener {
             payload.variables.add(dto);
         }
         DebugServerEndpoint.publishVariables(payload);
+    }
+
+    /** Flushes buffer when a full snapshot line is received. */
+    private boolean flushSnapshotIfComplete() {
+        int nl = snapshotBuffer.indexOf("\n");
+        if (nl < 0) return false;
+        String line = snapshotBuffer.substring(0, nl);
+        capturingSnapshot = false;
+        try {
+            if (line.startsWith(SNAPSHOT_PREFIX)) {
+                publishVariablesFromSnapshot(line.substring(SNAPSHOT_PREFIX.length()));
+                return true;
+            }
+        } catch (Throwable t) {
+            LOGGER.warn("Failed to handle REPL snapshot line", t);
+        }
+        return false;
     }
 }
