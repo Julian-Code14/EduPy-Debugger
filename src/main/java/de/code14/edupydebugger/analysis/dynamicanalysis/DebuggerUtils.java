@@ -154,6 +154,13 @@ public class DebuggerUtils {
                                 String namesExprByName = String.format(
                                         "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else ','.join(__ins.getargvalues(__matches[%d].frame).args)))([fi for fi in __ins.stack() if getattr(fi,'function','')=='%s']))(__import__('inspect'))",
                                         occurrence, occurrence, safeName);
+                                String namesByCodeByName = String.format(
+                                        "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else (lambda __f,__c,__ac,__kc,__fl: "+
+                                                "','.join(list(__c.co_varnames[:__ac]) + "+
+                                                "([] if not (__fl & 4) else [__c.co_varnames[__ac+__kc]]) + "+
+                                                "([] if not (__fl & 8) else [__c.co_varnames[__ac+__kc + (1 if (__fl & 4) else 0)]]) + "+
+                                                "list(__c.co_varnames[__ac:__ac+__kc]) ))(__matches[%d].frame, __matches[%d].frame.f_code, __matches[%d].frame.f_code.co_argcount, __matches[%d].frame.f_code.co_kwonlyargcount, __matches[%d].frame.f_code.co_flags)))([fi for fi in __ins.stack() if getattr(fi,'function','')=='%s']))(__import__('inspect'))",
+                                        occurrence, occurrence, occurrence, occurrence, occurrence, occurrence, safeName);
                                 // No locals fallback here either; if name-based selection fails, we show name() only.
                                 if ("<module>".equals(baseName)) {
                                     holder[0] = baseName + "()"; // avoid dumping module locals
@@ -166,6 +173,13 @@ public class DebuggerUtils {
                                         try {
                                             PyDebugValue nv = ctx.getFrameAccessor().evaluate(namesExprByName, false, true);
                                             namesCsv = nv != null && nv.getValue() != null ? nv.getValue() : "";
+                                        } catch (Throwable ignore) {}
+                                    }
+                                    // Final fallback: derive names from code object layout
+                                    if (namesCsv.isEmpty()) {
+                                        try {
+                                            PyDebugValue nv2 = ctx.getFrameAccessor().evaluate(namesByCodeByName, false, true);
+                                            namesCsv = nv2 != null && nv2.getValue() != null ? nv2.getValue() : "";
                                         } catch (Throwable ignore) {}
                                     }
                                     List<String> parts = new ArrayList<>();
@@ -182,10 +196,10 @@ public class DebuggerUtils {
                                             String anEsc = an.replace("'", "\\'");
                                             // Prefer depth-based value lookup; fallback to name-based frame if needed
                                             String valExpr = String.format(
-                                                    "(lambda _sys,_ins,_n,_a: (lambda __av: ((('refid:'+str(__builtins__.id(__av.locals.get(_a, None))))) if (not isinstance(__av.locals.get(_a, None),(int,float,str,bool,list,dict,tuple,set))) else repr(__av.locals.get(_a, None))))(_ins.getargvalues(_sys._getframe(_n))))(__import__('sys'), __import__('inspect'), %d, '%s')",
+                                                    "(lambda _sys,_ins,_n,_a: (lambda __av,__b: ((('refid:'+str(__b.id(__av.locals.get(_a, None))))) if (not isinstance(__av.locals.get(_a, None),(__b.int,__b.float,__b.str,__b.bool,__b.list,__b.dict,__b.tuple,__b.set))) else repr(__av.locals.get(_a, None))))(_ins.getargvalues(_sys._getframe(_n)), __import__('builtins')))(__import__('sys'), __import__('inspect'), %d, '%s')",
                                                     depth, anEsc);
                                             String valExprByName = String.format(
-                                                    "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else (lambda __av: ((('refid:'+str(__builtins__.id(__av.locals.get('%s', None))))) if (not isinstance(__av.locals.get('%s', None),(int,float,str,bool,list,dict,tuple,set))) else repr(__av.locals.get('%s', None))))(__ins.getargvalues(__matches[%d].frame))))([fi for fi in __ins.stack() if getattr(fi,'function','')=='%s']))(__import__('inspect'))",
+                                                    "(lambda __ins: (lambda __matches: ('' if len(__matches)<=%d else (lambda __av,__b: ((('refid:'+str(__b.id(__av.locals.get('%s', None))))) if (not isinstance(__av.locals.get('%s', None),(__b.int,__b.float,__b.str,__b.bool,__b.list,__b.dict,__b.tuple,__b.set))) else repr(__av.locals.get('%s', None))))(__ins.getargvalues(__matches[%d].frame), __import__('builtins'))))([fi for fi in __ins.stack() if getattr(fi,'function','')=='%s']))(__import__('inspect'))",
                                                     occurrence, anEsc, anEsc, anEsc, occurrence, safeName);
                                             try {
                                                 PyDebugValue rv = ctx.getFrameAccessor().evaluate(valExpr, false, true);
