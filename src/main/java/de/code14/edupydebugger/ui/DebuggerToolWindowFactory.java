@@ -112,9 +112,14 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
      */
     public static void closeJBCefBrowser() {
         if (jbCefBrowser != null) {
-            jbCefBrowser.dispose();
-            jbCefBrowser.getCefBrowser().close(true);
-            jbCefBrowser = null;
+            try {
+                jbCefBrowser.dispose();
+                jbCefBrowser.getCefBrowser().close(true);
+            } catch (Throwable ignore) {
+                // keep quiet to avoid noisy shutdown warnings
+            } finally {
+                jbCefBrowser = null;
+            }
         }
     }
 
@@ -131,6 +136,8 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
      * This method is typically used to refresh the content displayed in the tool window.
      */
     public static void reloadEduPyDebugger() {
-        jbCefBrowser.loadURL("http://127.0.0.1:8026/index.html");
+        if (jbCefBrowser != null) {
+            jbCefBrowser.loadURL("http://127.0.0.1:8026/index.html");
+        }
     }
 }

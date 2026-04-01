@@ -61,6 +61,10 @@ public class DebugSessionController {
      * @throws IOException if an error occurs during diagram generation or file processing
      */
     public void performDynamicAnalysis(@Nullable String selectedThread) throws IOException {
+        if (this.debugProcess == null) {
+            LOGGER.warn("performDynamicAnalysis called without debugProcess; ignoring.");
+            return;
+        }
         Map<PyThreadInfo, List<PyStackFrame>> perThreadFrames =
                 DebuggerUtils.getStackFramesPerThread(this.debugProcess.getSession());
 

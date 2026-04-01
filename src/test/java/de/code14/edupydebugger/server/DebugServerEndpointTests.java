@@ -187,6 +187,26 @@ public class DebugServerEndpointTests {
     }
 
     @Test
+    public void testThreadSelected_blankName_isTreatedAsNull() {
+        DebugServerEndpoint ep = new DebugServerEndpoint();
+        ep.onOpen(mockSession);
+
+        // blank name → should not throw and behave like null
+        String json = "{\"type\":\"thread_selected\",\"payload\":{\"name\":\"   \"}}";
+        ep.onMessage(json, mockSession);
+    }
+
+    @Test
+    public void testGet_ignoresNullResource() {
+        DebugServerEndpoint ep = new DebugServerEndpoint();
+        ep.onOpen(mockSession);
+
+        // resource=null → should not NPE
+        String json = "{\"type\":\"get\",\"payload\":{\"resource\":null}}";
+        ep.onMessage(json, mockSession);
+    }
+
+    @Test
     public void testSetDebugProcess_setsIntoController() throws Exception {
         DebugServerEndpoint.setDebugProcess(mockDebugProcess);
 

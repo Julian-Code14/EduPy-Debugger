@@ -158,14 +158,17 @@ public class DebugServerEndpoint {
         switch (msg.type) {
             case "action": {
                 // payload: { "command": "resume|pause|step-over|step-into|step-out" }
-                Map<?, ?> p = (Map<?, ?>) msg.payload;
-                String command = String.valueOf(p.get("command"));
+                String command = de.code14.edupydebugger.server.validation.DebugMessageValidator
+                        .extractActionCommand(msg.payload, GSON)
+                        .orElse(null);
                 handleAction(command);
                 break;
             }
             case "console_input": {
                 // payload: { "text": "..." }
-                ConsolePayload p = GSON.fromJson(GSON.toJson(msg.payload), ConsolePayload.class);
+                ConsolePayload p = de.code14.edupydebugger.server.validation.DebugMessageValidator
+                        .extractConsoleInput(msg.payload, GSON)
+                        .orElse(null);
                 if (p != null && p.text != null) {
                     try {
                         consoleController.sendInputToProcess(p.text);
@@ -177,9 +180,9 @@ public class DebugServerEndpoint {
             }
             case "thread_selected": {
                 // payload: { "name": "Thread-1" } | empty -> null
-                Map<?, ?> p = (Map<?, ?>) msg.payload;
-                String name = (p == null) ? null : (String) p.get("name");
-                selectedThread = (name == null || name.isBlank()) ? null : name;
+                String name = de.code14.edupydebugger.server.validation.DebugMessageValidator
+                        .extractSelectedThread(msg.payload, GSON);
+                selectedThread = name;
                 try {
                     debugSessionController.performDynamicAnalysis(selectedThread);
                 } catch (IOException e) {
@@ -189,9 +192,9 @@ public class DebugServerEndpoint {
             }
             case "get": {
                 // payload: { "resource": "variables|object_cards|class_diagram|object_diagram|callstack|threads" }
-                Map<?, ?> p = (Map<?, ?>) msg.payload;
-                String res = String.valueOf(p.get("resource"));
-                sendLatest(res);
+                de.code14.edupydebugger.server.validation.DebugMessageValidator
+                        .extractGetResource(msg.payload, GSON)
+                        .ifPresent(this::sendLatest);
                 break;
             }
             default:
@@ -259,7 +262,7 @@ public class DebugServerEndpoint {
      */
     public static void sendDebugMessage(String type, Object payload) {
         DebugMessage<Object> m = new DebugMessage<>(type, payload);
-        String json = new Gson().toJson(m); // keep consistent with original behavior
+        String json = GSON.toJson(m);
         if (!isConnected) {
             messageQueue.offer(json);
             return;
