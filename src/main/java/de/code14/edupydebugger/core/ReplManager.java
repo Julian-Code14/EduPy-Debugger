@@ -20,6 +20,7 @@ public class ReplManager {
     private static final ReplManager INSTANCE = new ReplManager();
 
     private OSProcessHandler replHandler;
+    private boolean bootstrapped;
 
     public static ReplManager getInstance() {
         return INSTANCE;
@@ -58,6 +59,8 @@ public class ReplManager {
             replHandler = new OSProcessHandler(gcl2);
             LOGGER.info("Started fallback REPL using '" + executable + "'");
         }
+        bootstrapped = false;
+        try { ensureBootstrapInjected(); } catch (Throwable t) { LOGGER.warn("REPL bootstrap failed", t); }
         return replHandler;
     }
 
@@ -70,8 +73,63 @@ public class ReplManager {
                 // ignore; best-effort
             } finally {
                 replHandler = null;
+                bootstrapped = false;
             }
         }
     }
-}
 
+    /** Injects helper functions into the REPL to snapshot variables as JSON. */
+    public synchronized void ensureBootstrapInjected() throws Exception {
+        if (replHandler == null || replHandler.isProcessTerminated() || bootstrapped) return;
+        var os = replHandler.getProcessInput();
+        if (os == null) return;
+        String bootstrap = String.join("\n",
+                "import json, builtins",
+                "_EDUPY_PRIMS = {'int','float','str','bool','list','dict','tuple','set'}",
+                "def _edupy__snapshot():",
+                "    out = []",
+                "    gs = globals()",
+                "    for k,v in list(gs.items()):",
+                "        if k.startswith('_') or k in ('__name__','__builtins__'):",
+                "            continue",
+                "        try:",
+                "            t = type(v).__name__",
+                "            if t in _EDUPY_PRIMS:",
+                "                reprv = repr(v)",
+                "            else:",
+                "                attrs = []",
+                "                try:",
+                "                    for a in dir(v):",
+                "                        if a.startswith('_'): continue",
+                "                        try:",
+                "                            av = getattr(v, a)",
+                "                            s = repr(av)",
+                "                            if len(s) > 20: s = s[:20] + ' [...]'",
+                "                            attrs.append(f'{a}: {s}')",
+                "                        except Exception:",
+                "                            pass",
+                "                except Exception:",
+                "                    pass",
+                "                reprv = '\\n'.join(attrs[:10])",
+                "            out.append({'id': str(id(v)), 'name': k, 'type': t, 'repr': reprv, 'scope': 'global'})",
+                "        except Exception:",
+                "            pass",
+                "    return json.dumps(out)",
+                ""
+        ) + "\n";
+        os.write(bootstrap.getBytes());
+        os.flush();
+        bootstrapped = true;
+    }
+
+    /** Requests a variables snapshot from the REPL (parsed by the Java side via ConsoleOutputListener). */
+    public synchronized void requestSnapshot() throws Exception {
+        if (replHandler == null || replHandler.isProcessTerminated()) return;
+        ensureBootstrapInjected();
+        var os = replHandler.getProcessInput();
+        if (os == null) return;
+        String cmd = "print(\"__EDUPY_SNAPSHOT__\"+_edupy__snapshot())\n";
+        os.write(cmd.getBytes());
+        os.flush();
+    }
+}

@@ -7,6 +7,8 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.ui.jcef.JBCefBrowser;
+import de.code14.edupydebugger.server.DebugWebServer;
+import de.code14.edupydebugger.server.DebugWebSocketServer;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -71,6 +73,18 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
      * Loads the debugger UI from a specified local URL.
      */
     private void initializeBrowser() {
+        // Ensure servers are running even without an active debug session
+        try {
+            if (!DebugWebSocketServer.getInstance().isRunning()) {
+                DebugWebSocketServer.getInstance().startWebSocketServer();
+            }
+            if (!DebugWebServer.getInstance().isRunning()) {
+                DebugWebServer.getInstance().startWebServer();
+            }
+        } catch (Throwable t) {
+            LOGGER.warn("Could not start web/socket servers from ToolWindow init", t);
+        }
+
         if (jbCefBrowser == null && JBCefApp.isSupported()) {
             jbCefBrowser = new JBCefBrowser("http://127.0.0.1:8026/index.html");
             LOGGER.info("Loading JBCef browser...");

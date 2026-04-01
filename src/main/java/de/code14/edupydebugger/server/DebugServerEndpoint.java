@@ -180,6 +180,10 @@ public class DebugServerEndpoint {
                     try {
                         ensureConsoleTarget();
                         consoleController.sendInputToProcess(p.text);
+                        // In REPL mode, trigger a variables snapshot after each input
+                        if (debugProcessController.getDebugProcess() == null) {
+                            try { ReplManager.getInstance().requestSnapshot(); } catch (Exception ignore) {}
+                        }
                     } catch (IOException e) {
                         LOGGER.error("Error sending console input", e);
                     }
@@ -267,7 +271,16 @@ public class DebugServerEndpoint {
                 if (lastObjectDiagram != null) sendDebugMessage("object_diagram", lastObjectDiagram);
             }
             case "variables" -> {
-                if (lastVariables != null) sendDebugMessage("variables", lastVariables);
+                if (lastVariables != null) {
+                    sendDebugMessage("variables", lastVariables);
+                } else {
+                    // If we are in REPL mode and have a running handler, request a fresh snapshot
+                    if (consoleController.getProcessHandler() != null &&
+                            debugProcessController.getDebugProcess() == null) {
+                        try { ReplManager.getInstance().requestSnapshot(); }
+                        catch (Exception e) { LOGGER.warn("Failed to request REPL snapshot on GET", e); }
+                    }
+                }
             }
             case "callstack" -> {
                 if (lastCallstack != null) sendDebugMessage("callstack", lastCallstack);

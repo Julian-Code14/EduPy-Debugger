@@ -9,6 +9,9 @@ import de.code14.edupydebugger.server.DebugServerEndpoint;
 import de.code14.edupydebugger.server.dto.ConsolePayload;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * Listens to the standard output and error streams of the debugged Python process
  * and forwards all console output to the frontend via a JSON-based WebSocket message.
@@ -54,6 +57,16 @@ public class ConsoleOutputListener {
                     return;
                 }
 
+                // REPL variables snapshot marker handling
+                if (text != null && text.startsWith("__EDUPY_SNAPSHOT__")) {
+                    try {
+                        publishVariablesFromSnapshot(text.substring("__EDUPY_SNAPSHOT__".length()));
+                    } catch (Throwable t) {
+                        LOGGER.warn("Failed to parse REPL snapshot", t);
+                    }
+                    return;
+                }
+
                 LOGGER.info("Console Output: " + text);
                 ConsolePayload payload = new ConsolePayload();
                 payload.text = text;
@@ -77,5 +90,41 @@ public class ConsoleOutputListener {
         boolean hasArg = (t.contains("--client") || t.contains("--port")) && t.contains("--file");
         // starts with a python executable path is common, but not required for the check
         return containsPydevd && hasArg;
+    }
+
+    /** Parses REPL JSON snapshot and publishes VariablesPayload. */
+    private void publishVariablesFromSnapshot(String json) {
+        List<Map<String, String>> items = new com.google.gson.Gson()
+                .fromJson(json, java.util.List.class);
+        if (items == null) return;
+
+        de.code14.edupydebugger.server.dto.VariablesPayload payload =
+                new de.code14.edupydebugger.server.dto.VariablesPayload(new java.util.ArrayList<>());
+
+        for (Object o : items) {
+            if (!(o instanceof java.util.Map)) continue;
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> m = (java.util.Map<String, Object>) o;
+            de.code14.edupydebugger.server.dto.VariableDTO dto = new de.code14.edupydebugger.server.dto.VariableDTO();
+            dto.id = String.valueOf(m.get("id"));
+            dto.names = java.util.Collections.singletonList(String.valueOf(m.get("name")));
+            dto.pyType = String.valueOf(m.get("type"));
+            dto.scope = String.valueOf(m.getOrDefault("scope", "global"));
+
+            de.code14.edupydebugger.server.dto.ValueDTO val = new de.code14.edupydebugger.server.dto.ValueDTO();
+            // primitive types list mirrors DebugSessionController.defaultTypes
+            java.util.Set<String> prim = new java.util.HashSet<>(java.util.Arrays.asList(
+                    "int","float","str","bool","list","dict","tuple","set"));
+            if (prim.contains(dto.pyType)) {
+                val.kind = "primitive";
+                val.repr = String.valueOf(m.get("repr"));
+            } else {
+                val.kind = "composite";
+                val.repr = String.valueOf(m.get("repr"));
+            }
+            dto.value = val;
+            payload.variables.add(dto);
+        }
+        DebugServerEndpoint.publishVariables(payload);
     }
 }
