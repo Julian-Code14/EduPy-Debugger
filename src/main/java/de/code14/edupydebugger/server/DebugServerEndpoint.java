@@ -22,6 +22,13 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+// Added imports for REPL class diagram generation
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
+import de.code14.edupydebugger.analysis.staticanalysis.PythonAnalyzer;
+import de.code14.edupydebugger.diagram.ClassDiagramParser;
+import de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator;
+
 /**
  * WebSocket endpoint that exchanges JSON messages with the frontend.
  * <p>
@@ -93,6 +100,21 @@ public class DebugServerEndpoint {
 
     /** Currently selected thread name (null if no explicit selection). */
     private static String selectedThread;
+
+    /** Test seam: supplier for the IDE project used in REPL mode static analysis. */
+    private static java.util.function.Supplier<Project> projectSupplier = () -> {
+        try {
+            Project[] open = ProjectManager.getInstance().getOpenProjects();
+            return (open != null && open.length > 0) ? open[0] : null;
+        } catch (Throwable t) {
+            LOGGER.warn("Could not obtain open project for REPL class diagram", t);
+            return null;
+        }
+    };
+
+    /** Test seam: supplier for ClassDiagramParser construction. */
+    private static java.util.function.Supplier<ClassDiagramParser> classDiagramParserSupplier =
+            () -> new ClassDiagramParser(new PythonAnalyzer());
 
     // ======================================================================
     // Lifecycle
@@ -256,6 +278,12 @@ public class DebugServerEndpoint {
                     wiredHandlers.add(repl);
                 }
             }
+            // Clear call stack when switching to REPL to avoid stale frames from previous debug sessions
+            try {
+                CallstackPayload empty = new CallstackPayload();
+                empty.frames = java.util.Collections.emptyList();
+                publishCallstack(empty);
+            } catch (Throwable ignore) {}
         } catch (Exception ex) {
             LOGGER.warn("Failed to start fallback REPL", ex);
         }
@@ -286,7 +314,18 @@ public class DebugServerEndpoint {
     private void sendLatest(String resource) {
         switch (resource) {
             case "class_diagram" -> {
-                if (lastClassDiagram != null) sendDebugMessage("class_diagram", lastClassDiagram);
+                if (lastClassDiagram != null) {
+                    sendDebugMessage("class_diagram", lastClassDiagram);
+                } else {
+                    // In REPL mode (no debug process), lazily generate the class diagram from sources
+                    if (debugProcessController.getDebugProcess() == null) {
+                        try {
+                            generateAndPublishClassDiagramForOpenProject();
+                        } catch (Exception e) {
+                            LOGGER.warn("Failed to generate class diagram in REPL mode", e);
+                        }
+                    }
+                }
             }
             case "object_cards" -> {
                 if (lastObjectCards != null) sendDebugMessage("object_cards", lastObjectCards);
@@ -472,5 +511,59 @@ public class DebugServerEndpoint {
      */
     public static String getSelectedThread() {
         return selectedThread;
+    }
+
+    // ======================================================================
+    // Helpers
+    // ======================================================================
+
+    /**
+     * Generates and publishes a class diagram for the first open IDE project.
+     * No‑op if no project is open or generation fails.
+     */
+    private static void generateAndPublishClassDiagramForOpenProject() throws java.io.IOException {
+        Project project = projectSupplier.get();
+        if (project == null) return;
+        ClassDiagramParser parser = classDiagramParserSupplier.get();
+        String plantUml;
+        try {
+            var app = com.intellij.openapi.application.ApplicationManager.getApplication();
+            if (app != null) {
+                plantUml = com.intellij.openapi.application.ReadAction.compute(() -> parser.generateClassDiagram(project));
+            } else {
+                plantUml = parser.generateClassDiagram(project);
+            }
+        } catch (Throwable t) {
+            // Fallback for non‑IDE test contexts without Application instance
+            plantUml = parser.generateClassDiagram(project);
+        }
+        String base64 = PlantUMLDiagramGenerator.generateDiagramAsBase64(plantUml);
+        publishClassDiagram(base64);
+    }
+
+    // Visible for tests
+    static void setProjectSupplier(java.util.function.Supplier<Project> supplier) {
+        if (supplier != null) {
+            projectSupplier = supplier;
+        } else {
+            projectSupplier = () -> {
+                try {
+                    Project[] open = ProjectManager.getInstance().getOpenProjects();
+                    return (open != null && open.length > 0) ? open[0] : null;
+                } catch (Throwable t) {
+                    LOGGER.warn("Could not obtain open project for REPL class diagram", t);
+                    return null;
+                }
+            };
+        }
+    }
+
+    // Visible for tests
+    static void setClassDiagramParserSupplier(java.util.function.Supplier<ClassDiagramParser> supplier) {
+        if (supplier != null) {
+            classDiagramParserSupplier = supplier;
+        } else {
+            classDiagramParserSupplier = () -> new ClassDiagramParser(new PythonAnalyzer());
+        }
     }
 }

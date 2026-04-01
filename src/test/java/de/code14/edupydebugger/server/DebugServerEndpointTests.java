@@ -326,4 +326,92 @@ public class DebugServerEndpointTests {
         assertEquals("class_diagram", m1.type);
         assertEquals("object_diagram", m2.type);
     }
+
+    @Test
+    public void testReplStart_clearsCallstackOnEnter() throws Exception {
+        // Prepare: cache a non-empty callstack
+        CallstackPayload cached = new CallstackPayload();
+        cached.frames = Arrays.asList("old1", "old2");
+        setStatic("lastCallstack", cached);
+
+        // Mock WS session
+        DebugServerEndpoint ep = new DebugServerEndpoint();
+        when(mockSession.getBasicRemote()).thenReturn(mockBasicRemote);
+        ArgumentCaptor<String> cap = ArgumentCaptor.forClass(String.class);
+        doNothing().when(mockBasicRemote).sendText(cap.capture());
+        ep.onOpen(mockSession);
+
+        // Mock REPL startup to avoid starting a real process
+        try (MockedStatic<de.code14.edupydebugger.core.repl.ReplManager> rmStatic = mockStatic(de.code14.edupydebugger.core.repl.ReplManager.class)) {
+            de.code14.edupydebugger.core.repl.ReplManager rm = mock(de.code14.edupydebugger.core.repl.ReplManager.class);
+            rmStatic.when(de.code14.edupydebugger.core.repl.ReplManager::getInstance).thenReturn(rm);
+
+            // Process handler with writable OutputStream
+            ProcessHandler ph = mock(ProcessHandler.class);
+            java.io.OutputStream os = mock(java.io.OutputStream.class);
+            when(ph.getProcessInput()).thenReturn(os);
+            when(rm.ensureReplStarted()).thenReturn(ph);
+
+            // Ensure no existing process handler so ensureConsoleTarget starts REPL
+            DebugServerEndpoint.setProcessHandler(null);
+
+            // Trigger REPL start via console_input
+            String json = "{\"type\":\"console_input\",\"payload\":{\"text\":\"print(1)\"}}";
+            ep.onMessage(json, mockSession);
+
+            // Verify static state: callstack cleared (empty or null frames)
+            Field f = DebugServerEndpoint.class.getDeclaredField("lastCallstack");
+            f.setAccessible(true);
+            CallstackPayload latest = (CallstackPayload) f.get(null);
+            assertNotNull(latest);
+            // Should be a new instance (cleared) rather than the old cached reference
+            assertTrue(latest != cached);
+        }
+    }
+
+    @Test
+    public void testGetClassDiagram_inRepl_generatesWhenMissing() throws Exception {
+        DebugServerEndpoint ep = new DebugServerEndpoint();
+        when(mockSession.getBasicRemote()).thenReturn(mockBasicRemote);
+        ArgumentCaptor<String> cap = ArgumentCaptor.forClass(String.class);
+        doNothing().when(mockBasicRemote).sendText(cap.capture());
+        ep.onOpen(mockSession);
+
+        // Ensure no debug process and no cached diagram
+        setStatic("lastClassDiagram", null);
+
+        // Override suppliers to control behavior
+        DebugServerEndpoint.setProjectSupplier(() -> mock(com.intellij.openapi.project.Project.class));
+        DebugServerEndpoint.setClassDiagramParserSupplier(() -> {
+            de.code14.edupydebugger.diagram.ClassDiagramParser parser = mock(de.code14.edupydebugger.diagram.ClassDiagramParser.class);
+            when(parser.generateClassDiagram(any())).thenReturn("@startuml\nclass A\n@enduml");
+            return parser;
+        });
+
+        try (MockedStatic<de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator> puml = mockStatic(de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator.class)) {
+            puml.when(() -> de.code14.edupydebugger.diagram.PlantUMLDiagramGenerator.generateDiagramAsBase64(anyString()))
+                .thenReturn("b64-xyz");
+
+            // Request class_diagram via GET
+            String json = "{\"type\":\"get\",\"payload\":{\"resource\":\"class_diagram\"}}";
+            ep.onMessage(json, mockSession);
+
+            // Find class_diagram message
+            boolean found = false;
+            for (String s : cap.getAllValues()) {
+                Type t = new TypeToken<DebugMessage<de.code14.edupydebugger.server.dto.DiagramPayload>>(){}.getType();
+                DebugMessage<de.code14.edupydebugger.server.dto.DiagramPayload> m = gson.fromJson(s, t);
+                if (m != null && "class_diagram".equals(m.type)) {
+                    found = true;
+                    assertNotNull(m.payload);
+                    assertEquals("b64-xyz", m.payload.svgBase64);
+                }
+            }
+            assertTrue("class_diagram was not generated/published", found);
+        } finally {
+            // Reset suppliers to defaults
+            DebugServerEndpoint.setProjectSupplier(null);
+            DebugServerEndpoint.setClassDiagramParserSupplier(null);
+        }
+    }
 }
