@@ -274,11 +274,14 @@ public class DebugServerEndpoint {
                 if (lastVariables != null) {
                     sendDebugMessage("variables", lastVariables);
                 } else {
-                    // If we are in REPL mode and have a running handler, request a fresh snapshot
-                    if (consoleController.getProcessHandler() != null &&
-                            debugProcessController.getDebugProcess() == null) {
-                        try { ReplManager.getInstance().requestSnapshot(); }
-                        catch (Exception e) { LOGGER.warn("Failed to request REPL snapshot on GET", e); }
+                    // In REPL mode, ensure we have a target and trigger a snapshot
+                    if (debugProcessController.getDebugProcess() == null) {
+                        try {
+                            ensureConsoleTarget();
+                            ReplManager.getInstance().requestSnapshot();
+                        } catch (Exception e) {
+                            LOGGER.warn("Failed to request REPL snapshot on GET", e);
+                        }
                     }
                 }
             }
