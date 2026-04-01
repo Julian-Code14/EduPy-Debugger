@@ -142,12 +142,10 @@ public class DebuggerUtils {
                         try {
                             if (children.size() > 0 && children.getValue(0) instanceof PyDebugValue) {
                                 PyDebugValue ctx = (PyDebugValue) children.getValue(0);
-                                // Best-effort: choose the occurrence-th frame with matching function name using inspect.stack()
-                                String safeName = base.replace("'", "\'");
-                                // Step 1: get relevant argument names for this exact frame as comma-separated list
+                                // Step 1: get relevant argument names for this exact frame depth as comma-separated list
                                 String namesExpr = String.format(
-                                        "(lambda _ins,_nm,_k: (lambda _stk: (lambda _matches: (lambda _fi: ('' if _fi is None else (lambda _av: ','.join([a for a in (list(_av.args)+([] if _av.varargs is None else [_av.varargs])+([] if _av.keywords is None else [_av.keywords])) if not a.startswith('__') and not a.startswith('_pydev_') and not a.startswith('__py')]))(_ins.getargvalues(_fi.frame))))(_matches[_k] if 0 <= _k < len(_matches) else None))([fi for fi in _stk if getattr(fi,'function','')==_nm]))(_ins.stack()))(__import__('inspect'), '%s', %d)",
-                                        safeName, occurrence);
+                                        "(lambda _sys,_ins,_n: (lambda _av: ','.join([a for a in (list(_av.args)+([] if _av.varargs is None else [_av.varargs])+([] if _av.keywords is None else [_av.keywords])) if not a.startswith('__') and not a.startswith('_pydev_') and not a.startswith('__py')]))(_ins.getargvalues(_sys._getframe(_n))))(__import__('sys'), __import__('inspect'), %d)",
+                                        depth);
                                 if ("<module>".equals(base)) {
                                     holder[0] = base + "()"; // avoid dumping module locals
                                 } else {
@@ -161,8 +159,8 @@ public class DebuggerUtils {
                                             String an = names[i].trim(); if (an.isEmpty()) continue;
                                             String anEsc = an.replace("'", "\\'");
                                             String valExpr = String.format(
-                                                    "(lambda _ins,_nm,_k,_a: (lambda _stk: (lambda _matches: (lambda _fi: ('' if _fi is None else (lambda _av,_v: ((('refid:'+str(__builtins__.id(_v)))) if (not isinstance(_v,(int,float,str,bool,list,dict,tuple,set))) else repr(_v)))(_ins.getargvalues(_fi.frame), _ins.getargvalues(_fi.frame).locals.get(_a, None))))(_matches[_k] if 0 <= _k < len(_matches) else None))([fi for fi in _stk if getattr(fi,'function','')==_nm]))(_ins.stack()))(__import__('inspect'), '%s', %d, '%s')",
-                                                    safeName, occurrence, anEsc);
+                                                    "(lambda _sys,_ins,_n,_a: (lambda _av,_v: ((('refid:'+str(__builtins__.id(_v)))) if (not isinstance(_v,(int,float,str,bool,list,dict,tuple,set))) else repr(_v)))(_ins.getargvalues(_sys._getframe(_n)), _ins.getargvalues(_sys._getframe(_n)).locals.get(_a, None)))(__import__('sys'), __import__('inspect'), %d, '%s')",
+                                                    depth, anEsc);
                                             try {
                                                 PyDebugValue rv = ctx.getFrameAccessor().evaluate(valExpr, false, true);
                                                 String vv = rv != null && rv.getValue() != null ? rv.getValue() : "";
