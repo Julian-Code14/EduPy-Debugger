@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hilfe – EduPy‑Debugger by Code14</title>
+    <title>Hilfe – So verwendest Du den EduPy‑Debugger</title>
     <link rel="stylesheet" href="../styles.css">
     <script src="page-common.js" defer></script>
     <style>
         .content { max-width: 900px; margin: 0 auto; background:#fff; border:1px solid #ddd; padding:16px; }
         .content h2 { margin-top: 1.2em; }
         .backbar { display:flex; justify-content:flex-end; }
+        .callout { border-left: 4px solid #4CAF50; background: #f6fff7; padding:12px 14px; margin: 16px 0; }
+        .callout-title { font-weight: bold; margin-bottom: 6px; }
     </style>
     <script>
         function openTutor() { window.open('https://pythontutor.com/python-compiler.html#mode=edit', '_blank'); }
@@ -22,14 +24,15 @@
     <div class="backbar"></div>
   </header>
 <main class="content">
-    <h2>Hilfe – Kurzanleitung für Schüler</h2>
+    <h2>Hilfe – So verwendest Du den EduPy‑Debugger</h2>
 
     <p>Mit dem EduPy‑Debugger kannst du Python‑Programme Schritt für Schritt ausführen und dabei Variablen, Aufrufstack und Objekte ansehen. Diese Seite erklärt dir die wichtigsten Bereiche kurz und mit Beispielen.</p>
 
-    <h3>Debugger starten</h3>
+    <h3>Debugging starten</h3>
     <ul>
-        <li>Starte dein Python‑Programm wie gewohnt im Debug‑Modus (über das Plugin‑Icon oder den Debug‑Button in der IDE).</li>
+        <li>Starte dein Python‑Programm im <b>Debug‑Modus</b> (über das Plugin‑Icon oder den Debug‑Button in der IDE).</li>
         <li>Setze bei Bedarf Breakpoints (roter Punkt neben der Zeile). Wenn der Code dort ankommt, hält der Debugger an.</li>
+        <li><b>Ohne laufende Debug‑Sitzung</b> kannst du bereits im Bereich <b>Konsole</b> im <b>REPL‑Modus</b> arbeiten: Python‑Befehle direkt eingeben, Ergebnisse ansehen und Ideen schnell ausprobieren. Eine formale Debug‑Session ist dafür nicht nötig.</li>
     </ul>
 
     <h3>Steuerung</h3>
@@ -58,14 +61,21 @@ werte = [1, 2, 3, 4]
     <h3>Objektinspektor</h3>
     <p>Hier findest du Karten für wichtige Objekte (z. B. Klasseninstanzen). Du kannst mit den Pfeilen blättern. Links in den Karten führen zu anderen Karten – so erkennst du Beziehungen.</p>
 
+    <h3>Konsole</h3>
+    <p>Die <b>Konsole</b> ist dein zentraler Ort für Ausgaben und schnelle Experimente:</p>
+    <ul>
+        <li><b>REPL‑Modus</b>: Du kannst ohne Debug‑Sitzung Python‑Befehle direkt eingeben und Ergebnisse sehen.</li>
+        <li><b>print(…)</b>: Alle <code>print</code>‑Ausgaben deines Programms erscheinen hier.</li>
+        <li><b>input(…)</b>: Eingaben werden in der Konsole abgefragt und entgegengenommen.</li>
+        <li><b>Fehlerhilfe</b>: Falls Ausnahmen (Exceptions) auftreten, siehst du Hinweise und Stacktraces hier; nutze sie für die Fehleranalyse.</li>
+    </ul>
+    <p>Nach Eingaben werden die Variablen automatisch aktualisiert. Mit dem Kreis‑Pfeil setzt du die Konsole zurück.</p>
+
     <h3>Diagramme</h3>
     <ul>
         <li><b>Klassendiagramm</b>: Übersicht über Klassen und Beziehungen. Öffnest du über den Button <i>Klassendiagramm</i>.</li>
         <li><b>Objektdiagramm</b>: Zeigt konkrete Objekte zur Laufzeit. Öffnest du über <i>Objektdiagramm</i>.</li>
     </ul>
-
-    <h3>Konsole (REPL)</h3>
-    <p>Unten kannst du Python‑Befehle eingeben. Die Ausgabe erscheint darüber. Nach Eingaben werden Variablen aktualisiert. Mit dem Kreis‑Pfeil setzt du die Konsole zurück.</p>
 
     <h3>Tipps</h3>
     <ul>
@@ -74,8 +84,19 @@ werte = [1, 2, 3, 4]
         <li>Öffne bei Bedarf <button onclick="openTutor()">PythonTutor</button> für zusätzliche Visualisierung.</li>
     </ul>
 
+    <div class="callout">
+        <div class="callout-title">Troubleshooting – Debug‑Protokolle</div>
+        <p>Finde systematisch die Ursache eines Fehlers, indem du ein kurzes Protokoll führst:</p>
+        <ol>
+            <li><b>Beobachtung / Fehlerbeschreibung</b>: Was siehst du (z. B. Exception, falscher Wert)?</li>
+            <li><b>Hypothese</b>: Was könnte die Ursache sein?</li>
+            <li><b>Lösungsversuch / Schlussfolgerung</b>: Teste die Hypothese (Breakpoint setzen, Schritt‑für‑Schritt, Werte prüfen, kleine Änderungen).</li>
+            <li><b>Nächste Hypothese</b>: Falls nicht gelöst, formuliere die nächste Annahme und teste erneut.</li>
+            <li><b>Endgültige Lösung + Erklärung</b>: Fix einbauen und in 1–2 Sätzen erklären, warum es jetzt funktioniert.</li>
+        </ol>
+    </div>
+
     <p><button class="large-btn" onclick="goToIndex()">Zurück zum Debugger</button></p>
 </main>
 </body>
 </html>
-

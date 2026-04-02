@@ -524,14 +524,15 @@ function logToConsole(message, isPrompt = false) {
 /* Sticky controls */
 document.addEventListener('DOMContentLoaded', function () {
     const controls = document.querySelector('.controls');
+    if (!controls) return;
     const initialOffsetTop = controls.offsetTop;
-    window.addEventListener('scroll', function () {
-        if (window.scrollY > initialOffsetTop) {
-            controls.classList.add('sticky-controls');
-        } else {
-            controls.classList.remove('sticky-controls');
-        }
-    });
+    const toggleFloating = () => {
+        const y = window.scrollY || window.pageYOffset;
+        if (y > initialOffsetTop + 4) controls.classList.add('controls-floating');
+        else controls.classList.remove('controls-floating');
+    };
+    window.addEventListener('scroll', toggleFloating, { passive: true });
+    toggleFloating();
 });
 
 /* Navigation buttons (unchanged) */
