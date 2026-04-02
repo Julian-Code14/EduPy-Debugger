@@ -74,8 +74,7 @@ public class VariableAnalyzer {
             public void addChildren(@NotNull XValueChildrenList children, boolean last) {
                 LOGGER.debug("Analyzing PyStackFrame: " + pyStackFrame.getFrameId());
 
-                // Keep a small set of names visible directly in this frame
-                Set<String> namesInFrame = new HashSet<>();
+                // Iterate visible values in the current frame
                 PyDebugValue evalCtx = null;
                 for (int i = 0; i < children.size(); i++) {
                     PyDebugValue value = (PyDebugValue) children.getValue(i);
@@ -87,7 +86,6 @@ public class VariableAnalyzer {
                     String id = determinePythonId(value, value.getName());
                     // If the file changes, variables from another file would not be defined -> exclude
                     if (!id.contains("is not defined")) {
-                        namesInFrame.add(value.getName());
                         if (variables.containsKey(id)) { // If there are more names for an id
                             List<String> meta = variables.get(id);
                             String existing = meta.get(0);
@@ -315,8 +313,7 @@ public class VariableAnalyzer {
         if (name.startsWith("__") && name.endsWith("__")) return true;
         // Explicit allowlist skip for well-known module attrs
         Set<String> known = Set.of("__name__", "__file__", "__package__", "__loader__", "__spec__", "__doc__", "__cached__");
-        if (known.contains(name)) return true;
-        return false;
+        return known.contains(name);
     }
 
     private boolean isBuiltinContainerType(String t) {

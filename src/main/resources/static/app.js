@@ -1,15 +1,37 @@
+/**
+ * EduPy Debugger Frontend Script
+ *
+ * Responsibilities
+ * - Maintain a WebSocket to the IDE backend and route incoming typed payloads.
+ * - Render sections: threads, callstack, variables, and object inspector (cards/diagram).
+ * - Provide compact previews in the variables table and on‑demand expansion with readable formatting.
+ * - Wire basic debugger controls (resume/pause/step) and a lightweight REPL console.
+ *
+ * Conventions
+ * - All outbound messages use { type, payload } JSON; inbound messages follow the same schema.
+ * - For variables, ValueDTO.repr is a preview; ValueDTO.full (when present) contains the full string.
+ */
 // WebSocket (JSON only)
 const wsScheme = location.protocol === 'https:' ? 'wss' : 'ws';
 const websocketUrl = `${wsScheme}://127.0.0.1:8025/websockets/debug`;
 let socket;
 const reconnectInterval = 5000;
 
+/**
+ * Sends a typed JSON message to the backend if the socket is open.
+ * @param {string} type Message type (e.g., 'get', 'action').
+ * @param {object} payload JSON payload (optional).
+ */
 function sendJson(type, payload = {}) {
     if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ type, payload }));
     }
 }
 
+/**
+ * Establishes the WebSocket connection and dispatches inbound messages
+ * to their respective renderers.
+ */
 function connectWebSocket() {
     socket = new WebSocket(websocketUrl);
 
@@ -64,6 +86,10 @@ function connectWebSocket() {
 }
 
 /* ---------- Threads ---------- */
+/**
+ * Renders the threads dropdown and the callstack table header.
+ * @param {{threads: Array<{name:string,state:string}>}} payload
+ */
 function renderThreads(payload) {
     const selectElement = document.getElementById('threads');
     const previousSelection = (selectElement.value || '').split(" ").at(0);
@@ -85,6 +111,10 @@ function renderThreads(payload) {
 }
 
 /* ---------- Callstack ---------- */
+/**
+ * Renders the callstack table.
+ * @param {{frames: string[]}} payload
+ */
 function renderCallstack(payload) {
     const tableBody = document.querySelector('.threads-container tbody');
     tableBody.innerHTML = '';
@@ -106,6 +136,10 @@ function renderCallstack(payload) {
 /* ---------- Variables ---------- */
 let activeRow = null;
 
+/**
+ * Renders the variables table (name, type, value preview/full, scope, id).
+ * @param {{variables: Array}} payload
+ */
 function renderVariables(payload) {
     const tableBody = document.querySelector('.variables-container tbody');
     tableBody.innerHTML = '';
@@ -145,11 +179,25 @@ function renderVariables(payload) {
     });
 }
 
+/**
+ * Converts a ValueDTO into HTML string for preview rendering.
+ * Replaces refid:### with clickable links to object cards.
+ * @param {{kind:string, repr:string}} valueDTO
+ * @returns {string}
+ */
 function processValue(valueDTO) {
     if (!valueDTO) return '';
     return htmlize(valueDTO.kind, valueDTO.repr);
 }
 
+/**
+ * Escapes/expands a text representation to HTML.
+ * - For primitives: escape and preserve newlines.
+ * - For composites: also convert refid:### to object-card links.
+ * @param {'primitive'|'composite'} kind
+ * @param {string} text
+ * @returns {string}
+ */
 function htmlize(kind, text) {
     if (kind === 'primitive') return escapeHtml(text || '').replaceAll('\n', '<br>');
     const raw = text || '';
@@ -158,6 +206,11 @@ function htmlize(kind, text) {
     ).replaceAll('\n', '<br>');
 }
 
+/**
+ * Builds the value cell with preview and optional full view + toggle button.
+ * @param {{pyType:string, value:{kind:string, repr:string, full?:string}}} v
+ * @returns {HTMLTableCellElement}
+ */
 function createValueCell(v) {
     const td = document.createElement('td');
     const previewDiv = document.createElement('div');
@@ -205,12 +258,17 @@ function createValueCell(v) {
 }
 
 // ---------- Pretty formatting for "full" ----------
+/** Removes a matching outer pair of brackets if present. */
 function stripOuter(s, open, close) {
     s = (s || '').trim();
     if (s.startsWith(open) && s.endsWith(close)) return s.slice(1, -1);
     return s;
 }
 
+/**
+ * Splits a string on commas at top level, ignoring nested brackets and quotes.
+ * Useful for pretty-printing list/tuple/set/dict representations.
+ */
 function smartSplitByComma(s) {
     const parts = [];
     let buf = '';
@@ -239,6 +297,7 @@ function smartSplitByComma(s) {
     return parts;
 }
 
+/** Finds the first top-level colon position in a string, or -1. */
 function smartSplitFirstColon(s) {
     let depthRound = 0, depthSquare = 0, depthCurly = 0;
     let inSingle = false, inDouble = false, escape = false;
@@ -263,6 +322,7 @@ function smartSplitFirstColon(s) {
     return -1;
 }
 
+/** Formats list/tuple/set as one line, keeping appropriate brackets. */
 function formatListLike(text, pyType) {
     let inner = (text || '').trim();
     let open = '[', close = ']';
@@ -277,6 +337,7 @@ function formatListLike(text, pyType) {
     return `${open}${items.join(', ')}${close}`;
 }
 
+/** Formats a dict as {\nkey: value\n...\n}. */
 function formatDict(text) {
     let inner = stripOuter(text, '{', '}');
     if (!inner.trim()) return '{}';
@@ -295,6 +356,7 @@ function formatDict(text) {
     return '{\n' + lines.join('\n') + '\n}';
 }
 
+/** Dispatches pretty formatting by Python type name. */
 function formatFullByType(pyType, text) {
     const t = (pyType || '').toLowerCase();
     if (t === 'dict') return formatDict(text);
@@ -302,6 +364,7 @@ function formatFullByType(pyType, text) {
     return text;
 }
 
+/** Applies pretty formatting per attribute line for composite previews. */
 function formatCompositeFull(text) {
     const lines = (text || '').split('\n');
     const out = [];
