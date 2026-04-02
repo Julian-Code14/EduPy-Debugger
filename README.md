@@ -1,8 +1,6 @@
 # EduPy-Debugger
 
 <!-- Plugin description -->
-EduPy-Debugger is a lightweight, web-based debugging companion for Python in PyCharm. It offers visual object inspection, UML-style diagrams, and an integrated console in a clean tool window.
-
 EduPy‑Debugger ist ein schlankes, webbasiertes Debug‑Werkzeug für Python in PyCharm (Community & Professional) – mit klarem Fokus auf Unterricht und Einstieg. Es kombiniert eine aufgeräumte Debug‑Ansicht mit visualisierten Objekten und einer integrierten Konsole.
 
 Kurzüberblick:
@@ -63,12 +61,7 @@ Die Anwendung folgt u.a. drei, von JetBrains empfohlenen UX-Prinzipien:
 
 ## Screenshots
 
-<div align="center">
-  <img src="docs/images/class-diagram.png" alt="Klassendiagramm" width="31%" />
-  <img src="docs/images/variables-table.png" alt="Variablen" width="31%" />
-  <img src="docs/images/object-inspector-console.png" alt="Objektinspektor und Konsole" width="31%" />
-  
-</div>
+Demnächst verfügbar – gerne ein Issue eröffnen und eigene Screenshots teilen!
 
 ---
 
@@ -109,25 +102,25 @@ cd EduPy-Debugger
 
 | Schritt | Aktion                                                                            |
 |---------|-----------------------------------------------------------------------------------|
-| 1 | Öffne oder erstelle ein Python‑Projekt.                                           |
-| 2 | Optional: Nutze direkt die <b>Konsole</b> als REPL (ohne Debug‑Sitzung) für schnelle Experimente. |
-| 3 | Setze Breakpoints und klicke **Debug**.                                           |
+| 1 | Öffne oder erstelle ein Python-Projekt.                                           |
+| 2 | Setze einen Breakpoint und klicke **Debug**.                                      |
+| 3 | Beobachte, wie das EduPy-Debugger-Fenster links einblendet.                       |
 | 4 | Steuere die Ausführung mit den grünen ▶, blauen ⏸ und gelben ↷ Buttons.           |
 | 5 | Klicke unten auf **Klassendiagramm** oder **Objektdiagramm** für eine Übersicht.  |
-| 6 | Aktiviere den **Threads‑Schalter**, falls du andere Threads untersuchen möchtest. |
+| 6 | Aktiviere den **Threads-Schalter**, falls du andere Threads untersuchen möchtest. |
 
 ---
 
 ## Verwendung im Detail
 
-### Aufbau des Tool‑Fensters
+### Aufbau des Tool-Fensters
 
-- **Kontrollleiste** – fixierte Toolbar mit Resume/Pause/Step‑Aktionen.
-- **Threads‑Panel** – standardmäßig verborgen; zeigt Dropdown aller Python‑Threads samt Call‑Stack (experimentell).
-- **Variablen‑Tabelle** – Name, Typ, Wert, Scope und interne `id()`; Vorschau/„Mehr“ für komplexe Werte; Klick auf Namen/IDs öffnet die passende Objektkarte.
-- **Objekt‑Inspektor** – Karussell aus PlantUML‑Karten; mit ◂ ▸ navigieren. Klicks auf refid springen zur Karte und scrollen automatisch zum Inspektor.
-- **Konsole** – REPL‑Eingaben ohne Debug‑Sitzung, `print`‑Ausgaben, `input`‑Abfragen und Fehler‑Hinweise; mit ↵ senden.
-- **Unterer Bereich** – Buttons zu vollformatigen Klassen‑ bzw. Objekt‑Diagrammen.
+- **Kontrollleiste** – fixierte Toolbar mit Resume/Pause/Step-Aktionen.
+- **Threads-Panel** – standardmäßig verborgen; zeigt Dropdown aller Python-Threads samt Call‑Stack (experimentell).
+- **Variablen-Tabelle** – Name, Typ, Wert, Scope und interne `id()`; Klick öffnet die Objektkarte.
+- **Objekt-Inspektor** – Karussell aus PlantUML-Karten; mit ◂ ▸ (Pfeiltasten) navigieren.
+- **Konsole** – interaktives stdin/stdout; mit ↵ Eingaben senden.
+- **Unterer Bereich** – Buttons zu vollformatigen Klassen- bzw. Objekt-Diagrammen.
 
 ---
 
@@ -156,10 +149,10 @@ Fortgeschrittene können die Ports (`8025` / `8026`) in `DebugWebSocketServer` &
 <details>
 <summary><strong>Diagramme leer oder fehlerhaft</strong></summary>
 
-- Kurz warten und erneut öffnen. Falls weiterhin leer: IDE‑Log prüfen und ein Issue eröffnen (gern mit minimalem Beispiel). PlantUML ist als Abhängigkeit gebündelt; keine manuelle Installation erforderlich.
+- Vergewissere dich, dass die PlantUML‑JAR (`plantuml-1.2025.x.jar`) im Verzeichnis **plugins/** liegt.
 </details>
 
-Für weitere Hilfe: Issue eröffnen oder @Julian-Code14 anpingen. Eine kompakte Anleitung findest du im Footer unter **Hilfe**.
+Für weitere Hilfe: Issue eröffnen oder @Julian-Code14 anpingen.
 
 ---
 
@@ -185,14 +178,7 @@ Integrationstests nutzen das IntelliJ‑Platform‑Testing‑Framework.
 
 ---
 
-## Rechtliches & Kontakt
-
-- Hilfe: siehe Footer‑Link „Hilfe – So verwendest Du den EduPy‑Debugger“.
-- Datenschutz: „Datenschutzerklärung“ (keine Übermittlung personenbezogener Daten durch das Plugin).
-- Nutzungsbedingungen: siehe Seite „Nutzungsbedingungen“ (u. a. Haftungs‑/Gewährleistungsausschluss).
-- Kontakt: julian.flach@code14.de.
-
 ## Lizenz
 
-EduPy‑Debugger steht unter der **MIT‑Lizenz**.  
-Den vollständigen Text findest du in der Datei **LICENSE.txt**.
+EduPy‑Debugger steht unter der **MIT-Lizenz**.  
+Den vollständigen Text findest du in der Datei **LICENSE**.
