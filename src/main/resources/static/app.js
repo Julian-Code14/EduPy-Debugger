@@ -441,6 +441,20 @@ function jumpToSlide(refid) {
         const slidesContainer = document.querySelector('#object-slides');
         slidesContainer.style.transform = `translateX(-${currentIndex * 100}%)`;
     }
+
+    // Ensure Object‑Inspector is visible and scroll into view
+    try {
+        const oiContainer = document.getElementById('object-inspector-container');
+        const oiToggleBtn = document.getElementById('oi-toggle');
+        if (oiContainer) {
+            if (oiContainer.classList.contains('collapsed')) {
+                oiContainer.classList.remove('collapsed');
+                if (oiToggleBtn) oiToggleBtn.classList.remove('rotated');
+            }
+            const y = oiContainer.getBoundingClientRect().top + window.pageYOffset - 20; // small offset for sticky controls
+            window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+    } catch (e) { console.error(e); }
 }
 
 /* ---------- Controls & UI Wiring ---------- */
@@ -524,14 +538,15 @@ function logToConsole(message, isPrompt = false) {
 /* Sticky controls */
 document.addEventListener('DOMContentLoaded', function () {
     const controls = document.querySelector('.controls');
+    if (!controls) return;
     const initialOffsetTop = controls.offsetTop;
-    window.addEventListener('scroll', function () {
-        if (window.scrollY > initialOffsetTop) {
-            controls.classList.add('sticky-controls');
-        } else {
-            controls.classList.remove('sticky-controls');
-        }
-    });
+    const toggleFloating = () => {
+        const y = window.scrollY || window.pageYOffset;
+        if (y > initialOffsetTop + 4) controls.classList.add('controls-floating');
+        else controls.classList.remove('controls-floating');
+    };
+    window.addEventListener('scroll', toggleFloating, { passive: true });
+    toggleFloating();
 });
 
 /* Navigation buttons (unchanged) */

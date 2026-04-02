@@ -186,6 +186,8 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
         ses.schedule(tryShow, 0, java.util.concurrent.TimeUnit.MILLISECONDS);
     }
 
+    
+
     /**
      * Opens the Debugger Tool Window.
      *
