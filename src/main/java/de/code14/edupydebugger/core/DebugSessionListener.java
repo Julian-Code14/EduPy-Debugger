@@ -2,7 +2,7 @@ package de.code14.edupydebugger.core;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.util.concurrency.EdtScheduledExecutorService;
+import com.intellij.util.concurrency.AppExecutorUtil;
 import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugSessionListener;
 import com.jetbrains.python.debugger.*;
@@ -57,10 +57,17 @@ public class DebugSessionListener implements XDebugSessionListener {
         this.debugProcess = debugProcess;
         this.classDiagramParser = new ClassDiagramParser(new PythonAnalyzer());
 
-        try {
-            performStaticAnalysis((PyDebugProcess) debugProcess);
-        } catch (IOException e) {
-            LOGGER.error(e);
+        // Static analysis (PlantUML generation) can be expensive; perform off the EDT
+        if (debugProcess instanceof PyDebugProcess py) {
+            AppExecutorUtil.getAppExecutorService().execute(() -> {
+                try {
+                    performStaticAnalysis(py);
+                } catch (IOException e) {
+                    LOGGER.error(e);
+                } catch (Throwable t) {
+                    LOGGER.warn("Static analysis failed", t);
+                }
+            });
         }
     }
 
@@ -93,7 +100,7 @@ public class DebugSessionListener implements XDebugSessionListener {
                     if (shouldSchedule) debounceScheduled = true;
                 }
                 if (shouldSchedule) {
-                    EdtScheduledExecutorService.getInstance().schedule(() -> {
+                    AppExecutorUtil.getAppScheduledExecutorService().schedule(() -> {
                         try { work.run(); }
                         finally {
                             synchronized (debounceLock) { debounceScheduled = false; }
@@ -136,7 +143,17 @@ public class DebugSessionListener implements XDebugSessionListener {
      * @throws IOException if PlantUML diagram generation or encoding fails
      */
     protected void performStaticAnalysis(PyDebugProcess py) throws IOException {
-        String plantUml = classDiagramParser.generateClassDiagram(py.getProject());
+        String plantUml;
+        var app = ApplicationManager.getApplication();
+        if (app != null) {
+            try {
+                plantUml = com.intellij.openapi.application.ReadAction.compute(() -> classDiagramParser.generateClassDiagram(py.getProject()));
+            } catch (Throwable t) {
+                plantUml = classDiagramParser.generateClassDiagram(py.getProject());
+            }
+        } else {
+            plantUml = classDiagramParser.generateClassDiagram(py.getProject());
+        }
         String base64 = PlantUMLDiagramGenerator.generateDiagramAsBase64(plantUml);
         DebugServerEndpoint.publishClassDiagram(base64);
     }
