@@ -1,15 +1,18 @@
 {
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
-  
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": false,
   "packages": {
     ".": {
-      "release-type": "simple",
+      "release-type": "java",
       "package-name": "edupy-debugger",
       "include-component-in-tag": false,
       "extra-files": [
-        "gradle.properties"
+        {
+          "type": "generic",
+          "path": "gradle.properties",
+          "regex": "(?s)(# x-release-please-start-version\n)pluginVersion = (?<version>[^\n]+)(\n# x-release-please-end)"
+        }
       ]
     }
   }
