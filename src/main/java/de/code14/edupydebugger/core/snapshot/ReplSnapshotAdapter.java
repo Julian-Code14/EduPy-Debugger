@@ -40,6 +40,10 @@ public final class ReplSnapshotAdapter {
                 dto.scope = String.valueOf(m.getOrDefault("scope", "global"));
                 ValueDTO val = new ValueDTO();
                 val.repr = String.valueOf(m.get("repr"));
+                Object full = m.get("full");
+                if (full != null) {
+                    val.full = String.valueOf(full);
+                }
                 dto.value = val;
                 varDtos.add(dto);
             }
@@ -80,4 +84,3 @@ public final class ReplSnapshotAdapter {
         return objects;
     }
 }
-

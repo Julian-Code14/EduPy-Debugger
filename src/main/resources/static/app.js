@@ -1,15 +1,37 @@
+/**
+ * EduPy Debugger Frontend Script
+ *
+ * Responsibilities
+ * - Maintain a WebSocket to the IDE backend and route incoming typed payloads.
+ * - Render sections: threads, callstack, variables, and object inspector (cards/diagram).
+ * - Provide compact previews in the variables table and on‑demand expansion with readable formatting.
+ * - Wire basic debugger controls (resume/pause/step) and a lightweight REPL console.
+ *
+ * Conventions
+ * - All outbound messages use { type, payload } JSON; inbound messages follow the same schema.
+ * - For variables, ValueDTO.repr is a preview; ValueDTO.full (when present) contains the full string.
+ */
 // WebSocket (JSON only)
 const wsScheme = location.protocol === 'https:' ? 'wss' : 'ws';
 const websocketUrl = `${wsScheme}://127.0.0.1:8025/websockets/debug`;
 let socket;
 const reconnectInterval = 5000;
 
+/**
+ * Sends a typed JSON message to the backend if the socket is open.
+ * @param {string} type Message type (e.g., 'get', 'action').
+ * @param {object} payload JSON payload (optional).
+ */
 function sendJson(type, payload = {}) {
     if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ type, payload }));
     }
 }
 
+/**
+ * Establishes the WebSocket connection and dispatches inbound messages
+ * to their respective renderers.
+ */
 function connectWebSocket() {
     socket = new WebSocket(websocketUrl);
 
@@ -64,6 +86,10 @@ function connectWebSocket() {
 }
 
 /* ---------- Threads ---------- */
+/**
+ * Renders the threads dropdown and the callstack table header.
+ * @param {{threads: Array<{name:string,state:string}>}} payload
+ */
 function renderThreads(payload) {
     const selectElement = document.getElementById('threads');
     const previousSelection = (selectElement.value || '').split(" ").at(0);
@@ -85,6 +111,10 @@ function renderThreads(payload) {
 }
 
 /* ---------- Callstack ---------- */
+/**
+ * Renders the callstack table.
+ * @param {{frames: string[]}} payload
+ */
 function renderCallstack(payload) {
     const tableBody = document.querySelector('.threads-container tbody');
     tableBody.innerHTML = '';
@@ -106,6 +136,10 @@ function renderCallstack(payload) {
 /* ---------- Variables ---------- */
 let activeRow = null;
 
+/**
+ * Renders the variables table (name, type, value preview/full, scope, id).
+ * @param {{variables: Array}} payload
+ */
 function renderVariables(payload) {
     const tableBody = document.querySelector('.variables-container tbody');
     tableBody.innerHTML = '';
@@ -115,13 +149,22 @@ function renderVariables(payload) {
 
         const names = (v.names || []).join(", ");
         const type = v.pyType || '';
-        const val = processValue(v.value);
+        const valCell = createValueCell(v);
         const scope = v.scope || '';
         const id = v.id || '';
 
-        [names, type, val, scope, id].forEach((value) => {
+        // Name, Type
+        [names, type].forEach((value) => {
             const td = document.createElement('td');
-            td.innerHTML = value;
+            td.textContent = value;
+            tr.appendChild(td);
+        });
+        // Value cell with preview/full toggle when available
+        tr.appendChild(valCell);
+        // Scope, ID
+        [scope, id].forEach((value) => {
+            const td = document.createElement('td');
+            td.textContent = value;
             tr.appendChild(td);
         });
 
@@ -136,15 +179,214 @@ function renderVariables(payload) {
     });
 }
 
+/**
+ * Converts a ValueDTO into HTML string for preview rendering.
+ * Replaces refid:### with clickable links to object cards.
+ * @param {{kind:string, repr:string}} valueDTO
+ * @returns {string}
+ */
 function processValue(valueDTO) {
     if (!valueDTO) return '';
-    if (valueDTO.kind === 'primitive') return escapeHtml(valueDTO.repr || '');
+    return htmlize(valueDTO.kind, valueDTO.repr);
+}
 
-    // 'composite': wir ersetzen "refid:123" durch klickbaren Link
-    const raw = valueDTO.repr || '';
+/**
+ * Escapes/expands a text representation to HTML.
+ * - For primitives: escape and preserve newlines.
+ * - For composites: also convert refid:### to object-card links.
+ * @param {'primitive'|'composite'} kind
+ * @param {string} text
+ * @returns {string}
+ */
+function htmlize(kind, text) {
+    if (kind === 'primitive') return escapeHtml(text || '').replaceAll('\n', '<br>');
+    const raw = text || '';
     return raw.replace(/refid:(\d+)/g, (_, rid) =>
         `<a href="javascript:void(0);" onclick="jumpToSlide(${rid})">${rid}</a>`
     ).replaceAll('\n', '<br>');
+}
+
+/**
+ * Builds the value cell with preview and optional full view + toggle button.
+ * @param {{pyType:string, value:{kind:string, repr:string, full?:string}}} v
+ * @returns {HTMLTableCellElement}
+ */
+function createValueCell(v) {
+    const td = document.createElement('td');
+    const previewDiv = document.createElement('div');
+    previewDiv.className = 'value-preview';
+    previewDiv.innerHTML = processValue(v.value);
+    td.appendChild(previewDiv);
+
+    let fullText = v?.value?.full;
+    // Optional formatting for nicer full view: lists/sets side-by-side, dicts key:value per line
+    if (fullText && typeof fullText === 'string') {
+        if (['list','tuple','set','dict'].includes((v.pyType || '').toLowerCase())) {
+            fullText = formatFullByType(v.pyType, fullText);
+        } else if (v.value.kind === 'composite') {
+            fullText = formatCompositeFull(fullText);
+        }
+    }
+    const hasExpandable = fullText && typeof fullText === 'string' && fullText.length > 0 && fullText !== v?.value?.repr;
+    if (hasExpandable) {
+        const fullDiv = document.createElement('div');
+        fullDiv.className = 'value-full';
+        fullDiv.style.display = 'none';
+        fullDiv.innerHTML = htmlize(v.value.kind, fullText);
+        td.appendChild(fullDiv);
+
+        const btn = document.createElement('button');
+        btn.className = 'expand-btn';
+        btn.type = 'button';
+        btn.textContent = 'Mehr';
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const open = fullDiv.style.display !== 'none';
+            if (open) {
+                fullDiv.style.display = 'none';
+                previewDiv.style.display = 'block';
+                btn.textContent = 'Mehr';
+            } else {
+                fullDiv.style.display = 'block';
+                previewDiv.style.display = 'none';
+                btn.textContent = 'Weniger';
+            }
+        });
+        td.appendChild(btn);
+    }
+    return td;
+}
+
+// ---------- Pretty formatting for "full" ----------
+/** Removes a matching outer pair of brackets if present. */
+function stripOuter(s, open, close) {
+    s = (s || '').trim();
+    if (s.startsWith(open) && s.endsWith(close)) return s.slice(1, -1);
+    return s;
+}
+
+/**
+ * Splits a string on commas at top level, ignoring nested brackets and quotes.
+ * Useful for pretty-printing list/tuple/set/dict representations.
+ */
+function smartSplitByComma(s) {
+    const parts = [];
+    let buf = '';
+    let depthRound = 0, depthSquare = 0, depthCurly = 0;
+    let inSingle = false, inDouble = false, escape = false;
+    for (let i = 0; i < s.length; i++) {
+        const ch = s[i];
+        if (escape) { buf += ch; escape = false; continue; }
+        if (ch === '\\') { buf += ch; escape = true; continue; }
+        if (!inDouble && ch === '\'' ) { inSingle = !inSingle; buf += ch; continue; }
+        if (!inSingle && ch === '"') { inDouble = !inDouble; buf += ch; continue; }
+        if (!inSingle && !inDouble) {
+            if (ch === '(') depthRound++;
+            else if (ch === ')') depthRound = Math.max(0, depthRound-1);
+            else if (ch === '[') depthSquare++;
+            else if (ch === ']') depthSquare = Math.max(0, depthSquare-1);
+            else if (ch === '{') depthCurly++;
+            else if (ch === '}') depthCurly = Math.max(0, depthCurly-1);
+            else if (ch === ',' && depthRound===0 && depthSquare===0 && depthCurly===0) {
+                parts.push(buf.trim()); buf = ''; continue;
+            }
+        }
+        buf += ch;
+    }
+    if (buf.trim().length) parts.push(buf.trim());
+    return parts;
+}
+
+/** Finds the first top-level colon position in a string, or -1. */
+function smartSplitFirstColon(s) {
+    let depthRound = 0, depthSquare = 0, depthCurly = 0;
+    let inSingle = false, inDouble = false, escape = false;
+    for (let i = 0; i < s.length; i++) {
+        const ch = s[i];
+        if (escape) { escape = false; continue; }
+        if (ch === '\\') { escape = true; continue; }
+        if (!inDouble && ch === '\'') { inSingle = !inSingle; continue; }
+        if (!inSingle && ch === '"') { inDouble = !inDouble; continue; }
+        if (!inSingle && !inDouble) {
+            if (ch === '(') depthRound++;
+            else if (ch === ')') depthRound = Math.max(0, depthRound-1);
+            else if (ch === '[') depthSquare++;
+            else if (ch === ']') depthSquare = Math.max(0, depthSquare-1);
+            else if (ch === '{') depthCurly++;
+            else if (ch === '}') depthCurly = Math.max(0, depthCurly-1);
+            else if (ch === ':' && depthRound===0 && depthSquare===0 && depthCurly===0) {
+                return i;
+            }
+        }
+    }
+    return -1;
+}
+
+/** Formats list/tuple/set as one line, keeping appropriate brackets. */
+function formatListLike(text, pyType) {
+    let inner = (text || '').trim();
+    let open = '[', close = ']';
+    const t = (pyType || '').toLowerCase();
+    if (t === 'tuple') { open = '('; close = ')'; }
+    if (t === 'set') { open = '{'; close = '}'; }
+    // Strip any existing outermost brackets to avoid duplicates
+    if ((inner.startsWith('[') && inner.endsWith(']')) || (inner.startsWith('(') && inner.endsWith(')')) || (inner.startsWith('{') && inner.endsWith('}'))) {
+        inner = inner.slice(1, -1);
+    }
+    const items = smartSplitByComma(inner);
+    return `${open}${items.join(', ')}${close}`;
+}
+
+/** Formats a dict as {\nkey: value\n...\n}. */
+function formatDict(text) {
+    let inner = stripOuter(text, '{', '}');
+    if (!inner.trim()) return '{}';
+    const pairs = smartSplitByComma(inner);
+    const lines = [];
+    for (const p of pairs) {
+        const idx = smartSplitFirstColon(p);
+        if (idx >= 0) {
+            const k = p.slice(0, idx).trim();
+            const v = p.slice(idx + 1).trim();
+            lines.push(`${k}: ${v}`);
+        } else if (p.trim()) {
+            lines.push(p.trim());
+        }
+    }
+    return '{\n' + lines.join('\n') + '\n}';
+}
+
+/** Dispatches pretty formatting by Python type name. */
+function formatFullByType(pyType, text) {
+    const t = (pyType || '').toLowerCase();
+    if (t === 'dict') return formatDict(text);
+    if (t === 'list' || t === 'tuple' || t === 'set') return formatListLike(text, pyType);
+    return text;
+}
+
+/** Applies pretty formatting per attribute line for composite previews. */
+function formatCompositeFull(text) {
+    const lines = (text || '').split('\n');
+    const out = [];
+    for (const line of lines) {
+        const idx = line.indexOf(':');
+        if (idx <= 0) { out.push(line); continue; }
+        const name = line.slice(0, idx).trim();
+        let val = line.slice(idx + 1).trim();
+        if (val.startsWith('{') && val.includes(':')) {
+            const body = formatDict(val);
+            out.push(`${name}: ${body}`);
+        } else if (val.startsWith('[') || val.startsWith('(') || (val.startsWith('{') && !val.includes(':'))) {
+            // Try to infer container type brackets from current value
+            let typ = 'list';
+            if (val.startsWith('(')) typ = 'tuple';
+            if (val.startsWith('{')) typ = 'set';
+            out.push(`${name}: ${formatListLike(val, typ)}`);
+        } else {
+            out.push(line);
+        }
+    }
+    return out.join('\n');
 }
 
 function escapeHtml(s) {
