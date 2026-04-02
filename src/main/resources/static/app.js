@@ -524,32 +524,14 @@ function logToConsole(message, isPrompt = false) {
 /* Sticky controls */
 document.addEventListener('DOMContentLoaded', function () {
     const controls = document.querySelector('.controls');
-    if (!controls) return;
-
-    // Insert a placeholder right after the controls to preserve layout height
-    const placeholder = document.createElement('div');
-    placeholder.style.height = '0px';
-    controls.parentNode.insertBefore(placeholder, controls.nextSibling);
-
-    const stickPoint = controls.offsetTop; // capture initial top before it becomes fixed
-    let isSticky = false;
-    const hysteresis = 8; // px buffer to avoid flicker near threshold
-
-    const onScroll = () => {
-        const y = window.scrollY || window.pageYOffset;
-        if (!isSticky && y > stickPoint + hysteresis) {
+    const initialOffsetTop = controls.offsetTop;
+    window.addEventListener('scroll', function () {
+        if (window.scrollY > initialOffsetTop) {
             controls.classList.add('sticky-controls');
-            placeholder.style.height = controls.offsetHeight + 'px';
-            isSticky = true;
-        } else if (isSticky && y <= stickPoint - hysteresis) {
+        } else {
             controls.classList.remove('sticky-controls');
-            placeholder.style.height = '0px';
-            isSticky = false;
         }
-    };
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll(); // run once in case we load scrolled
+    });
 });
 
 /* Navigation buttons (unchanged) */
