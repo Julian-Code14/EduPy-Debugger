@@ -7,6 +7,8 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.ui.jcef.JBCefBrowser;
+import com.intellij.ui.AnimatedIcon;
+import com.intellij.util.concurrency.AppExecutorUtil;
 import de.code14.edupydebugger.server.DebugWebServer;
 import de.code14.edupydebugger.server.DebugWebSocketServer;
 import org.jetbrains.annotations.NotNull;
@@ -34,6 +36,10 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
     private final static Logger LOGGER = Logger.getInstance(DebuggerToolWindowFactory.class);
 
     private static JBCefBrowser jbCefBrowser;
+
+    // Simple card-based UI to show a loading screen on first start
+    private final String CARD_LOADING = "loading";
+    private final String CARD_BROWSER = "browser";
 
 
     /**
@@ -66,13 +72,38 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
                 }
             } catch (Throwable ignore2) {}
         } catch (Throwable ignore) {}
-        initializeBrowser();
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.add(jbCefBrowser.getComponent(), BorderLayout.CENTER);
+        // Root with CardLayout
+        CardLayout cards = new CardLayout();
+        JPanel root = new JPanel(cards);
+
+        // Loading panel with spinner and message
+        JPanel loading = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0; gbc.gridy = 0; gbc.insets = new Insets(8,8,4,8);
+        JLabel title = new JLabel("Starting EduPy Debugger…");
+        title.setFont(title.getFont().deriveFont(Font.BOLD, title.getFont().getSize2D() + 1f));
+        loading.add(title, gbc);
+        gbc.gridy = 1; gbc.insets = new Insets(0,8,8,8);
+        JLabel subtitle = new JLabel("Launching local servers and UI");
+        loading.add(subtitle, gbc);
+        gbc.gridy = 2; gbc.insets = new Insets(8,8,8,8);
+        JLabel spinner = new JLabel(new AnimatedIcon.Default());
+        loading.add(spinner, gbc);
+
+        // Browser container (we plug JBCef when ready)
+        JPanel browserContainer = new JPanel(new BorderLayout());
+
+        root.add(loading, CARD_LOADING);
+        root.add(browserContainer, CARD_BROWSER);
+        cards.show(root, CARD_LOADING);
 
         ContentFactory contentFactory = ContentFactory.getInstance();
-        Content content = contentFactory.createContent(panel, "", false);
+        Content content = contentFactory.createContent(root, "", false);
         toolWindow.getContentManager().addContent(content);
+
+        // Start servers asynchronously and then show the browser when ready
+        initializeBrowser();
+        waitForServersThenShowBrowser(browserContainer, cards, root);
     }
 
     /**
@@ -104,7 +135,7 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
         // Start servers asynchronously to avoid UI stalls; browser loads regardless
         final DebugWebSocketServer ws = DebugWebSocketServer.getInstance();
         final DebugWebServer http = DebugWebServer.getInstance();
-        com.intellij.util.concurrency.AppExecutorUtil.getAppExecutorService().execute(() -> {
+        AppExecutorUtil.getAppExecutorService().execute(() -> {
             try {
                 if (!ws.isRunning()) {
                     ws.startWebSocketServer();
@@ -117,15 +148,35 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
             }
         });
 
-        if (jbCefBrowser == null && JBCefApp.isSupported()) {
-            jbCefBrowser = new JBCefBrowser("http://127.0.0.1:8026/index.html");
-            LOGGER.info("Loading JBCef browser...");
-        } else if (jbCefBrowser != null) {
-            jbCefBrowser.loadURL("http://127.0.0.1:8026/index.html");
-            LOGGER.info("Reloaded JBCef browser");
-        } else {
-            LOGGER.error("JBCefApp is not supported");
-        }
+        // Defer actual JBCef creation to when servers are (likely) up; see waitForServersThenShowBrowser
+    }
+
+    private void waitForServersThenShowBrowser(JPanel browserContainer, CardLayout cards, JPanel root) {
+        final DebugWebSocketServer ws = DebugWebSocketServer.getInstance();
+        final DebugWebServer http = DebugWebServer.getInstance();
+        AppExecutorUtil.getAppExecutorService().execute(() -> {
+            long deadline = System.currentTimeMillis() + 5000; // up to 5s
+            while (System.currentTimeMillis() < deadline) {
+                if (ws.isRunning() && http.isRunning()) break;
+                try { Thread.sleep(100); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); break; }
+            }
+            SwingUtilities.invokeLater(() -> {
+                if (jbCefBrowser == null && JBCefApp.isSupported()) {
+                    jbCefBrowser = new JBCefBrowser("http://127.0.0.1:8026/index.html");
+                    LOGGER.info("Loading JBCef browser...");
+                } else if (jbCefBrowser != null) {
+                    jbCefBrowser.loadURL("http://127.0.0.1:8026/index.html");
+                    LOGGER.info("Reloaded JBCef browser");
+                } else {
+                    LOGGER.error("JBCefApp is not supported");
+                }
+                if (jbCefBrowser != null) {
+                    browserContainer.removeAll();
+                    browserContainer.add(jbCefBrowser.getComponent(), BorderLayout.CENTER);
+                }
+                cards.show(root, CARD_BROWSER);
+            });
+        });
     }
 
     /**
