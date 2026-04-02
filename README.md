@@ -61,17 +61,12 @@ Die Anwendung folgt u.a. drei, von JetBrains empfohlenen UX-Prinzipien:
 
 ## Screenshots
 
-Klassendiagramm – Struktur verstehen:
-
-![Klassendiagramm](docs/images/class-diagram.png)
-
-Variablen – kompakte Vorschau und „Mehr“ für Details:
-
-![Variablen](docs/images/variables-table.png)
-
-Objekt‑Inspektor und Konsole – refid‑Sprung und Laufzeit‑I/O:
-
-![Objektinspektor und Konsole](docs/images/object-inspector-console.png)
+<div align="center">
+  <img src="docs/images/class-diagram.png" alt="Klassendiagramm" width="31%" />
+  <img src="docs/images/variables-table.png" alt="Variablen" width="31%" />
+  <img src="docs/images/object-inspector-console.png" alt="Objektinspektor und Konsole" width="31%" />
+  
+</div>
 
 ---
 
