@@ -61,7 +61,17 @@ Die Anwendung folgt u.a. drei, von JetBrains empfohlenen UX-Prinzipien:
 
 ## Screenshots
 
-Demnächst verfügbar – gerne ein Issue eröffnen und eigene Screenshots teilen!
+Klassendiagramm – Struktur verstehen:
+
+![Klassendiagramm](docs/images/class-diagram.png)
+
+Variablen – kompakte Vorschau und „Mehr“ für Details:
+
+![Variablen](docs/images/variables-table.png)
+
+Objekt‑Inspektor und Konsole – refid‑Sprung und Laufzeit‑I/O:
+
+![Objektinspektor und Konsole](docs/images/object-inspector-console.png)
 
 ---
 
