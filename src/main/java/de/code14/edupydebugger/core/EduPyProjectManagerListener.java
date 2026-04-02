@@ -3,6 +3,7 @@ package de.code14.edupydebugger.core;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManagerListener;
+import com.intellij.util.concurrency.AppExecutorUtil;
 import de.code14.edupydebugger.server.DebugWebServer;
 import de.code14.edupydebugger.server.DebugWebSocketServer;
 import de.code14.edupydebugger.ui.DebuggerToolWindowFactory;
@@ -28,11 +29,14 @@ public class EduPyProjectManagerListener implements ProjectManagerListener {
      */
     @Override
     public void projectClosing(@NotNull Project project) {
-        SwingUtilities.invokeLater(() -> {
+        // Stop servers in background to avoid blocking EDT during project shutdown
+        final DebugWebSocketServer ws = DebugWebSocketServer.getInstance();
+        final DebugWebServer http = DebugWebServer.getInstance();
+        AppExecutorUtil.getAppExecutorService().execute(() -> {
             // Stop the Websocket Server
-            if (DebugWebSocketServer.getInstance().isRunning()) {
+            if (ws.isRunning()) {
                 try {
-                    DebugWebSocketServer.getInstance().stopWebSocketServer();
+                    ws.stopWebSocketServer();
                     LOGGER.info("Stopped debug web socket server");
                 } catch (final Exception e) {
                     LOGGER.error("Failed to stop the websocket server", e);
@@ -40,18 +44,18 @@ public class EduPyProjectManagerListener implements ProjectManagerListener {
             }
 
             // Stop the HTTP Webserver
-            if (DebugWebServer.getInstance().isRunning()) {
+            if (http.isRunning()) {
                 try {
-                    DebugWebServer.getInstance().stopWebServer();
+                    http.stopWebServer();
                     LOGGER.info("Stopped debug web server");
                 } catch (final Exception e) {
                     LOGGER.error("Failed to start the http server", e);
                 }
             }
-
-            // Close the JBCefBrowser in the DebuggerToolWindowFactory
-            DebuggerToolWindowFactory.closeJBCefBrowser();
         });
+
+        // Close the JBCefBrowser on EDT
+        SwingUtilities.invokeLater(DebuggerToolWindowFactory::closeJBCefBrowser);
     }
 
 

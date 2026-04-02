@@ -57,9 +57,9 @@ public class EduPyProjectManagerListenerTests {
             // Act
             listener.projectClosing(mockProject);
 
-            // Verify that WebSocket and Web servers were stopped
-            verify(mockWebSocketServer, times(1)).stopWebSocketServer();
-            verify(mockWebServer, times(1)).stopWebServer();
+            // Verify that WebSocket and Web servers were stopped (async background)
+            verify(mockWebSocketServer, timeout(2000).times(1)).stopWebSocketServer();
+            verify(mockWebServer, timeout(2000).times(1)).stopWebServer();
 
             // Verify that the JBCefBrowser was closed
             toolWindowFactoryMock.verify(DebuggerToolWindowFactory::closeJBCefBrowser, times(1));
@@ -107,4 +107,3 @@ public class EduPyProjectManagerListenerTests {
         }
     }
 }
-
