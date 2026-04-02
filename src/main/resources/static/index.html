@@ -29,12 +29,13 @@
 		</div>
 		<div id="threads-content">
 			<h2>Threads</h2>
-			<div class="threads-dropdown">
-				<label for="threads">Wähle einen Thread:</label>
-				<select id="threads" name="threads">
-					<!-- Dynamische Inhalte hier einfügen -->
-				</select>
-			</div>
+            <div class="threads-dropdown">
+                <label for="threads">Threads:</label>
+                <select id="threads" name="threads">
+                    <!-- Dynamische Inhalte hier einfügen -->
+                </select>
+                <span class="info-hint" title="Stepping ist global: Im Multithread‑Kontext ist zuverlässiges Single‑Thread‑Stepping in Python nicht möglich. Andere Threads können beim Step fortfahren.">ⓘ</span>
+            </div>
 			<div class="threads-container">
 				<table>
 					<thead>
