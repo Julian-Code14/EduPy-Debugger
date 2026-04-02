@@ -5,6 +5,28 @@
 All notable changes to this project will be documented in this file.
 This format follows Keep a Changelog, and versions follow Semantic Versioning (including beta suffixes).
 
+## [1.0.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/v0.5.3-beta.0...v1.0.0) (2026-04-02)
+
+
+### Features
+
+* **analysis:** show globals in local stop + enrich call stack with arguments ([#221](https://github.com/Julian-Code14/EduPy-Debugger/issues/221)) ([0c95539](https://github.com/Julian-Code14/EduPy-Debugger/commit/0c955393716e3b46f24f2764b166860914ebe3e8))
+* **console:** format Python tracebacks into student-friendly messages with location and tips; add tests ([#219](https://github.com/Julian-Code14/EduPy-Debugger/issues/219)) ([1fe3d11](https://github.com/Julian-Code14/EduPy-Debugger/commit/1fe3d11e0efadb2f00839700b5634fa9396ef94e))
+* **console:** suppress pydevd startup line and add idle REPL fallback ([#217](https://github.com/Julian-Code14/EduPy-Debugger/issues/217)) ([954b885](https://github.com/Julian-Code14/EduPy-Debugger/commit/954b885fa7aa46af58bd2281d7da88d3c4d56da4))
+* **server:** show class diagram in REPL and clear call stack on REPL start ([#222](https://github.com/Julian-Code14/EduPy-Debugger/issues/222)) ([7d4274c](https://github.com/Julian-Code14/EduPy-Debugger/commit/7d4274c876182c748003c6e9d128cec82b39cd60))
+* **ui:** add Help/Privacy/Terms/Contact subpages and footer updates ([#226](https://github.com/Julian-Code14/EduPy-Debugger/issues/226)) ([aa26cde](https://github.com/Julian-Code14/EduPy-Debugger/commit/aa26cde81156366bbad56ffca0c42d21f0fea098))
+* **ui:** expandable values in variables table (preview + full) ([#223](https://github.com/Julian-Code14/EduPy-Debugger/issues/223)) ([51401cb](https://github.com/Julian-Code14/EduPy-Debugger/commit/51401cb669dfd4892564283f7e73d350a0e285f3))
+
+
+### Bug Fixes
+
+* **debugger:** enforce global stepping; stabilize frame events; clarify UI ([#224](https://github.com/Julian-Code14/EduPy-Debugger/issues/224)) ([8959575](https://github.com/Julian-Code14/EduPy-Debugger/commit/89595754e99d9b94fe33e8ebc52269b49af27287))
+
+
+### Performance Improvements
+
+* **debugger:** move analysis off EDT, debounce on BGT ([#225](https://github.com/Julian-Code14/EduPy-Debugger/issues/225)) ([11a2031](https://github.com/Julian-Code14/EduPy-Debugger/commit/11a2031fb4316fc79b534e8a23d9f1930eacd687))
+
 ## [0.5.3-beta.0](https://github.com/Julian-Code14/EduPy-Debugger/compare/v0.5.2-beta.0...v0.5.3-beta.0) (2025-10-26)
 
 
