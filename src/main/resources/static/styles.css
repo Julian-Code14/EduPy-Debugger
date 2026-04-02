@@ -526,3 +526,9 @@ th, td {
 .variables-container td .value-full {
     white-space: nowrap;
 }
+
+/* Subpages: zentriere CTA-Buttons innerhalb von .content */
+.content .large-btn {
+    display: block;
+    margin: 0 auto;
+}
