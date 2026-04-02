@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hilfe – EduPy‑Debugger by Code14</title>
+    <link rel="stylesheet" href="../styles.css">
+    <script src="page-common.js" defer></script>
+    <style>
+        .content { max-width: 900px; margin: 0 auto; background:#fff; border:1px solid #ddd; padding:16px; }
+        .content h2 { margin-top: 1.2em; }
+        .backbar { display:flex; justify-content:flex-end; }
+    </style>
+    <script>
+        function openTutor() { window.open('https://pythontutor.com/python-compiler.html#mode=edit', '_blank'); }
+    </script>
+    </head>
+<body>
+<header>
+    <h1>EduPy‑Debugger by Code14</h1>
+    <button id="close-btn" class="close-btn" onclick="goToIndex()">X</button>
+    <div class="backbar"></div>
+  </header>
+<main class="content">
+    <h2>Hilfe – Kurzanleitung für Schüler</h2>
+
+    <p>Mit dem EduPy‑Debugger kannst du Python‑Programme Schritt für Schritt ausführen und dabei Variablen, Aufrufstack und Objekte ansehen. Diese Seite erklärt dir die wichtigsten Bereiche kurz und mit Beispielen.</p>
+
+    <h3>Debugger starten</h3>
+    <ul>
+        <li>Starte dein Python‑Programm wie gewohnt im Debug‑Modus (über das Plugin‑Icon oder den Debug‑Button in der IDE).</li>
+        <li>Setze bei Bedarf Breakpoints (roter Punkt neben der Zeile). Wenn der Code dort ankommt, hält der Debugger an.</li>
+    </ul>
+
+    <h3>Steuerung</h3>
+    <ul>
+        <li><b>Resume</b>: Programm weiterlaufen lassen.</li>
+        <li><b>Pause</b>: Ausführung anhalten (falls möglich).</li>
+        <li><b>Step Over</b>: Nächste Zeile ausführen, Funktionsaufrufe werden übersprungen.</li>
+        <li><b>Step Into</b>: In einen Funktionsaufruf hineinspringen.</li>
+        <li><b>Step Out</b>: Aktuelle Funktion bis zum Ende laufen lassen und zurückspringen.</li>
+    </ul>
+
+    <h3>Threads und Aufrufstack</h3>
+    <p>Aktiviere bei Bedarf den Schalter <b>Threads</b>. Dort siehst du den ausgewählten Thread und darunter den <b>Aufrufstack</b> (welche Funktionen aktuell aktiv sind). Ein Eintrag sieht z. B. so aus:</p>
+    <pre>main() → calculate(x=3) → helper(y=9)</pre>
+    <p>Wenn du auf eine <code>refid:123</code> klickst, springst du im Objektinspektor zur passenden Objektkarte.</p>
+
+    <h3>Variablen</h3>
+    <p>In der Tabelle siehst du Name, Typ, Wert, Scope (z. B. lokal/global) und eine Objekt‑ID. Bei komplexen Werten (Listen, Dicts, Objekte) kannst du mit <b>Mehr/Weniger</b> zwischen Vorschau und vollständiger Darstellung wechseln.</p>
+    <p>Beispiel:</p>
+    <pre>
+x = 5                     # primitive Variable
+person = {"name": "Ada", "age": 12}
+werte = [1, 2, 3, 4]
+    </pre>
+
+    <h3>Objektinspektor</h3>
+    <p>Hier findest du Karten für wichtige Objekte (z. B. Klasseninstanzen). Du kannst mit den Pfeilen blättern. Links in den Karten führen zu anderen Karten – so erkennst du Beziehungen.</p>
+
+    <h3>Diagramme</h3>
+    <ul>
+        <li><b>Klassendiagramm</b>: Übersicht über Klassen und Beziehungen. Öffnest du über den Button <i>Klassendiagramm</i>.</li>
+        <li><b>Objektdiagramm</b>: Zeigt konkrete Objekte zur Laufzeit. Öffnest du über <i>Objektdiagramm</i>.</li>
+    </ul>
+
+    <h3>Konsole (REPL)</h3>
+    <p>Unten kannst du Python‑Befehle eingeben. Die Ausgabe erscheint darüber. Nach Eingaben werden Variablen aktualisiert. Mit dem Kreis‑Pfeil setzt du die Konsole zurück.</p>
+
+    <h3>Tipps</h3>
+    <ul>
+        <li>Arbeite schrittweise: Führe wenige Zeilen aus und beobachte Variablen.</li>
+        <li>Nutze <b>Step Into</b>, um zu verstehen, wie eine Funktion intern arbeitet.</li>
+        <li>Öffne bei Bedarf <button onclick="openTutor()">PythonTutor</button> für zusätzliche Visualisierung.</li>
+    </ul>
+
+    <p><button class="large-btn" onclick="goToIndex()">Zurück zum Debugger</button></p>
+</main>
+</body>
+</html>
+
