@@ -60,6 +60,13 @@ public class DebugSessionController {
             LOGGER.warn("performDynamicAnalysis called without debugProcess; ignoring.");
             return;
         }
+        try {
+            if (this.debugProcess.getSession() == null || !this.debugProcess.getSession().isPaused()) {
+                // Avoid heavy evaluation while the process is running; try again on next paused event
+                LOGGER.debug("performDynamicAnalysis skipped: session not paused");
+                return;
+            }
+        } catch (Throwable ignore) {}
         Map<PyThreadInfo, List<PyStackFrame>> perThreadFrames =
                 DebuggerUtils.getStackFramesPerThread(this.debugProcess.getSession());
 

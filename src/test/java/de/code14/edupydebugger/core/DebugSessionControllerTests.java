@@ -40,6 +40,9 @@ public class DebugSessionControllerTests {
 
         when(mockPyDebugProcess.getSession()).thenReturn(mockXDebugSession);
         when(mockXDebugSession.getDebugProcess()).thenReturn(mockPyDebugProcess);
+        // New: performDynamicAnalysis now skips work unless the session is paused.
+        // Tests simulate a paused state to exercise analysis and publishing paths.
+        when(mockXDebugSession.isPaused()).thenReturn(true);
 
         sut = new DebugSessionController();
         sut.setDebugProcess(mockPyDebugProcess);

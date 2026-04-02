@@ -31,6 +31,26 @@ public class ObjectAnalyzer {
     private static final String PROTECTED_PREFIX = "_";
     private static final String STATIC_KEYWORD = "static";
 
+    /**
+     * Very small, targeted deny‑list of attribute names typically coming from
+     * Python's threading/synchronization internals. We keep user attributes
+     * (even if they start with a single underscore) and only skip these
+     * well‑known internals to avoid deep traversal into locks/conditions.
+     */
+    private static final java.util.Set<String> INTERNAL_ATTR_NAMES = new java.util.HashSet<>(java.util.Arrays.asList(
+            "_abc_impl",     // ABC internals
+            "_started",      // threading.Thread Event/Condition wrapper
+            "_is_stopped",
+            "_tstate_lock",
+            "_stop",
+            "_target", "_args", "_kwargs",
+            "_ident", "_native_id",
+            // Condition/Lock internals
+            "_lock", "_waiters", "_cond",
+            // Low‑level reentrant lock helpers
+            "_release_save", "_acquire_restore"
+    ));
+
     // Map to store objects, where the key is the object ID and the value is an array containing the name, type, current value, and visibility as ObjectInfo instances.
     private final Map<String, ObjectInfo> objects = new HashMap<>();
 
@@ -133,7 +153,8 @@ public class ObjectAnalyzer {
 
         for (String attrName : attributeNames) {
             attrName = attrName.trim().replace("'", ""); // Clean attribute name
-            if (attrName.endsWith("__") || attrName.equals("_abc_impl")) {
+            // Skip dunder attributes and a small deny‑list of typical thread/sync internals
+            if (attrName.endsWith("__") || INTERNAL_ATTR_NAMES.contains(attrName)) {
                 continue; // Skip attributes and methods ending with double underscore or that are from ABC module
             }
 
@@ -293,6 +314,11 @@ public class ObjectAnalyzer {
         try {
             return value.getFrameAccessor().evaluate(expression, false, true);
         } catch (PyDebuggerException e) {
+            // Reduce noise when the process resumed between calls
+            if (e.getMessage() != null && e.getMessage().contains("Process is running")) {
+                LOGGER.debug("Skip evaluation while running: " + expression);
+                return null;
+            }
             LOGGER.warn("Error evaluating expression: " + expression, e);
             return null;
         }
@@ -309,6 +335,10 @@ public class ObjectAnalyzer {
         try {
             return value.getFrameAccessor().evaluate(expression, false, true).getValue();
         } catch (PyDebuggerException e) {
+            if (e.getMessage() != null && e.getMessage().contains("Process is running")) {
+                LOGGER.debug("Skip evaluation while running: " + expression);
+                return "";
+            }
             LOGGER.warn("Error evaluating expression: " + expression, e);
             return "";
         }
