@@ -441,6 +441,20 @@ function jumpToSlide(refid) {
         const slidesContainer = document.querySelector('#object-slides');
         slidesContainer.style.transform = `translateX(-${currentIndex * 100}%)`;
     }
+
+    // Ensure Object‑Inspector is visible and scroll into view
+    try {
+        const oiContainer = document.getElementById('object-inspector-container');
+        const oiToggleBtn = document.getElementById('oi-toggle');
+        if (oiContainer) {
+            if (oiContainer.classList.contains('collapsed')) {
+                oiContainer.classList.remove('collapsed');
+                if (oiToggleBtn) oiToggleBtn.classList.remove('rotated');
+            }
+            const y = oiContainer.getBoundingClientRect().top + window.pageYOffset - 20; // small offset for sticky controls
+            window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+    } catch (e) { console.error(e); }
 }
 
 /* ---------- Controls & UI Wiring ---------- */
