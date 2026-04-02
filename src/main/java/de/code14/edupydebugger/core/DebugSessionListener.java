@@ -1,6 +1,8 @@
 package de.code14.edupydebugger.core;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.util.concurrency.EdtScheduledExecutorService;
 import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugSessionListener;
 import com.jetbrains.python.debugger.*;
@@ -41,6 +43,11 @@ public class DebugSessionListener implements XDebugSessionListener {
     /** Parses project sources to produce a PlantUML class diagram for the frontend. */
     private final ClassDiagramParser classDiagramParser;
 
+    /** Debounce guard to coalesce frequent stackFrameChanged events on EDT. */
+    private final Object debounceLock = new Object();
+    private volatile boolean debounceScheduled = false;
+    private static final long DEBOUNCE_MS = 40L;
+
     /**
      * Creates a new session listener and immediately performs a one-time static analysis pass.
      *
@@ -69,11 +76,33 @@ public class DebugSessionListener implements XDebugSessionListener {
         LOGGER.info("Stack frame changed -> dynamic analysis");
 
         if (debugProcess instanceof PyDebugProcess py) {
-            try {
-                publishThreads(py);
-                DebugServerEndpoint.getDebugSessionController().performDynamicAnalysis(DebugServerEndpoint.getSelectedThread());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            Runnable work = () -> {
+                try {
+                    publishThreads(py);
+                    DebugServerEndpoint.getDebugSessionController().performDynamicAnalysis(DebugServerEndpoint.getSelectedThread());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            };
+
+            var app = ApplicationManager.getApplication();
+            if (app != null && !app.isUnitTestMode()) {
+                boolean shouldSchedule;
+                synchronized (debounceLock) {
+                    shouldSchedule = !debounceScheduled;
+                    if (shouldSchedule) debounceScheduled = true;
+                }
+                if (shouldSchedule) {
+                    EdtScheduledExecutorService.getInstance().schedule(() -> {
+                        try { work.run(); }
+                        finally {
+                            synchronized (debounceLock) { debounceScheduled = false; }
+                        }
+                    }, DEBOUNCE_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
+                }
+            } else {
+                // Tests / headless: keine Verzögerung
+                work.run();
             }
         }
     }
