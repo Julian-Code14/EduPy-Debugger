@@ -153,6 +153,10 @@ input:checked + .checkbox-slider:before {
 
 .threads-dropdown {
     padding-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 select {
@@ -165,6 +169,22 @@ select {
 select:focus {
     outline: none;
     border-color: #888;
+}
+
+/* Mini-Tooltip neben Thread-Dropdown */
+.info-hint {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    font-size: 12px;
+    line-height: 1;
+    border: 1px solid #bbb;
+    border-radius: 50%;
+    color: #666;
+    cursor: help;
+    user-select: none;
 }
 
 #threads-content {
