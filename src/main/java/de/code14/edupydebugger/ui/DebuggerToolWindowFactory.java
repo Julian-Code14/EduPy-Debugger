@@ -101,17 +101,21 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
      * Loads the debugger UI from a specified local URL.
      */
     private void initializeBrowser() {
-        // Ensure servers are running even without an active debug session
-        try {
-            if (!DebugWebSocketServer.getInstance().isRunning()) {
-                DebugWebSocketServer.getInstance().startWebSocketServer();
+        // Start servers asynchronously to avoid UI stalls; browser loads regardless
+        final DebugWebSocketServer ws = DebugWebSocketServer.getInstance();
+        final DebugWebServer http = DebugWebServer.getInstance();
+        com.intellij.util.concurrency.AppExecutorUtil.getAppExecutorService().execute(() -> {
+            try {
+                if (!ws.isRunning()) {
+                    ws.startWebSocketServer();
+                }
+                if (!http.isRunning()) {
+                    http.startWebServer();
+                }
+            } catch (Throwable t) {
+                LOGGER.warn("Could not start web/socket servers from ToolWindow init", t);
             }
-            if (!DebugWebServer.getInstance().isRunning()) {
-                DebugWebServer.getInstance().startWebServer();
-            }
-        } catch (Throwable t) {
-            LOGGER.warn("Could not start web/socket servers from ToolWindow init", t);
-        }
+        });
 
         if (jbCefBrowser == null && JBCefApp.isSupported()) {
             jbCefBrowser = new JBCefBrowser("http://127.0.0.1:8026/index.html");
