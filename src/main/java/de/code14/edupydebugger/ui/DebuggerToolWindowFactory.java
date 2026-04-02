@@ -20,6 +20,8 @@ import com.intellij.openapi.module.Module;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.HierarchyListener;
 
 /**
  * A factory class for creating and managing the Debugger Tool Window.
@@ -34,6 +36,7 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
     private final static Logger LOGGER = Logger.getInstance(DebuggerToolWindowFactory.class);
 
     private static JBCefBrowser jbCefBrowser;
+    private volatile boolean browserAttached = false;
 
 
     /**
@@ -66,13 +69,22 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
                 }
             } catch (Throwable ignore2) {}
         } catch (Throwable ignore) {}
-        initializeBrowser();
+        // Panel zuerst einhängen, Browser erst anfügen wenn sichtbar (macOS Accessibility Avoidance)
         JPanel panel = new JPanel(new BorderLayout());
-        panel.add(jbCefBrowser.getComponent(), BorderLayout.CENTER);
 
         ContentFactory contentFactory = ContentFactory.getInstance();
         Content content = contentFactory.createContent(panel, "", false);
         toolWindow.getContentManager().addContent(content);
+
+        // Wenn das Panel „showing“ wird, den Browser anhängen (verhindert getLocationOnScreen‑Fehler)
+        panel.addHierarchyListener(new HierarchyListener() {
+            @Override
+            public void hierarchyChanged(HierarchyEvent e) {
+                if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && panel.isShowing()) {
+                    SwingUtilities.invokeLater(() -> attachBrowserIfNeeded(panel));
+                }
+            }
+        });
     }
 
     /**
@@ -121,6 +133,20 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
             LOGGER.info("Reloaded JBCef browser");
         } else {
             LOGGER.error("JBCefApp is not supported");
+        }
+    }
+
+    /**
+     * Fügt die Browser‑Komponente nur an, wenn nötig und erst nach dem Anzeigen des Panels.
+     */
+    private void attachBrowserIfNeeded(JPanel panel) {
+        if (browserAttached) return;
+        initializeBrowser();
+        if (jbCefBrowser != null && jbCefBrowser.getComponent().getParent() != panel) {
+            panel.add(jbCefBrowser.getComponent(), BorderLayout.CENTER);
+            browserAttached = true;
+            panel.revalidate();
+            panel.repaint();
         }
     }
 
