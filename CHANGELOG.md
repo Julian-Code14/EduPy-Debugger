@@ -5,6 +5,13 @@
 All notable changes to this project will be documented in this file.
 This format follows Keep a Changelog, and versions follow Semantic Versioning (including beta suffixes).
 
+## [1.0.4](https://github.com/Julian-Code14/EduPy-Debugger/compare/v1.0.3...v1.0.4) (2026-04-02)
+
+
+### Miscellaneous Chores
+
+* release now ([ca6002b](https://github.com/Julian-Code14/EduPy-Debugger/commit/ca6002b820b1237719207ec28b1bf32868dd286d))
+
 ## [1.0.3](https://github.com/Julian-Code14/EduPy-Debugger/compare/v1.0.1...v1.0.3) (2026-04-02)
 
 
