@@ -74,8 +74,7 @@ public class VariableAnalyzer {
             public void addChildren(@NotNull XValueChildrenList children, boolean last) {
                 LOGGER.debug("Analyzing PyStackFrame: " + pyStackFrame.getFrameId());
 
-                // Keep a small set of names visible directly in this frame
-                Set<String> namesInFrame = new HashSet<>();
+                // Iterate visible values in the current frame
                 PyDebugValue evalCtx = null;
                 for (int i = 0; i < children.size(); i++) {
                     PyDebugValue value = (PyDebugValue) children.getValue(i);
@@ -87,7 +86,6 @@ public class VariableAnalyzer {
                     String id = determinePythonId(value, value.getName());
                     // If the file changes, variables from another file would not be defined -> exclude
                     if (!id.contains("is not defined")) {
-                        namesInFrame.add(value.getName());
                         if (variables.containsKey(id)) { // If there are more names for an id
                             List<String> meta = variables.get(id);
                             String existing = meta.get(0);
@@ -104,12 +102,22 @@ public class VariableAnalyzer {
                                 } catch (Exception ignore) {}
                             }
                             if (raw == null) raw = "";
-                            variables.put(id, new ArrayList<>(Arrays.asList(
+                            List<String> meta = new ArrayList<>(Arrays.asList(
                                     value.getName(),
                                     value.getType(),
                                     raw.replace(", ", "~"),
                                     determineScope(value)
-                            )));
+                            ));
+                            // For builtin containers, attach a full, untruncated repr as 5th element
+                            if (isBuiltinContainerType(value.getType())) {
+                                try {
+                                    String full = evaluateExpression(value, "repr(" + value.getName() + ")");
+                                    meta.add(full != null ? full : "");
+                                } catch (Exception ex) {
+                                    meta.add("");
+                                }
+                            }
+                            variables.put(id, meta);
                         }
                     }
                 }
@@ -293,18 +301,19 @@ public class VariableAnalyzer {
             if (digits) return true; // _i42, _i123 etc.
         }
         if (name.equals("_ih") || name.equals("_oh") || name.equals("In") || name.equals("Out")) return true;
-        // Cover debugger temp names, possibly truncated by UI into "__py_deb..."
+        // Cover debugger temp names, possibly truncated by UI into "__py..."
         if (name.startsWith("__py_debug")) return true;
         if (name.startsWith("__py_deb")) return true;
         if (name.startsWith("__py_")) return true;
+        if (name.startsWith("__py")) return true; // extremely truncated variant like "__py..."
+        if (name.startsWith("_") && name.endsWith("...")) return true; // truncated private/system names
         if (name.startsWith("_pydev_")) return true;
         if (name.startsWith("__pydev")) return true;
         // Python module-level dunders (and any other __dunder__)
         if (name.startsWith("__") && name.endsWith("__")) return true;
         // Explicit allowlist skip for well-known module attrs
         Set<String> known = Set.of("__name__", "__file__", "__package__", "__loader__", "__spec__", "__doc__", "__cached__");
-        if (known.contains(name)) return true;
-        return false;
+        return known.contains(name);
     }
 
     private boolean isBuiltinContainerType(String t) {

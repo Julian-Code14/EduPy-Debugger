@@ -16,20 +16,38 @@ public final class PayloadPublisher {
 
     public static void publishVariablesWithSnippet(List<VariableDTO> variables, Map<String, ObjectInfo> objects) {
         Set<String> prim = new HashSet<>(Arrays.asList("int","float","str","bool","list","dict","tuple","set"));
+        Set<String> containers = new HashSet<>(Arrays.asList("list","dict","tuple","set"));
         for (VariableDTO dto : variables) {
             if (dto == null || dto.value == null) continue;
-            if (!prim.contains(dto.pyType)) {
+            String t = dto.pyType != null ? dto.pyType : "";
+            if (!prim.contains(t)) {
                 ObjectInfo info = (objects != null) ? objects.get(dto.id) : null;
                 StringBuilder sb = new StringBuilder();
+                StringBuilder full = new StringBuilder();
                 if (info != null) {
                     for (AttributeInfo a : info.attributes()) {
                         String shown = a.value();
                         if (shown.length() > 20) shown = shown.substring(0, 20) + " [...]";
                         sb.append(a.name()).append(": ").append(shown).append("\n");
+                        full.append(a.name()).append(": ").append(a.value()).append("\n");
                     }
                 }
                 dto.value.kind = "composite";
                 dto.value.repr = sb.toString().trim();
+                dto.value.full = full.toString().trim();
+            } else {
+                // Primitive & builtin containers
+                dto.value.kind = "primitive";
+                String base = dto.value.repr != null ? dto.value.repr.replace("~", ", ") : "";
+                if (containers.contains(t)) {
+                    // Supply full and a shortened preview
+                    dto.value.full = (dto.value.full != null && !dto.value.full.isEmpty()) ? dto.value.full : base;
+                    String full = dto.value.full; // set above to non-null
+                    dto.value.repr = (full.length() > 60) ? (full.substring(0, 60) + " [...]") : base;
+                } else {
+                    // Non-container primitives keep full=null and show base
+                    dto.value.repr = base;
+                }
             }
         }
         DebugServerEndpoint.publishVariables(new VariablesPayload(variables));
@@ -54,4 +72,3 @@ public final class PayloadPublisher {
         DebugServerEndpoint.publishObjectDiagram(odBase64);
     }
 }
-
