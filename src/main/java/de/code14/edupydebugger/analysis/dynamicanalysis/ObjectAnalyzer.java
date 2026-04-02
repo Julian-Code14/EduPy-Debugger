@@ -133,7 +133,8 @@ public class ObjectAnalyzer {
 
         for (String attrName : attributeNames) {
             attrName = attrName.trim().replace("'", ""); // Clean attribute name
-            if (attrName.endsWith("__") || attrName.equals("_abc_impl")) {
+            // Skip dunder attributes and obvious internals; also skip leading '_' to avoid heavy thread internals
+            if (attrName.endsWith("__") || attrName.equals("_abc_impl") || attrName.startsWith("_")) {
                 continue; // Skip attributes and methods ending with double underscore or that are from ABC module
             }
 
@@ -293,6 +294,11 @@ public class ObjectAnalyzer {
         try {
             return value.getFrameAccessor().evaluate(expression, false, true);
         } catch (PyDebuggerException e) {
+            // Reduce noise when the process resumed between calls
+            if (e.getMessage() != null && e.getMessage().contains("Process is running")) {
+                LOGGER.debug("Skip evaluation while running: " + expression);
+                return null;
+            }
             LOGGER.warn("Error evaluating expression: " + expression, e);
             return null;
         }
@@ -309,6 +315,10 @@ public class ObjectAnalyzer {
         try {
             return value.getFrameAccessor().evaluate(expression, false, true).getValue();
         } catch (PyDebuggerException e) {
+            if (e.getMessage() != null && e.getMessage().contains("Process is running")) {
+                LOGGER.debug("Skip evaluation while running: " + expression);
+                return "";
+            }
             LOGGER.warn("Error evaluating expression: " + expression, e);
             return "";
         }
