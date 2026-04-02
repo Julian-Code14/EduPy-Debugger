@@ -15,6 +15,7 @@ import de.code14.edupydebugger.core.console.ConsoleOutputListener;
 import de.code14.edupydebugger.server.DebugWebServer;
 import de.code14.edupydebugger.server.DebugWebSocketServer;
 import de.code14.edupydebugger.ui.DebuggerToolWindowFactory;
+import com.intellij.util.concurrency.AppExecutorUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -76,23 +77,25 @@ public class DebugProcessListener implements XDebuggerManagerListener {
 
         LOGGER.info("Debug Process started");
 
-        // Start the WebSocket server if it's not already running
-        if (!DebugWebSocketServer.getInstance().isRunning()) {
-            try {
-                DebugWebSocketServer.getInstance().startWebSocketServer();
-            } catch (final Exception e) {
-                LOGGER.error("Failed to start the websocket server", e);
+        // Resolve instances on the calling thread (helps tests with static mocks), then start in background
+        final DebugWebSocketServer wsServer = DebugWebSocketServer.getInstance();
+        final DebugWebServer httpServer = DebugWebServer.getInstance();
+        AppExecutorUtil.getAppExecutorService().execute(() -> {
+            if (!wsServer.isRunning()) {
+                try {
+                    wsServer.startWebSocketServer();
+                } catch (final Exception e) {
+                    LOGGER.error("Failed to start the websocket server", e);
+                }
             }
-        }
-
-        // Start the HTTP server if it's not already running
-        if (!DebugWebServer.getInstance().isRunning()) {
-            try {
-                DebugWebServer.getInstance().startWebServer();
-            } catch (final Exception e) {
-                LOGGER.error("Failed to start the http server", e);
+            if (!httpServer.isRunning()) {
+                try {
+                    httpServer.startWebServer();
+                } catch (final Exception e) {
+                    LOGGER.error("Failed to start the http server", e);
+                }
             }
-        }
+        });
 
         // Set the debug process in the WebSocket endpoint
         DebugServerEndpoint.setDebugProcess((PyDebugProcess) debugProcess);

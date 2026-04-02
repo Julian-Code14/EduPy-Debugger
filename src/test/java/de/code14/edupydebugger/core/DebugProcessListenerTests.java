@@ -83,9 +83,9 @@ public class DebugProcessListenerTests {
             // Act: simulate starting the process.
             debugProcessListener.processStarted(pyDebugProcess);
 
-            // Verify that the WebSocket and HTTP servers are started.
-            verify(mockWebSocketServer, times(1)).startWebSocketServer();
-            verify(mockWebServer, times(1)).startWebServer();
+            // Verify that the WebSocket and HTTP servers are started (async background)
+            verify(mockWebSocketServer, timeout(1000).times(1)).startWebSocketServer();
+            verify(mockWebServer, timeout(1000).times(1)).startWebServer();
 
             // Verify that the DebugServerEndpoint methods are called to set the debug process and process handler.
             debugServerEndpointMock.verify(() -> DebugServerEndpoint.setDebugProcess(pyDebugProcess), times(1));
