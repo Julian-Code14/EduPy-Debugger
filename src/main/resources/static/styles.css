@@ -32,18 +32,18 @@ h1 {
     justify-content: center;
     margin: 10px 0;
     gap: 5px;
+    position: sticky; /* bleibt im Fluss, vermeidet Layoutsprünge */
+    top: 12px;        /* Abstand zum oberen Rand beim Ankleben */
+    z-index: 1000;
 }
 
-.sticky-controls {
-    position: fixed;  /* Fixed position, bleibt immer sichtbar */
-    top: 0;           /* Bleibt am oberen Rand des Bildschirms */
-    left: 50%;
-    transform: translateX(-50%); /* Zentriert die Buttons horizontal */
-    z-index: 1000;  /* Stellt sicher, dass das Element über anderen Elementen bleibt */
-    background-color: rgba(255, 255, 255, 0.8); /* Halbtransparenter Hintergrund */
-    padding: 10px;
+.controls.controls-floating {
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1px solid #ddd;
     border-radius: 10px;
+    padding: 8px 10px;
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(2px);
 }
 
 .control-btn {
@@ -525,4 +525,10 @@ th, td {
 }
 .variables-container td .value-full {
     white-space: nowrap;
+}
+
+/* Subpages: zentriere CTA-Buttons innerhalb von .content */
+.content .large-btn {
+    display: block;
+    margin: 0 auto;
 }
