@@ -37,9 +37,9 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
 
     private static JBCefBrowser jbCefBrowser;
 
-    // Simple card-based UI to show a loading screen on first start
-    private final String CARD_LOADING = "loading";
-    private final String CARD_BROWSER = "browser";
+    // Simple card-based UI to show a loading screen on first start (local to factory instance)
+    private static final String CARD_LOADING = "loading";
+    private static final String CARD_BROWSER = "browser";
 
 
     /**
@@ -154,29 +154,36 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
     private void waitForServersThenShowBrowser(JPanel browserContainer, CardLayout cards, JPanel root) {
         final DebugWebSocketServer ws = DebugWebSocketServer.getInstance();
         final DebugWebServer http = DebugWebServer.getInstance();
-        AppExecutorUtil.getAppExecutorService().execute(() -> {
-            long deadline = System.currentTimeMillis() + 5000; // up to 5s
-            while (System.currentTimeMillis() < deadline) {
-                if (ws.isRunning() && http.isRunning()) break;
-                try { Thread.sleep(100); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); break; }
+        // Use a scheduled check instead of busy-wait sleep
+        java.util.concurrent.ScheduledExecutorService ses = AppExecutorUtil.getAppScheduledExecutorService();
+        final long deadline = System.currentTimeMillis() + 5000; // up to 5s
+        final Runnable tryShow = new Runnable() {
+            @Override public void run() {
+                boolean ready = ws.isRunning() && http.isRunning();
+                boolean timeout = System.currentTimeMillis() >= deadline;
+                if (!ready && !timeout) {
+                    ses.schedule(this, 100, java.util.concurrent.TimeUnit.MILLISECONDS);
+                    return;
+                }
+                SwingUtilities.invokeLater(() -> {
+                    if (jbCefBrowser == null && JBCefApp.isSupported()) {
+                        jbCefBrowser = new JBCefBrowser("http://127.0.0.1:8026/index.html");
+                        LOGGER.info("Loading JBCef browser...");
+                    } else if (jbCefBrowser != null) {
+                        jbCefBrowser.loadURL("http://127.0.0.1:8026/index.html");
+                        LOGGER.info("Reloaded JBCef browser");
+                    } else {
+                        LOGGER.error("JBCefApp is not supported");
+                    }
+                    if (jbCefBrowser != null) {
+                        browserContainer.removeAll();
+                        browserContainer.add(jbCefBrowser.getComponent(), BorderLayout.CENTER);
+                    }
+                    cards.show(root, CARD_BROWSER);
+                });
             }
-            SwingUtilities.invokeLater(() -> {
-                if (jbCefBrowser == null && JBCefApp.isSupported()) {
-                    jbCefBrowser = new JBCefBrowser("http://127.0.0.1:8026/index.html");
-                    LOGGER.info("Loading JBCef browser...");
-                } else if (jbCefBrowser != null) {
-                    jbCefBrowser.loadURL("http://127.0.0.1:8026/index.html");
-                    LOGGER.info("Reloaded JBCef browser");
-                } else {
-                    LOGGER.error("JBCefApp is not supported");
-                }
-                if (jbCefBrowser != null) {
-                    browserContainer.removeAll();
-                    browserContainer.add(jbCefBrowser.getComponent(), BorderLayout.CENTER);
-                }
-                cards.show(root, CARD_BROWSER);
-            });
-        });
+        };
+        ses.schedule(tryShow, 0, java.util.concurrent.TimeUnit.MILLISECONDS);
     }
 
     /**

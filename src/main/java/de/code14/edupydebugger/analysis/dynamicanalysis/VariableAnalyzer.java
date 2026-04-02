@@ -241,7 +241,7 @@ public class VariableAnalyzer {
         } catch (PyDebuggerException e) {
             if (e.getMessage() != null && e.getMessage().contains("Process is running")) {
                 // Benign race: target resumed between computeChildren() and evaluate(); skip noise
-                LOGGER.debug("Skip evaluation while running: " + expression);
+                LOGGER.debug("eval(str): running; skip: " + expression);
                 return "";
             }
             LOGGER.warn("Error evaluating expression: " + expression, e);
@@ -258,7 +258,7 @@ public class VariableAnalyzer {
             return value.getFrameAccessor().evaluate(expression, false, true);
         } catch (PyDebuggerException e) {
             if (e.getMessage() != null && e.getMessage().contains("Process is running")) {
-                LOGGER.debug("Skip evaluation while running: " + expression);
+                LOGGER.debug("eval(value): running; skip: " + expression);
                 return null;
             }
             LOGGER.warn("Error evaluating expression: " + expression, e);
