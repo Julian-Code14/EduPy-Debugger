@@ -27,7 +27,7 @@ plugins {
 }
 
 group   = properties("pluginGroup").get()
-version = properties("pluginVersion").get()
+version = properties("version").get()
 
 /* ------------------------------------------------------------------- */
 /*  Repositories                                                       */
@@ -179,7 +179,7 @@ tasks {
 
     /* ------------------------ Plugin-XML ----------------------------- */
     patchPluginXml {
-        version    = properties("pluginVersion").get()
+        version    = properties("version").get()
         sinceBuild = properties("pluginSinceBuild").get()
 
         pluginDescription = providers
@@ -197,7 +197,7 @@ tasks {
             }
 
         val changelog = project.changelog
-        changeNotes = properties("pluginVersion").map { vers ->
+        changeNotes = properties("version").map { vers ->
             with(changelog) {
                 renderItem(
                     (getOrNull(vers) ?: getUnreleased())
