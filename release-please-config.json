@@ -4,12 +4,11 @@
   "bump-patch-for-minor-pre-major": false,
   "packages": {
     ".": {
-      "release-type": "simple",
+      "release-type": "java",
       "package-name": "edupy-debugger",
       "include-component-in-tag": false,
-      "extra-files": [
-        "gradle.properties"
-      ]
+      "extra-files": [],
+      "version-file": "gradle.properties"
     }
   }
 }
