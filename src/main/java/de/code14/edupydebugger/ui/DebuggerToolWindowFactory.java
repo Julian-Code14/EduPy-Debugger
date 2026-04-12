@@ -84,7 +84,7 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
         title.setFont(title.getFont().deriveFont(Font.BOLD, title.getFont().getSize2D() + 1f));
         loading.add(title, gbc);
         gbc.gridy = 1; gbc.insets = new Insets(0,8,8,8);
-        JLabel subtitle = new JLabel("Launching local servers and UI……");
+        JLabel subtitle = new JLabel("Launching local servers and UI…");
         loading.add(subtitle, gbc);
         gbc.gridy = 2; gbc.insets = new Insets(8,8,8,8);
         JLabel spinner = new JLabel(new AnimatedIcon.Default());
