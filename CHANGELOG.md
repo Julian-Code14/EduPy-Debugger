@@ -3,6 +3,14 @@
 ### CI
 
 - Release-Please: Tag on merge + explizites Manifest/Config; keine Codeänderungen.
+## [1.0.8](https://github.com/Julian-Code14/EduPy-Debugger/compare/v1.0.7...v1.0.8) (2026-04-12)
+
+
+### Bug Fixes
+
+* **release:** sync dev → main ([011752a](https://github.com/Julian-Code14/EduPy-Debugger/commit/011752a712335de26b5087ac22f5761a159bf16a))
+* **release:** sync dev → main (release trigger) ([#302](https://github.com/Julian-Code14/EduPy-Debugger/issues/302)) ([8d62fc2](https://github.com/Julian-Code14/EduPy-Debugger/commit/8d62fc246e07c1fd5869ea50274b49a91966795b))
+
 ## [1.0.6](https://github.com/Julian-Code14/EduPy-Debugger/compare/v1.0.5...v1.0.6) (2026-04-12)
 
 
