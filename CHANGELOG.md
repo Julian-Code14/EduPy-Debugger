@@ -3,6 +3,13 @@
 ### CI
 
 - Release-Please: Tag on merge + explizites Manifest/Config; keine Codeänderungen.
+## [1.0.9](https://github.com/Julian-Code14/EduPy-Debugger/compare/v1.0.8...v1.0.9) (2026-04-12)
+
+
+### Bug Fixes
+
+* **release:** Marketplace description meets requirements ([f31fccc](https://github.com/Julian-Code14/EduPy-Debugger/commit/f31fccc8d693cea9604a404c1b8f17aa37520c2f))
+
 ## [1.0.8](https://github.com/Julian-Code14/EduPy-Debugger/compare/v1.0.7...v1.0.8) (2026-04-12)
 
 
