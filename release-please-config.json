@@ -10,7 +10,8 @@
       "extra-files": [
         {
           "type": "generic",
-          "path": "gradle.properties"
+          "path": "gradle.properties",
+          "regex": "(?s)(# x-release-please-start-version\\n)version = (?<version>[^\\n]+)(\\n# x-release-please-end)"
         }
       ]
     }

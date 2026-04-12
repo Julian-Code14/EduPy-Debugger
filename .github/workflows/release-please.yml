@@ -8,6 +8,11 @@ on:
         description: 'Force release as version (optional)'
         required: false
         type: string
+      skip_pr:
+        description: 'Skip creating a Release PR (tag/release directly)'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -28,6 +33,7 @@ jobs:
           target-branch: main
           release-as: ${{ inputs.release_as }}
           skip-labeling: true
+          skip-github-pull-request: ${{ inputs.skip_pr }}
   publish:
     needs: release
     if: ${{ needs.release.outputs.release_created == 'true' }}
