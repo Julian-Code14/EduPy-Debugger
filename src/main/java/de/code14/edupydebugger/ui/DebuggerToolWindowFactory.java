@@ -168,7 +168,7 @@ public class DebuggerToolWindowFactory implements ToolWindowFactory {
                 SwingUtilities.invokeLater(() -> {
                     if (jbCefBrowser == null && JBCefApp.isSupported()) {
                         jbCefBrowser = new JBCefBrowser("http://127.0.0.1:8026/index.html");
-                        LOGGER.info("Loading JBCef browser...");
+                        LOGGER.info("Loading JBCef browser…");
                     } else if (jbCefBrowser != null) {
                         jbCefBrowser.loadURL("http://127.0.0.1:8026/index.html");
                         LOGGER.info("Reloaded JBCef browser");
