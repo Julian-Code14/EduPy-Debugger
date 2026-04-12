@@ -154,6 +154,8 @@ intellijPlatform {
     }
 
     publishing {
+
+        // Note: Gradle uses PUBLISH_TOKEN for Marketplace publish; GH_TOKEN is only used by gh CLI asset upload.
         // JetBrains Marketplace Token aus ENV
         token.set(providers.environmentVariable("PUBLISH_TOKEN"))
     }
