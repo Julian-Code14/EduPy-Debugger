@@ -134,6 +134,8 @@ intellijPlatform {
     }
 
     signing {
+
+        // Note: PRIVATE_KEY_PASSWORD is optional for unencrypted keys; see CI secrets check.
         if (certChainEnv.orNull != null && privateKeyEnv.orNull != null) {
             // Variante: Secrets enthalten PEM-Inhalte → in Dateien schreiben
             certificateChainFile.set(signingCertFile)
