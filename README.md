@@ -1,6 +1,8 @@
 # EduPy-Debugger
 
 <!-- Plugin description -->
+EduPy-Debugger is a lightweight, web-based Python debugging tool for PyCharm (Community and Professional). It focuses on teaching and onboarding, providing a clean variables view, visual object cards, and an integrated console.
+
 EduPy‑Debugger ist ein schlankes, webbasiertes Debug‑Werkzeug für Python in PyCharm (Community & Professional) – mit klarem Fokus auf Unterricht und Einstieg. Es kombiniert eine aufgeräumte Debug‑Ansicht mit visualisierten Objekten und einer integrierten Konsole.
 
 Kurzüberblick:
@@ -182,3 +184,4 @@ Integrationstests nutzen das IntelliJ‑Platform‑Testing‑Framework.
 
 EduPy‑Debugger steht unter der **MIT-Lizenz**.  
 Den vollständigen Text findest du in der Datei **LICENSE**.
+EduPy-Debugger is a lightweight, web-based Python debugging tool for PyCharm (Community and Professional). It focuses on teaching and onboarding, providing a clean variables view, visual object cards, and an integrated console.
