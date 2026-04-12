@@ -8,6 +8,7 @@
       "release-type": "java",
       "package-name": "edupy-debugger",
       "include-component-in-tag": false,
+      "release-as": "1.0.5",
       "extra-files": [
         {
           "type": "generic",
