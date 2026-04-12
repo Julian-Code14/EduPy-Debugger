@@ -3,6 +3,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      release_as:
+        description: 'Force release as version (optional)'
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -20,6 +25,8 @@ jobs:
         id: rp
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          target-branch: main
+          release-as: ${{ inputs.release_as }}
   publish:
     needs: release
     if: ${{ needs.release.outputs.release_created == 'true' }}
