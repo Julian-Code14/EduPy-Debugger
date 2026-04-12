@@ -37,7 +37,7 @@ jobs:
           skip-github-pull-request: ${{ inputs.skip_pr }}
 
       - name: Open SNAPSHOT bump PR (java)
-        if: ${{ steps.rp.outputs.release_created == \"true\" }}
+        if: ${{ steps.rp.outputs.release_created == 'true' }}
         uses: googleapis/release-please-action@v4
         with:
           config-file: release-please-config.json
@@ -77,12 +77,16 @@ jobs:
         shell: bash
         run: |
           missing=0
-          for v in PUBLISH_TOKEN CERTIFICATE_CHAIN PRIVATE_KEY PRIVATE_KEY_PASSWORD; do
+          for v in PUBLISH_TOKEN CERTIFICATE_CHAIN PRIVATE_KEY; do
+            # PRIVATE_KEY_PASSWORD is optional (only for encrypted keys)
             if [ -z "$(printenv $v)" ]; then
               echo "::error::$v is missing (configure Actions secret)";
               missing=1;
             fi
           done
+          if [ -z "${PRIVATE_KEY_PASSWORD}" ]; then
+            echo "::notice::PRIVATE_KEY_PASSWORD not set (assumes unencrypted key).";
+          fi
           if [ "$missing" = "1" ]; then exit 1; fi
 
       - name: Extract version (strip leading \"v\")
