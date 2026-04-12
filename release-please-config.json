@@ -7,8 +7,12 @@
       "release-type": "java",
       "package-name": "edupy-debugger",
       "include-component-in-tag": false,
-      "extra-files": [],
-      "version-file": "gradle.properties"
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "gradle.properties"
+        }
+      ]
     }
   }
 }
