@@ -67,8 +67,8 @@ dependencies {
     implementation("net.sourceforge.plantuml:plantuml:1.2025.4")
     implementation("com.google.code.gson:gson:2.11.0")
 
-    testImplementation("org.mockito:mockito-core:4.11.0")
-    testImplementation("org.mockito:mockito-inline:4.11.0")
+    testImplementation("org.mockito:mockito-core:5.2.0")
+    testImplementation("org.mockito:mockito-inline:5.2.0")
     testImplementation("junit:junit:4.13.2")
 
     // Klassen aus dem Plugin-Quellset dem Test-Classpath hinzufügen
